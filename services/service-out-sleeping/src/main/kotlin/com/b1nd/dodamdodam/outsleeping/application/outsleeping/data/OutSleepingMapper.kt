@@ -8,6 +8,7 @@ import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.response.Out
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.response.StudentResponse
 import com.b1nd.dodamdodam.outsleeping.domain.deadline.entity.OutSleepingDeadlineEntity
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.entity.OutSleepingEntity
+import java.util.UUID
 
 fun ApplyOutSleepingRequest.toEntity(userId: UUID) = OutSleepingEntity(
     userId = userId,
