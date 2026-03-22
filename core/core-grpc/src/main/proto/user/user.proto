@@ -29,7 +29,6 @@ message VerifyPasswordResponse {
   bool valid = 1;
 }
 
-
 message GetUserRequest {
   string public_id = 1;
 }
