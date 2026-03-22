@@ -5,3 +5,5 @@ import com.b1nd.dodamdodam.core.common.exception.BasicException
 class NightStudyNotFoundException: BasicException(NightStudyExceptionCode.NIGHT_STUDY_NOT_FOUND)
 
 class NightStudyBannedException: BasicException(NightStudyExceptionCode.NIGHT_STUDY_BANNED)
+
+class NotMyNightStudyException: BasicException(NightStudyExceptionCode.NOT_MY_NIGHT_STUDY)

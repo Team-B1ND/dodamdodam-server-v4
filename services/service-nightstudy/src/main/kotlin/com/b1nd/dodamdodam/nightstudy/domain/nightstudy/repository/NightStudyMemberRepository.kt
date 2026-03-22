@@ -8,4 +8,5 @@ interface NightStudyMemberRepository: JpaRepository<NightStudyMemberEntity, Long
     fun findAllByUserId(userId: UUID): List<NightStudyMemberEntity>
     fun deleteAllByNightStudyId(id: Long)
     fun findAllByNightStudyId(id: Long): List<UUID>
+    fun existsByIdAndUserId(id: Long, userId: UUID): Boolean
 }

@@ -13,7 +13,6 @@ import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.toProjectNight
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service.NightStudyService
-import com.b1nd.dodamdodam.nightstudy.infrastructure.user.client.UserQueryClient
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Component
 
@@ -21,7 +20,6 @@ import org.springframework.stereotype.Component
 @Transactional(rollbackOn = [Exception::class])
 class NightStudyUseCase (
     private val nightStudyService: NightStudyService,
-    private val userQueryClient: UserQueryClient
 ) {
     fun applyPersonalNightStudy(request: ApplyPersonalNightStudyRequest): Response<Any> {
         val userId = PassportHolder.current().requireUserId()
@@ -47,8 +45,9 @@ class NightStudyUseCase (
         return Response.ok("프로젝트 심자 신청 목록을 조회했어요.", result.toProjectNightStudyListResponse())
     }
 
-    fun cancelNightStudy(id: Long) {
-        var userId = PassportHolder.current().requireUserId()
-        nightStudyService.delete(id)
+    fun cancelNightStudy(id: Long): Response<Any> {
+        val userId = PassportHolder.current().requireUserId()
+        nightStudyService.delete(userId, id)
+        return Response.ok("심자 신청을 취소했어요.")
     }
 }

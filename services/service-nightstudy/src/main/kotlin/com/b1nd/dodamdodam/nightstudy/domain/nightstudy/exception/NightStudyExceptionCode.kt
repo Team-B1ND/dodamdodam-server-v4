@@ -9,5 +9,6 @@ enum class NightStudyExceptionCode(
 ): ExceptionCode {
     NIGHT_STUDY_NOT_FOUND(HttpStatus.NOT_FOUND, "심야 자습 신청을 찾을 수 없어요."),
     NIGHT_STUDY_BANNED(HttpStatus.FORBIDDEN, "심야 자습이 정지된 인원이 있어요."),
+    NOT_MY_NIGHT_STUDY(HttpStatus.FORBIDDEN, "내가 신청한 심야 자습이 아니에요."),
     ;
 }

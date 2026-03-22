@@ -6,6 +6,7 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudySt
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyBannedException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyNotFoundException
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NotMyNightStudyException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.NightStudyBannedRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.NightStudyMemberRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.NightStudyRepository
@@ -54,7 +55,12 @@ class NightStudyService(
 
     @Transactional
     fun delete(userId: UUID, id: Long) {
-        if()
+        val isExist = isExist(id)
+        val isMine = isMine(userId, id)
+
+        if(!isExist) throw NightStudyNotFoundException()
+        if (isMine) throw NotMyNightStudyException()
+
         nightStudyRepository.deleteById(id)
         nightStudyMemberRepository.deleteAllByNightStudyId(id)
     }
@@ -82,5 +88,15 @@ class NightStudyService(
 
     private fun isBanned(userId: UUID): Boolean {
         return bannedRepository.existsByUserId(userId)
+    }
+
+    private fun isExist(nightStudyId: Long): Boolean {
+        return nightStudyRepository.existsById(nightStudyId)
+    }
+
+    private fun isMine(userId: UUID, nightStudyId: Long): Boolean {
+        val asLeader = nightStudyRepository.existsByIdAndLeaderId(nightStudyId, userId)
+        val asMember = nightStudyMemberRepository.existsByIdAndUserId(nightStudyId, userId)
+        return asLeader || asMember
     }
 }
