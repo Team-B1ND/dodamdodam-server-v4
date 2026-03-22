@@ -20,8 +20,8 @@ class OutSleepingService(
     fun create(outSleeping: OutSleepingEntity): OutSleepingEntity =
         outSleepingRepository.save(outSleeping)
 
-    fun getById(id: Long): OutSleepingEntity =
-        outSleepingRepository.findById(id).orElseThrow { OutSleepingNotFoundException() }
+    fun getByPublicId(publicId: UUID): OutSleepingEntity =
+        outSleepingRepository.findByPublicId(publicId) ?: throw OutSleepingNotFoundException()
 
     fun getByUserId(userId: UUID): List<OutSleepingEntity> =
         outSleepingRepository.findAllByUserId(userId)
@@ -29,13 +29,10 @@ class OutSleepingService(
     fun getByDate(date: LocalDate, pageable: Pageable): Page<OutSleepingEntity> =
         outSleepingRepository.findAllByStartAtLessThanEqualAndEndAtGreaterThanEqual(date, date, pageable)
 
-    fun getByStatusAndDate(status: OutSleepingStatus, date: LocalDate): List<OutSleepingEntity> =
+    fun getAllowedByDate(date: LocalDate, pageable: Pageable): Page<OutSleepingEntity> =
         outSleepingRepository.findAllByStatusAndStartAtLessThanEqualAndEndAtGreaterThanEqual(
-            status, date, date
+            OutSleepingStatus.ALLOWED, date, date, pageable
         )
-
-    fun getAllowedByDate(date: LocalDate): List<OutSleepingEntity> =
-        getByStatusAndDate(OutSleepingStatus.ALLOWED, date)
 
     fun validateOwner(outSleeping: OutSleepingEntity, userId: UUID) {
         if (outSleeping.userId != userId) {

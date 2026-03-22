@@ -36,18 +36,18 @@ class OutSleepingUseCase(
         return Response.created("외박 신청이 완료되었어요.")
     }
 
-    fun modify(id: Long, request: ModifyOutSleepingRequest): Response<Any> {
+    fun modify(publicId: UUID, request: ModifyOutSleepingRequest): Response<Any> {
         deadlineService.validateDeadline()
         val userId = currentUserId()
-        val outSleeping = outSleepingService.getById(id)
+        val outSleeping = outSleepingService.getByPublicId(publicId)
         outSleepingService.validateOwner(outSleeping, userId)
         outSleeping.update(request.reason, request.startAt, request.endAt)
         return Response.ok("외박 신청이 수정되었어요.")
     }
 
-    fun cancel(id: Long): Response<Any> {
+    fun cancel(publicId: UUID): Response<Any> {
         val userId = currentUserId()
-        val outSleeping = outSleepingService.getById(id)
+        val outSleeping = outSleepingService.getByPublicId(publicId)
         outSleepingService.validateOwner(outSleeping, userId)
         outSleepingService.validatePending(outSleeping)
         outSleepingService.delete(outSleeping)
@@ -74,26 +74,29 @@ class OutSleepingUseCase(
     }
 
     @Transactional(readOnly = true)
-    fun getValid(): Response<List<OutSleepingResponse>> {
-        val outSleepings = outSleepingService.getAllowedByDate(LocalDate.now())
-        val userInfoMap = getUserInfoMap(outSleepings.map { it.userId })
-        return Response.ok("유효한 외박 목록을 조회했어요.", outSleepings.map { it.toResponse(userInfoMap[it.userId]) })
+    fun getValid(pageable: Pageable): Response<PageResponse<OutSleepingResponse>> {
+        val outSleepings = outSleepingService.getAllowedByDate(LocalDate.now(), pageable)
+        val userInfoMap = getUserInfoMap(outSleepings.content.map { it.userId })
+        return Response.ok(
+            "유효한 외박 목록을 조회했어요.",
+            PageResponse.of(outSleepings.map { it.toResponse(userInfoMap[it.userId]) })
+        )
     }
 
-    fun allow(id: Long): Response<Any> {
-        val outSleeping = outSleepingService.getById(id)
+    fun allow(publicId: UUID): Response<Any> {
+        val outSleeping = outSleepingService.getByPublicId(publicId)
         outSleeping.allow()
         return Response.ok("외박 신청을 승인했어요.")
     }
 
-    fun deny(id: Long, request: DenyOutSleepingRequest): Response<Any> {
-        val outSleeping = outSleepingService.getById(id)
+    fun deny(publicId: UUID, request: DenyOutSleepingRequest): Response<Any> {
+        val outSleeping = outSleepingService.getByPublicId(publicId)
         outSleeping.deny(request.denyReason)
         return Response.ok("외박 신청을 거절했어요.")
     }
 
-    fun revert(id: Long): Response<Any> {
-        val outSleeping = outSleepingService.getById(id)
+    fun revert(publicId: UUID): Response<Any> {
+        val outSleeping = outSleepingService.getByPublicId(publicId)
         outSleeping.revert()
         return Response.ok("외박 신청 상태를 되돌렸어요.")
     }

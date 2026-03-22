@@ -18,7 +18,7 @@ fun ApplyOutSleepingRequest.toEntity(userId: UUID) = OutSleepingEntity(
 )
 
 fun OutSleepingEntity.toResponse(userInfo: UserResponse?) = OutSleepingResponse(
-    id = id!!,
+    publicId = publicId,
     reason = reason,
     status = status,
     student = userInfo?.student?.toStudentResponse(userInfo.name),
@@ -27,7 +27,7 @@ fun OutSleepingEntity.toResponse(userInfo: UserResponse?) = OutSleepingResponse(
 )
 
 fun OutSleepingEntity.toDeniedResponse(userInfo: UserResponse?) = DeniedOutSleepingResponse(
-    id = id!!,
+    publicId = publicId,
     reason = reason,
     status = status,
     student = userInfo?.student?.toStudentResponse(userInfo.name),

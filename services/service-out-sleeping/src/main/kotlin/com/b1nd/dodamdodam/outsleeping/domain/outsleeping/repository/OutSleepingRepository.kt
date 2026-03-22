@@ -10,11 +10,11 @@ import java.util.UUID
 
 interface OutSleepingRepository : JpaRepository<OutSleepingEntity, Long> {
 
-    fun findAllByUserId(userId: UUID): List<OutSleepingEntity>
+    fun findByPublicId(publicId: UUID): OutSleepingEntity?
 
-    fun findAllByStartAtLessThanEqualAndEndAtGreaterThanEqual(startAt: LocalDate, endAt: LocalDate): List<OutSleepingEntity>
+    fun findAllByUserId(userId: UUID): List<OutSleepingEntity>
 
     fun findAllByStartAtLessThanEqualAndEndAtGreaterThanEqual(startAt: LocalDate, endAt: LocalDate, pageable: Pageable): Page<OutSleepingEntity>
 
-    fun findAllByStatusAndStartAtLessThanEqualAndEndAtGreaterThanEqual(status: OutSleepingStatus, startAt: LocalDate, endAt: LocalDate): List<OutSleepingEntity>
+    fun findAllByStatusAndStartAtLessThanEqualAndEndAtGreaterThanEqual(status: OutSleepingStatus, startAt: LocalDate, endAt: LocalDate, pageable: Pageable): Page<OutSleepingEntity>
 }

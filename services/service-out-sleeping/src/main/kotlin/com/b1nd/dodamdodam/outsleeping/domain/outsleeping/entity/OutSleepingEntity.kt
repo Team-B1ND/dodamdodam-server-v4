@@ -11,6 +11,9 @@ import java.util.UUID
 @Table(name = "out_sleepings")
 class OutSleepingEntity(
 
+    @Column(nullable = false, unique = true, columnDefinition = "BINARY(16)")
+    val publicId: UUID = UUID.randomUUID(),
+
     @Column(name = "fk_user_id", nullable = false, columnDefinition = "BINARY(16)")
     val userId: UUID,
 

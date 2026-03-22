@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.data.domain.Pageable
 import org.springframework.web.bind.annotation.RestController
 import java.time.LocalDate
+import java.util.UUID
 
 @RestController
 class OutSleepingController(
@@ -30,14 +31,14 @@ class OutSleepingController(
         outSleepingUseCase.apply(request)
 
     @UserAccess(roles = [RoleType.STUDENT])
-    @PatchMapping("/out-sleeping/{id}")
-    fun modify(@PathVariable id: Long, @RequestBody request: ModifyOutSleepingRequest) =
-        outSleepingUseCase.modify(id, request)
+    @PatchMapping("/out-sleeping/{publicId}")
+    fun modify(@PathVariable publicId: UUID, @RequestBody request: ModifyOutSleepingRequest) =
+        outSleepingUseCase.modify(publicId, request)
 
     @UserAccess(roles = [RoleType.STUDENT])
-    @DeleteMapping("/out-sleeping/{id}")
-    fun cancel(@PathVariable id: Long) =
-        outSleepingUseCase.cancel(id)
+    @DeleteMapping("/out-sleeping/{publicId}")
+    fun cancel(@PathVariable publicId: UUID) =
+        outSleepingUseCase.cancel(publicId)
 
     @UserAccess(roles = [RoleType.STUDENT])
     @GetMapping("/out-sleeping/my")
@@ -53,23 +54,23 @@ class OutSleepingController(
 
     @UserAccess
     @GetMapping("/out-sleeping/valid")
-    fun getValid() =
-        outSleepingUseCase.getValid()
+    fun getValid(pageable: Pageable) =
+        outSleepingUseCase.getValid(pageable)
 
     @UserAccess(roles = [RoleType.TEACHER, RoleType.DORMITORY_MANAGER])
-    @PatchMapping("/out-sleeping/{id}/allow")
-    fun allow(@PathVariable id: Long) =
-        outSleepingUseCase.allow(id)
+    @PatchMapping("/out-sleeping/{publicId}/allow")
+    fun allow(@PathVariable publicId: UUID) =
+        outSleepingUseCase.allow(publicId)
 
     @UserAccess(roles = [RoleType.TEACHER, RoleType.DORMITORY_MANAGER])
-    @PatchMapping("/out-sleeping/{id}/deny")
-    fun deny(@PathVariable id: Long, @RequestBody request: DenyOutSleepingRequest) =
-        outSleepingUseCase.deny(id, request)
+    @PatchMapping("/out-sleeping/{publicId}/deny")
+    fun deny(@PathVariable publicId: UUID, @RequestBody request: DenyOutSleepingRequest) =
+        outSleepingUseCase.deny(publicId, request)
 
     @UserAccess(roles = [RoleType.TEACHER, RoleType.DORMITORY_MANAGER])
-    @PatchMapping("/out-sleeping/{id}/revert")
-    fun revert(@PathVariable id: Long) =
-        outSleepingUseCase.revert(id)
+    @PatchMapping("/out-sleeping/{publicId}/revert")
+    fun revert(@PathVariable publicId: UUID) =
+        outSleepingUseCase.revert(publicId)
 
     @UserAccess
     @GetMapping("/out-sleeping/deadline")
