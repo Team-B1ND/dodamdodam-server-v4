@@ -3,13 +3,14 @@ package com.b1nd.dodamdodam.outsleeping
 import com.b1nd.dodamdodam.core.security.passport.Passport
 import com.b1nd.dodamdodam.core.security.passport.crypto.PassportCompressor
 import com.b1nd.dodamdodam.core.security.passport.enumerations.RoleType
-import com.b1nd.dodamdodam.grpc.user.UserInfoMessage
+import com.b1nd.dodamdodam.grpc.user.StudentInfo
+import com.b1nd.dodamdodam.grpc.user.UserResponse
 import com.b1nd.dodamdodam.outsleeping.domain.deadline.entity.OutSleepingDeadlineEntity
 import com.b1nd.dodamdodam.outsleeping.domain.deadline.repository.OutSleepingDeadlineRepository
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.entity.OutSleepingEntity
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.enumeration.OutSleepingStatus
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.repository.OutSleepingRepository
-import com.b1nd.dodamdodam.outsleeping.infrastructure.grpc.client.UserClient
+import com.b1nd.dodamdodam.outsleeping.infrastructure.user.client.UserQueryClient
 import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
@@ -23,7 +24,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
-import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
@@ -34,32 +34,40 @@ import java.util.UUID
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles("test")
 class OutSleepingIntegrationTest {
 
     @Autowired lateinit var mockMvc: MockMvc
     @Autowired lateinit var objectMapper: ObjectMapper
     @Autowired lateinit var outSleepingRepository: OutSleepingRepository
     @Autowired lateinit var deadlineRepository: OutSleepingDeadlineRepository
-    @MockBean lateinit var userClient: UserClient
+    @MockBean lateinit var userQueryClient: UserQueryClient
 
     private val studentId = UUID.randomUUID()
     private val teacherId = UUID.randomUUID()
     private val otherStudentId = UUID.randomUUID()
 
-    private fun buildUserInfoMessage(publicId: UUID, name: String, grade: Int? = null, room: Int? = null, number: Int? = null): UserInfoMessage {
-        val builder = UserInfoMessage.newBuilder()
+    private fun buildUserResponse(publicId: UUID, name: String, grade: Int? = null, room: Int? = null, number: Int? = null): UserResponse {
+        val builder = UserResponse.newBuilder()
             .setPublicId(publicId.toString())
             .setName(name)
-        grade?.let { builder.setGrade(it) }
-        room?.let { builder.setRoom(it) }
-        number?.let { builder.setNumber(it) }
+            .setUsername("user_${name}")
+            .setStatus("ACTIVE")
+            .setCreatedAt("2025-01-01T00:00:00")
+        if (grade != null && room != null && number != null) {
+            builder.setStudent(
+                StudentInfo.newBuilder()
+                    .setGrade(grade)
+                    .setRoom(room)
+                    .setNumber(number)
+                    .build()
+            )
+        }
         return builder.build()
     }
 
-    private val studentInfo get() = buildUserInfoMessage(studentId, "학생1", 2, 3, 15)
-    private val otherStudentInfo get() = buildUserInfoMessage(otherStudentId, "학생2", 1, 2, 10)
-    private val teacherInfo get() = buildUserInfoMessage(teacherId, "선생님1")
+    private val studentInfo get() = buildUserResponse(studentId, "학생1", 2, 3, 15)
+    private val otherStudentInfo get() = buildUserResponse(otherStudentId, "학생2", 1, 2, 10)
+    private val teacherInfo get() = buildUserResponse(teacherId, "선생님1")
 
     private fun passportHeader(userId: UUID, role: RoleType): String {
         val passport = Passport(
@@ -84,7 +92,6 @@ class OutSleepingIntegrationTest {
         outSleepingRepository.deleteAll()
         deadlineRepository.deleteAll()
 
-        // 월~일 전체 범위, 23:59까지로 설정하여 테스트에서 항상 신청 가능
         deadlineRepository.save(
             OutSleepingDeadlineEntity(
                 startDayOfWeek = DayOfWeek.MONDAY,
@@ -94,17 +101,15 @@ class OutSleepingIntegrationTest {
             )
         )
 
-        // Mock gRPC UserClient
         runBlocking {
-            whenever(userClient.getUserInfo(studentId)).thenReturn(studentInfo)
-            whenever(userClient.getUserInfo(otherStudentId)).thenReturn(otherStudentInfo)
-            whenever(userClient.getUserInfo(teacherId)).thenReturn(teacherInfo)
-            whenever(userClient.getUserInfosByIds(any())).thenAnswer { invocation ->
+            whenever(userQueryClient.getUser(studentId)).thenReturn(studentInfo)
+            whenever(userQueryClient.getUser(otherStudentId)).thenReturn(otherStudentInfo)
+            whenever(userQueryClient.getUser(teacherId)).thenReturn(teacherInfo)
+            whenever(userQueryClient.getUsers(any())).thenAnswer { invocation ->
                 val ids = invocation.getArgument<Collection<UUID>>(0)
                 val infoMap = mapOf(studentId to studentInfo, otherStudentId to otherStudentInfo, teacherId to teacherInfo)
                 ids.mapNotNull { infoMap[it] }
             }
-            whenever(userClient.getAllStudents()).thenReturn(listOf(studentInfo, otherStudentInfo))
         }
     }
 
@@ -351,8 +356,7 @@ class OutSleepingIntegrationTest {
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.data.content.length()").value(1))
-                .andExpect(jsonPath("$.data.page").value(0))
-                .andExpect(jsonPath("$.data.totalElements").value(1))
+                .andExpect(jsonPath("$.data.hasNext").value(false))
                 .andExpect(jsonPath("$.data.content[0].student.name").value("학생1"))
         }
 
@@ -386,27 +390,6 @@ class OutSleepingIntegrationTest {
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.data.length()").value(1))
                 .andExpect(jsonPath("$.data[0].status").value("ALLOWED"))
-        }
-    }
-
-    @Nested
-    @DisplayName("GET /out-sleeping/residual - 잔류학생 조회")
-    inner class GetResidual {
-
-        @Test
-        fun `교사가 잔류학생을 조회할 수 있다`() {
-            outSleepingRepository.save(
-                OutSleepingEntity(userId = studentId, reason = "사유", startAt = LocalDate.now(), endAt = LocalDate.now().plusDays(1), status = OutSleepingStatus.ALLOWED)
-            )
-
-            mockMvc.perform(
-                get("/out-sleeping/residual")
-                    .header("X-User-Passport", teacherPassport)
-            )
-                .andExpect(status().isOk)
-                .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.data.length()").value(1))
-                .andExpect(jsonPath("$.data[0].name").value("학생2"))
         }
     }
 
@@ -471,7 +454,6 @@ class OutSleepingIntegrationTest {
 
         @Test
         fun `마감시간 범위 밖이면 외박 신청이 불가능하다`() {
-            // 어제 요일 00:00 ~ 어제 요일 00:00 범위로 설정하여 오늘은 범위 밖
             val yesterday = LocalDate.now().minusDays(1).dayOfWeek
             deadlineRepository.deleteAll()
             deadlineRepository.save(

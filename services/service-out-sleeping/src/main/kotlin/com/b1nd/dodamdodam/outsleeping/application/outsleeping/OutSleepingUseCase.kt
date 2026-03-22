@@ -8,18 +8,16 @@ import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.request.Deny
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.request.ModifyOutSleepingRequest
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.request.UpdateDeadlineRequest
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.response.DeadlineResponse
-import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.response.MemberResponse
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.response.OutSleepingResponse
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.response.PageResponse
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.toEntity
-import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.toMemberResponses
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.toResponse
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.toResponses
 import com.b1nd.dodamdodam.outsleeping.domain.deadline.service.OutSleepingDeadlineService
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.service.OutSleepingService
-import com.b1nd.dodamdodam.outsleeping.infrastructure.grpc.client.UserClient
+import com.b1nd.dodamdodam.outsleeping.infrastructure.user.client.UserQueryClient
 import kotlinx.coroutines.runBlocking
-import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -29,7 +27,7 @@ import java.util.UUID
 @Transactional(rollbackFor = [Exception::class])
 class OutSleepingUseCase(
     private val outSleepingService: OutSleepingService,
-    private val userClient: UserClient,
+    private val userQueryClient: UserQueryClient,
     private val deadlineService: OutSleepingDeadlineService,
 ) {
 
@@ -61,26 +59,18 @@ class OutSleepingUseCase(
     fun getMy(): Response<List<OutSleepingResponse>> {
         val userId = currentUserId()
         val outSleepings = outSleepingService.getByUserId(userId)
-        val userInfo = runBlocking { userClient.getUserInfo(userId) }
+        val userInfo = runBlocking { userQueryClient.getUser(userId) }
         val userInfoMap = mapOf(userId to userInfo)
         return Response.ok("내 외박 신청 목록을 조회했어요.", outSleepings.toResponses(userInfoMap))
     }
 
     @Transactional(readOnly = true)
-    fun getByDate(date: LocalDate, page: Int, size: Int): Response<PageResponse<OutSleepingResponse>> {
-        val pageable = PageRequest.of(page, size)
+    fun getByDate(date: LocalDate, pageable: Pageable): Response<PageResponse<OutSleepingResponse>> {
         val outSleepings = outSleepingService.getByDate(date, pageable)
         val userInfoMap = getUserInfoMap(outSleepings.content.map { it.userId })
-        val responses = outSleepings.content.toResponses(userInfoMap)
         return Response.ok(
             "외박 신청 목록을 조회했어요.",
-            PageResponse(
-                content = responses,
-                page = outSleepings.number,
-                size = outSleepings.size,
-                totalElements = outSleepings.totalElements,
-                totalPages = outSleepings.totalPages,
-            )
+            PageResponse.of(outSleepings.map { it.toResponse(userInfoMap[it.userId]) })
         )
     }
 
@@ -89,17 +79,6 @@ class OutSleepingUseCase(
         val outSleepings = outSleepingService.getAllowedByDate(LocalDate.now())
         val userInfoMap = getUserInfoMap(outSleepings.map { it.userId })
         return Response.ok("유효한 외박 목록을 조회했어요.", outSleepings.toResponses(userInfoMap))
-    }
-
-    @Transactional(readOnly = true)
-    fun getResidual(): Response<List<MemberResponse>> {
-        val allowedUserIds = outSleepingService.getAllowedByDate(LocalDate.now())
-            .map { it.userId }.toSet()
-        val allStudents = runBlocking { userClient.getAllStudents() }
-        val residualStudents = allStudents.filter {
-            UUID.fromString(it.publicId) !in allowedUserIds
-        }
-        return Response.ok("잔류 학생을 조회했어요.", residualStudents.toMemberResponses())
     }
 
     fun allow(id: Long): Response<Any> {
@@ -132,7 +111,7 @@ class OutSleepingUseCase(
     }
 
     private fun getUserInfoMap(userIds: List<UUID>) = runBlocking {
-        userClient.getUserInfosByIds(userIds)
+        userQueryClient.getUsers(userIds)
     }.associateBy { UUID.fromString(it.publicId) }
 
     private fun currentUserId() = PassportHolder.current().requireUserId()

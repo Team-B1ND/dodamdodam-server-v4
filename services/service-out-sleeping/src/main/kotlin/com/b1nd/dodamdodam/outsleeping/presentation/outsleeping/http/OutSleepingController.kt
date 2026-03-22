@@ -1,4 +1,4 @@
-package com.b1nd.dodamdodam.outsleeping.presentation.outsleeping
+package com.b1nd.dodamdodam.outsleeping.presentation.outsleeping.http
 
 import com.b1nd.dodamdodam.core.security.annotation.authentication.UserAccess
 import com.b1nd.dodamdodam.core.security.passport.enumerations.RoleType
@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.data.domain.Pageable
 import org.springframework.web.bind.annotation.RestController
 import java.time.LocalDate
 
@@ -47,19 +48,13 @@ class OutSleepingController(
     @GetMapping("/out-sleeping")
     fun getByDate(
         @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") date: LocalDate,
-        @RequestParam(defaultValue = "0") page: Int,
-        @RequestParam(defaultValue = "20") size: Int,
-    ) = outSleepingUseCase.getByDate(date, page, size)
+        pageable: Pageable,
+    ) = outSleepingUseCase.getByDate(date, pageable)
 
     @UserAccess
     @GetMapping("/out-sleeping/valid")
     fun getValid() =
         outSleepingUseCase.getValid()
-
-    @UserAccess(roles = [RoleType.TEACHER, RoleType.DORMITORY_MANAGER])
-    @GetMapping("/out-sleeping/residual")
-    fun getResidual() =
-        outSleepingUseCase.getResidual()
 
     @UserAccess(roles = [RoleType.TEACHER, RoleType.DORMITORY_MANAGER])
     @PatchMapping("/out-sleeping/{id}/allow")

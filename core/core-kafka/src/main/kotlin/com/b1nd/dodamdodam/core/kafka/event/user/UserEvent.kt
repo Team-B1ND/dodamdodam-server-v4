@@ -13,9 +13,6 @@ data class UserCreatedEvent(
     val phone: String? = null,
     val profileImage: String? = null,
     val role: String = "STUDENT",
-    val grade: Int? = null,
-    val room: Int? = null,
-    val number: Int? = null,
     val createdAt: LocalDateTime = LocalDateTime.now()
 )
 
@@ -28,8 +25,5 @@ data class UserUpdatedEvent(
     val name: String = "",
     val phone: String? = null,
     val profileImage: String? = null,
-    val grade: Int? = null,
-    val room: Int? = null,
-    val number: Int? = null,
     val updatedAt: LocalDateTime = LocalDateTime.now()
 )

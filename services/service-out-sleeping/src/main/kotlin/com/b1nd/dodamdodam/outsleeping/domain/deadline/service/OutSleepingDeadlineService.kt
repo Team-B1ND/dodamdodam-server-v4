@@ -50,22 +50,16 @@ class OutSleepingDeadlineService(
         val startDayValue = deadline.startDayOfWeek.value
         val endDayValue = deadline.endDayOfWeek.value
 
-        return if (startDayValue <= endDayValue) {
-            // 같은 주 내 범위 (예: 월~금)
-            when {
-                currentDayValue < startDayValue || currentDayValue > endDayValue -> false
-                currentDayValue == startDayValue -> !currentTime.isBefore(deadline.startTime)
-                currentDayValue == endDayValue -> !currentTime.isAfter(deadline.endTime)
-                else -> true
-            }
-        } else {
-            // 주를 넘기는 범위 (예: 금~일)
-            when {
-                currentDayValue > endDayValue && currentDayValue < startDayValue -> false
-                currentDayValue == startDayValue -> !currentTime.isBefore(deadline.startTime)
-                currentDayValue == endDayValue -> !currentTime.isAfter(deadline.endTime)
-                else -> true
-            }
+        val isWithinSameWeek = startDayValue <= endDayValue
+        val isBeforeStart = currentDayValue < startDayValue ||
+            (currentDayValue == startDayValue && currentTime.isBefore(deadline.startTime))
+        val isAfterEnd = currentDayValue > endDayValue ||
+            (currentDayValue == endDayValue && currentTime.isAfter(deadline.endTime))
+
+        if (isWithinSameWeek) {
+            return !isBeforeStart && !isAfterEnd
         }
+
+        return !isAfterEnd || !isBeforeStart
     }
 }
