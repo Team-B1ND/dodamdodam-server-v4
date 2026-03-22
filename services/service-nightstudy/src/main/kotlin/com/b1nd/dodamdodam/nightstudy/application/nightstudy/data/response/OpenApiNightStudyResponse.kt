@@ -1,4 +1,4 @@
-package com.b1nd.dodamdodam.nightstudy.application.openapi.data.response
+package com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response
 
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType

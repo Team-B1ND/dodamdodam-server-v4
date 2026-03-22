@@ -6,13 +6,15 @@ import com.b1nd.dodamdodam.core.security.passport.enumerations.RoleType
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.NightStudyUseCase
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.ApplyPersonalNightStudyRequest
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.ApplyProjectNightStudyRequest
+import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.RejectNightStudyRequest
+import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.OpenApiNightStudyResponse
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.PersonalNightStudyResponse
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.ProjectNightStudyResponse
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/night-study")
 class NightStudyController(
     private val nightStudyUseCase: NightStudyUseCase,
 ) {
@@ -40,4 +42,30 @@ class NightStudyController(
     @DeleteMapping("/{id}")
     fun cancelNightStudy(@PathVariable id: Long): Response<Any> =
         nightStudyUseCase.cancelNightStudy(id)
+
+    @UserAccess(roles = [RoleType.DORMITORY_MANAGER])
+    @GetMapping("/applications")
+    fun findAllByType(@RequestParam type: NightStudyType): Response<List<OpenApiNightStudyResponse>> =
+        nightStudyUseCase.findAllByType(type)
+
+    @UserAccess(roles = [RoleType.DORMITORY_MANAGER])
+    @GetMapping("/applications/{id}")
+    fun findById(@PathVariable id: Long): Response<OpenApiNightStudyResponse> =
+        nightStudyUseCase.findById(id)
+
+    @UserAccess(roles = [RoleType.DORMITORY_MANAGER])
+    @PatchMapping("/applications/{id}/allow")
+    fun allow(@PathVariable id: Long): Response<Any> =
+        nightStudyUseCase.allow(id)
+
+    @UserAccess(roles = [RoleType.DORMITORY_MANAGER])
+    @PatchMapping("/applications/{id}/reject")
+    fun reject(@PathVariable id: Long, @RequestBody request: RejectNightStudyRequest): Response<Any> =
+        nightStudyUseCase.reject(id, request.rejectionReason)
+
+    @UserAccess(roles = [RoleType.DORMITORY_MANAGER])
+    @PatchMapping("/applications/{id}/pending")
+    fun pending(@PathVariable id: Long): Response<Any> =
+        nightStudyUseCase.pending(id)
 }
+
