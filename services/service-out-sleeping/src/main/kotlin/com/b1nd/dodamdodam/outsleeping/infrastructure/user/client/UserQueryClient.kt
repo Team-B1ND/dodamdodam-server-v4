@@ -5,7 +5,6 @@ import com.b1nd.dodamdodam.grpc.user.GetUserRequest
 import com.b1nd.dodamdodam.grpc.user.GetUsersRequest
 import com.b1nd.dodamdodam.grpc.user.UserQueryServiceGrpcKt
 import com.b1nd.dodamdodam.grpc.user.UserResponse
-import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingNotFoundException
 import io.grpc.Status
 import io.grpc.StatusException
 import io.grpc.StatusRuntimeException
@@ -26,11 +25,11 @@ class UserQueryClient {
     }.getOrElse { ex ->
         when (ex) {
             is StatusException -> throw when (ex.status.code) {
-                Status.Code.NOT_FOUND -> OutSleepingNotFoundException()
+                Status.Code.NOT_FOUND -> BaseInternalServerException()
                 else -> BaseInternalServerException()
             }
             is StatusRuntimeException -> throw when (ex.status.code) {
-                Status.Code.NOT_FOUND -> OutSleepingNotFoundException()
+                Status.Code.NOT_FOUND -> BaseInternalServerException()
                 else -> BaseInternalServerException()
             }
             else -> throw ex
@@ -45,11 +44,11 @@ class UserQueryClient {
     }.getOrElse { ex ->
         when (ex) {
             is StatusException -> throw when (ex.status.code) {
-                Status.Code.NOT_FOUND -> OutSleepingNotFoundException()
+                Status.Code.NOT_FOUND -> BaseInternalServerException()
                 else -> BaseInternalServerException()
             }
             is StatusRuntimeException -> throw when (ex.status.code) {
-                Status.Code.NOT_FOUND -> OutSleepingNotFoundException()
+                Status.Code.NOT_FOUND -> BaseInternalServerException()
                 else -> BaseInternalServerException()
             }
             else -> throw ex

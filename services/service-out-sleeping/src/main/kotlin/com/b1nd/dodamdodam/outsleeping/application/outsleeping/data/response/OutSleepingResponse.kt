@@ -12,13 +12,3 @@ data class OutSleepingResponse(
     val startAt: LocalDate,
     val endAt: LocalDate,
 )
-
-data class DeniedOutSleepingResponse(
-    val publicId: UUID,
-    val reason: String,
-    val status: OutSleepingStatus,
-    val student: StudentResponse?,
-    val denyReason: String?,
-    val startAt: LocalDate,
-    val endAt: LocalDate,
-)

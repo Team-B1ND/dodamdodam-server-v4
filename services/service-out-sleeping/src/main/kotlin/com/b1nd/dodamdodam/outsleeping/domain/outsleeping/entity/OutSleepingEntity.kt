@@ -3,16 +3,21 @@ package com.b1nd.dodamdodam.outsleeping.domain.outsleeping.entity
 import com.b1nd.dodamdodam.core.jpa.entity.BaseTimeEntity
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.enumeration.OutSleepingStatus
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingAlreadyProcessedException
-import jakarta.persistence.*
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.PrePersist
+import jakarta.persistence.Table
 import java.time.LocalDate
 import java.util.UUID
 
 @Entity
 @Table(name = "out_sleepings")
 class OutSleepingEntity(
-
-    @Column(nullable = false, unique = true, columnDefinition = "BINARY(16)")
-    val publicId: UUID = UUID.randomUUID(),
 
     @Column(name = "fk_user_id", nullable = false, columnDefinition = "BINARY(16)")
     val userId: UUID,
@@ -37,6 +42,15 @@ class OutSleepingEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null
+
+    @Column(nullable = false, unique = true)
+    var publicId: UUID? = null
+        protected set
+
+    @PrePersist
+    fun generatePublicId() {
+        publicId = UUID.randomUUID()
+    }
 
     fun allow() {
         validatePending()

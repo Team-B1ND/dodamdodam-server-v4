@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 @RestControllerAdvice
 class OutSleepingExceptionHandler : GlobalExceptionHandler {
 
-    private val log = LoggerFactory.getLogger(OutSleepingExceptionHandler::class.java)
+    private val log = LoggerFactory.getLogger(javaClass)
 
     @ExceptionHandler(BasicException::class)
     override fun handleDodamException(exception: BasicException): ResponseEntity<Response<Unit>> {
