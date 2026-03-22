@@ -8,10 +8,7 @@ import java.time.LocalDate
 import java.util.UUID
 
 @Entity
-@Table(
-    name = "out_sleepings",
-    indexes = [Index(name = "idx_out_sleepings_start_at_end_at", columnList = "start_at, end_at")]
-)
+@Table(name = "out_sleepings")
 class OutSleepingEntity(
 
     @Column(name = "fk_user_id", nullable = false, columnDefinition = "BINARY(16)")

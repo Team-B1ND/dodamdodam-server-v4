@@ -8,7 +8,6 @@ import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.response.Out
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.response.StudentResponse
 import com.b1nd.dodamdodam.outsleeping.domain.deadline.entity.OutSleepingDeadlineEntity
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.entity.OutSleepingEntity
-import java.util.UUID
 
 fun ApplyOutSleepingRequest.toEntity(userId: UUID) = OutSleepingEntity(
     userId = userId,
@@ -35,9 +34,6 @@ fun OutSleepingEntity.toDeniedResponse(userInfo: UserResponse?) = DeniedOutSleep
     startAt = startAt,
     endAt = endAt,
 )
-
-fun List<OutSleepingEntity>.toResponses(userInfoMap: Map<UUID, UserResponse>): List<OutSleepingResponse> =
-    map { it.toResponse(userInfoMap[it.userId]) }
 
 fun com.b1nd.dodamdodam.grpc.user.StudentInfo.toStudentResponse(name: String) = StudentResponse(
     name = name,

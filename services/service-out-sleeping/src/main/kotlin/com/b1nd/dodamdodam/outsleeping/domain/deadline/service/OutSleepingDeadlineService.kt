@@ -50,16 +50,18 @@ class OutSleepingDeadlineService(
         val startDayValue = deadline.startDayOfWeek.value
         val endDayValue = deadline.endDayOfWeek.value
 
-        val isWithinSameWeek = startDayValue <= endDayValue
         val isBeforeStart = currentDayValue < startDayValue ||
             (currentDayValue == startDayValue && currentTime.isBefore(deadline.startTime))
         val isAfterEnd = currentDayValue > endDayValue ||
             (currentDayValue == endDayValue && currentTime.isAfter(deadline.endTime))
 
-        if (isWithinSameWeek) {
-            return !isBeforeStart && !isAfterEnd
+        if (startDayValue <= endDayValue) {
+            if (isBeforeStart) return false
+            if (isAfterEnd) return false
+            return true
         }
 
-        return !isAfterEnd || !isBeforeStart
+        if (isAfterEnd && isBeforeStart) return false
+        return true
     }
 }

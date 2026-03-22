@@ -12,7 +12,6 @@ import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.response.Out
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.response.PageResponse
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.toEntity
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.toResponse
-import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.toResponses
 import com.b1nd.dodamdodam.outsleeping.domain.deadline.service.OutSleepingDeadlineService
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.service.OutSleepingService
 import com.b1nd.dodamdodam.outsleeping.infrastructure.user.client.UserQueryClient
@@ -61,7 +60,7 @@ class OutSleepingUseCase(
         val outSleepings = outSleepingService.getByUserId(userId)
         val userInfo = runBlocking { userQueryClient.getUser(userId) }
         val userInfoMap = mapOf(userId to userInfo)
-        return Response.ok("내 외박 신청 목록을 조회했어요.", outSleepings.toResponses(userInfoMap))
+        return Response.ok("내 외박 신청 목록을 조회했어요.", outSleepings.map { it.toResponse(userInfoMap[it.userId]) })
     }
 
     @Transactional(readOnly = true)
@@ -78,7 +77,7 @@ class OutSleepingUseCase(
     fun getValid(): Response<List<OutSleepingResponse>> {
         val outSleepings = outSleepingService.getAllowedByDate(LocalDate.now())
         val userInfoMap = getUserInfoMap(outSleepings.map { it.userId })
-        return Response.ok("유효한 외박 목록을 조회했어요.", outSleepings.toResponses(userInfoMap))
+        return Response.ok("유효한 외박 목록을 조회했어요.", outSleepings.map { it.toResponse(userInfoMap[it.userId]) })
     }
 
     fun allow(id: Long): Response<Any> {
