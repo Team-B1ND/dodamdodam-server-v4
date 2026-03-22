@@ -3,6 +3,7 @@ package com.b1nd.dodamdodam.outsleeping.application.outsleeping.data
 import com.b1nd.dodamdodam.grpc.user.UserResponse
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.request.ApplyOutSleepingRequest
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.response.DeadlineResponse
+import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.response.MyOutSleepingResponse
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.response.OutSleepingResponse
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.response.StudentResponse
 import com.b1nd.dodamdodam.outsleeping.domain.deadline.entity.OutSleepingDeadlineEntity
@@ -21,6 +22,14 @@ fun OutSleepingEntity.toResponse(userInfo: UserResponse?) = OutSleepingResponse(
     reason = reason,
     status = status,
     student = userInfo?.student?.toStudentResponse(userInfo.name),
+    startAt = startAt,
+    endAt = endAt,
+)
+
+fun OutSleepingEntity.toMyResponse() = MyOutSleepingResponse(
+    publicId = publicId!!,
+    reason = reason,
+    status = status,
     startAt = startAt,
     endAt = endAt,
 )

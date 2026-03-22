@@ -24,7 +24,4 @@ dependencies {
     // swagger
     implementation(libs.springdoc.openapi.webmvc.ui)
 
-    // test
-    testRuntimeOnly("com.h2database:h2")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
 }

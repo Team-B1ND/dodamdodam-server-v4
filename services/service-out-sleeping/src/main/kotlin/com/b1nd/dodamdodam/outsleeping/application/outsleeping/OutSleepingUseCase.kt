@@ -8,10 +8,13 @@ import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.request.Deny
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.request.ModifyOutSleepingRequest
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.request.UpdateDeadlineRequest
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.response.DeadlineResponse
+import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.response.MyOutSleepingListResponse
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.response.OutSleepingResponse
-import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.response.PageResponse
+import com.b1nd.dodamdodam.core.common.data.InfinityScrollPageResponse
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.toEntity
+import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.toMyResponse
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.toResponse
+import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.toStudentResponse
 import com.b1nd.dodamdodam.outsleeping.domain.deadline.service.OutSleepingDeadlineService
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.service.OutSleepingService
 import com.b1nd.dodamdodam.outsleeping.infrastructure.user.client.UserQueryClient
@@ -55,31 +58,42 @@ class OutSleepingUseCase(
     }
 
     @Transactional(readOnly = true)
-    fun getMy(): Response<List<OutSleepingResponse>> {
+    fun getMy(): Response<MyOutSleepingListResponse> {
         val userId = currentUserId()
         val outSleepings = outSleepingService.getByUserId(userId)
         val userInfo = runBlocking { userQueryClient.getUser(userId) }
-        val userInfoMap = mapOf(userId to userInfo)
-        return Response.ok("내 외박 신청 목록을 조회했어요.", outSleepings.map { it.toResponse(userInfoMap[it.userId]) })
-    }
-
-    @Transactional(readOnly = true)
-    fun getByDate(date: LocalDate, pageable: Pageable): Response<PageResponse<OutSleepingResponse>> {
-        val outSleepings = outSleepingService.getByDate(date, pageable)
-        val userInfoMap = getUserInfoMap(outSleepings.content.map { it.userId })
         return Response.ok(
-            "외박 신청 목록을 조회했어요.",
-            PageResponse.of(outSleepings.map { it.toResponse(userInfoMap[it.userId]) })
+            "내 외박 신청 목록을 조회했어요.",
+            MyOutSleepingListResponse(
+                student = userInfo.student?.toStudentResponse(userInfo.name),
+                outSleepings = outSleepings.map { it.toMyResponse() },
+            )
         )
     }
 
     @Transactional(readOnly = true)
-    fun getValid(pageable: Pageable): Response<PageResponse<OutSleepingResponse>> {
+    fun getByDate(date: LocalDate, pageable: Pageable): Response<InfinityScrollPageResponse<OutSleepingResponse>> {
+        val outSleepings = outSleepingService.getByDate(date, pageable)
+        val userInfoMap = getUserInfoMap(outSleepings.content.map { it.userId })
+        return Response.ok(
+            "외박 신청 목록을 조회했어요.",
+            InfinityScrollPageResponse(
+                content = outSleepings.content.map { it.toResponse(userInfoMap[it.userId]) },
+                hasNext = outSleepings.hasNext(),
+            )
+        )
+    }
+
+    @Transactional(readOnly = true)
+    fun getValid(pageable: Pageable): Response<InfinityScrollPageResponse<OutSleepingResponse>> {
         val outSleepings = outSleepingService.getAllowedByDate(LocalDate.now(), pageable)
         val userInfoMap = getUserInfoMap(outSleepings.content.map { it.userId })
         return Response.ok(
             "유효한 외박 목록을 조회했어요.",
-            PageResponse.of(outSleepings.map { it.toResponse(userInfoMap[it.userId]) })
+            InfinityScrollPageResponse(
+                content = outSleepings.content.map { it.toResponse(userInfoMap[it.userId]) },
+                hasNext = outSleepings.hasNext(),
+            )
         )
     }
 
