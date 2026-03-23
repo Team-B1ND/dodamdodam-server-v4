@@ -51,6 +51,16 @@ spring:
             - Path=/neis/**
           filters:
             - StripPrefix=1
+        - id: oauth-service
+          uri: http://localhost:8087
+          predicates:
+            - Path=/oauth/**
+          filters:
+            - StripPrefix=1
+        - id: oauth-wellknown
+          uri: http://localhost:8087
+          predicates:
+            - Path=/.well-known/**
         - id: openapi-user-service
           uri: http://localhost:8081
           predicates:
