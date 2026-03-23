@@ -171,6 +171,19 @@ services:
       mysql:
         condition: service_healthy
 
+  service-out-sleeping:
+    image: ${DOCKERHUB_USERNAME}/dodam-out-sleeping:dev
+    container_name: dodam-out-sleeping
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      MYSQL_HOST: mysql://mysql:3306/dodam-out-sleeping
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    depends_on:
+      mysql:
+        condition: service_healthy
+
   service-file:
     image: ${DOCKERHUB_USERNAME}/dodam-file:dev
     container_name: dodam-file
