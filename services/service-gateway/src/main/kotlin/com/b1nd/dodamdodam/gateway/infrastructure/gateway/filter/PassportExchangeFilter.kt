@@ -33,7 +33,7 @@ class PassportExchangeFilter(
 
     override fun filter(exchange: ServerWebExchange, chain: GatewayFilterChain): Mono<Void> {
         val path = exchange.request.uri.path
-        if (path.startsWith("/openapi/") || path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs")) {
+        if (path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs")) {
             return chain.filter(exchange)
         }
 
