@@ -1,7 +1,7 @@
 package com.b1nd.dodamdodam.neis.infrastructure.neis
 
 import com.b1nd.dodamdodam.neis.domain.meal.enumeration.MealType
-import com.b1nd.dodamdodam.neis.infrastructure.config.MealProperties
+import com.b1nd.dodamdodam.neis.infrastructure.config.NeisProperties
 import com.b1nd.dodamdodam.neis.infrastructure.neis.data.NeisMealApiResponse
 import com.b1nd.dodamdodam.neis.infrastructure.neis.data.NeisMealRow
 import org.slf4j.LoggerFactory
@@ -23,7 +23,7 @@ data class ParsedMeal(
 @Component
 class NeisClient(
     private val restTemplate: RestTemplate,
-    private val mealProperties: MealProperties,
+    private val neisProperties: NeisProperties,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
@@ -34,18 +34,17 @@ class NeisClient(
 
         val uri = UriComponentsBuilder
             .fromHttpUrl("https://open.neis.go.kr/hub/mealServiceDietInfo")
-            .queryParam("KEY", mealProperties.neisApiKey)
+            .queryParam("KEY", neisProperties.apiKey)
             .queryParam("Type", "json")
             .queryParam("pIndex", 1)
             .queryParam("pSize", 100)
-            .queryParam("ATPT_OFCDC_SC_CODE", mealProperties.eduOfficeCode)
-            .queryParam("SD_SCHUL_CODE", mealProperties.schoolCode)
+            .queryParam("ATPT_OFCDC_SC_CODE", neisProperties.eduOfficeCode)
+            .queryParam("SD_SCHUL_CODE", neisProperties.schoolCode)
             .queryParam("MLSV_FROM_YMD", startDate)
             .queryParam("MLSV_TO_YMD", endDate)
             .build()
             .toUri()
 
-        log.info("NEIS 요청 URL: {}", uri)
         val response = restTemplate.getForObject(uri, NeisMealApiResponse::class.java)
         val rows = response?.mealServiceDietInfo
             ?.flatMap { it.row ?: emptyList() }

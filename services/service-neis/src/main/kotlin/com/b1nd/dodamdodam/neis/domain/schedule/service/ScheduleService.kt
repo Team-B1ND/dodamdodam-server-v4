@@ -3,11 +3,9 @@ package com.b1nd.dodamdodam.neis.domain.schedule.service
 import com.b1nd.dodamdodam.neis.domain.schedule.entity.ScheduleEntity
 import com.b1nd.dodamdodam.neis.domain.schedule.entity.ScheduleTargetEntity
 import com.b1nd.dodamdodam.neis.domain.schedule.enums.ScheduleTarget
-import com.b1nd.dodamdodam.neis.domain.schedule.enums.ScheduleType
 import com.b1nd.dodamdodam.neis.domain.schedule.exception.ScheduleNotFoundException
 import com.b1nd.dodamdodam.neis.domain.schedule.repository.ScheduleRepository
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.Pageable
+import com.b1nd.dodamdodam.neis.domain.schedule.repository.ScheduleTargetRepository
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 import java.util.UUID
@@ -15,19 +13,24 @@ import java.util.UUID
 @Service
 class ScheduleService(
     private val scheduleRepository: ScheduleRepository,
+    private val scheduleTargetRepository: ScheduleTargetRepository,
 ) {
-    fun create(title: String, startDate: LocalDate, endDate: LocalDate, type: ScheduleType, targets: List<ScheduleTarget>): ScheduleEntity {
-        val schedule = ScheduleEntity(title, startDate, endDate, type)
+    fun create(title: String, startAt: LocalDate, endAt: LocalDate, targets: List<ScheduleTarget>): ScheduleEntity {
+        val schedule = scheduleRepository.save(ScheduleEntity(title, startAt, endAt))
         targets.forEach { target ->
-            schedule.targets.add(ScheduleTargetEntity(schedule, target))
+            scheduleTargetRepository.save(ScheduleTargetEntity(schedule, target))
         }
-        return scheduleRepository.save(schedule)
+        return schedule
     }
 
-    fun update(publicId: UUID, title: String, startDate: LocalDate, endDate: LocalDate, targets: List<ScheduleTarget>): ScheduleEntity {
+    fun update(publicId: UUID, title: String, startAt: LocalDate, endAt: LocalDate, targets: List<ScheduleTarget>): ScheduleEntity {
         val schedule = scheduleRepository.findByPublicId(publicId)
             ?: throw ScheduleNotFoundException()
-        schedule.update(title, startDate, endDate, targets)
+        schedule.update(title, startAt, endAt)
+        scheduleTargetRepository.deleteAllBySchedule(schedule)
+        targets.forEach { target ->
+            scheduleTargetRepository.save(ScheduleTargetEntity(schedule, target))
+        }
         return scheduleRepository.save(schedule)
     }
 
@@ -37,10 +40,16 @@ class ScheduleService(
         scheduleRepository.delete(schedule)
     }
 
-    fun deleteAllNeisSchedulesByMonth(startOfMonth: LocalDate, endOfMonth: LocalDate) {
-        scheduleRepository.deleteAllByTypeAndStartDateBetween(ScheduleType.NEIS, startOfMonth, endOfMonth)
+    fun getSchedulesByMonth(startAt: LocalDate, endAt: LocalDate): List<ScheduleEntity> =
+        scheduleRepository.findAllByMonth(startAt, endAt)
+
+    fun getTargetsBySchedules(schedules: List<ScheduleEntity>): Map<Long?, List<ScheduleTarget>> {
+        if (schedules.isEmpty()) return emptyMap()
+        return scheduleTargetRepository.findAllByScheduleIn(schedules)
+            .groupBy({ it.schedule.id }, { it.target })
     }
 
-    fun getSchedulesByMonth(startOfMonth: LocalDate, endOfMonth: LocalDate, pageable: Pageable): Page<ScheduleEntity> =
-        scheduleRepository.findSchedulesByMonth(startOfMonth, endOfMonth, pageable)
+    fun deleteAllByStartAtBetween(startAt: LocalDate, endAt: LocalDate) {
+        scheduleRepository.deleteAllByStartAtBetween(startAt, endAt)
+    }
 }

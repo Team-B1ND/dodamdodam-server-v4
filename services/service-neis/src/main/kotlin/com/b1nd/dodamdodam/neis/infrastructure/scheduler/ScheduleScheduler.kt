@@ -1,12 +1,12 @@
 package com.b1nd.dodamdodam.neis.infrastructure.scheduler
 
-import com.b1nd.dodamdodam.neis.domain.schedule.enums.ScheduleType
 import com.b1nd.dodamdodam.neis.domain.schedule.service.ScheduleService
 import com.b1nd.dodamdodam.neis.infrastructure.neis.NeisScheduleClient
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
 import java.time.YearMonth
 
 @Component
@@ -16,32 +16,30 @@ class ScheduleScheduler(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    @Scheduled(cron = "0 0 3 L-2 * *")
+    @Scheduled(cron = "0 0 3 2 3 *")
     @Transactional
-    fun fetchNextMonthSchedules() {
-        val nextMonth = YearMonth.now().plusMonths(1)
-        syncSchedules(nextMonth)
+    fun fetchYearlySchedules() {
+        val year = LocalDate.now().year
+        syncYearly(year)
     }
 
-    @Scheduled(cron = "0 0 4 1 * *")
-    @Transactional
-    fun fetchCurrentMonthSchedules() {
-        syncSchedules(YearMonth.now())
-    }
-
-    private fun syncSchedules(yearMonth: YearMonth) {
+    private fun syncYearly(year: Int) {
         try {
-            val startOfMonth = yearMonth.atDay(1)
-            val endOfMonth = yearMonth.atEndOfMonth()
+            val startDate = LocalDate.of(year, 3, 1)
+            val endDate = YearMonth.of(year + 1, 2).atEndOfMonth()
 
-            scheduleService.deleteAllNeisSchedulesByMonth(startOfMonth, endOfMonth)
+            scheduleService.deleteAllByStartAtBetween(startDate, endDate)
 
-            val schedules = neisScheduleClient.fetchMonthlySchedules(yearMonth)
-            schedules.forEach { parsed ->
-                scheduleService.create(parsed.title, parsed.date, parsed.date, ScheduleType.NEIS, parsed.targets)
+            for (month in 3..12) {
+                val schedules = neisScheduleClient.fetchMonthlySchedules(YearMonth.of(year, month))
+                schedules.forEach { scheduleService.create(it.title, it.date, it.date, it.targets) }
+            }
+            for (month in 1..2) {
+                val schedules = neisScheduleClient.fetchMonthlySchedules(YearMonth.of(year + 1, month))
+                schedules.forEach { scheduleService.create(it.title, it.date, it.date, it.targets) }
             }
         } catch (e: Exception) {
-            log.error("학사일정 동기화 실패: {}", yearMonth, e)
+            log.error("학사일정 동기화 실패: {}", year, e)
         }
     }
 }

@@ -4,15 +4,13 @@ CREATE TABLE schedules(
     created_at datetime NOT NULL,
     modified_at datetime NOT NULL,
     title VARCHAR(100) NOT NULL,
-    start_date date NOT NULL,
-    end_date date NOT NULL,
-    type VARCHAR(10) NOT NULL,
+    start_at date NOT NULL,
+    end_at date NOT NULL,
     CONSTRAINT uk_schedule_public_id UNIQUE (public_id)
 );
 
-CREATE INDEX idx_schedule_start_date ON schedules (start_date);
-CREATE INDEX idx_schedule_end_date ON schedules (end_date);
-CREATE INDEX idx_schedule_type ON schedules (type);
+CREATE INDEX idx_schedule_start_at ON schedules (start_at);
+CREATE INDEX idx_schedule_end_at ON schedules (end_at);
 
 CREATE TABLE schedule_targets(
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,

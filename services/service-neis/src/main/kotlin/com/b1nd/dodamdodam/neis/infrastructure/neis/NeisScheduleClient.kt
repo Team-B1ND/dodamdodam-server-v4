@@ -1,7 +1,7 @@
 package com.b1nd.dodamdodam.neis.infrastructure.neis
 
 import com.b1nd.dodamdodam.neis.domain.schedule.enums.ScheduleTarget
-import com.b1nd.dodamdodam.neis.infrastructure.config.ScheduleProperties
+import com.b1nd.dodamdodam.neis.infrastructure.config.NeisProperties
 import com.b1nd.dodamdodam.neis.infrastructure.neis.data.NeisScheduleApiResponse
 import com.b1nd.dodamdodam.neis.infrastructure.neis.data.NeisScheduleRow
 import com.b1nd.dodamdodam.neis.infrastructure.neis.data.ParsedSchedule
@@ -16,7 +16,7 @@ import java.time.format.DateTimeFormatter
 @Component
 class NeisScheduleClient(
     private val restTemplate: RestTemplate,
-    private val scheduleProperties: ScheduleProperties,
+    private val neisProperties: NeisProperties,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
@@ -27,18 +27,17 @@ class NeisScheduleClient(
 
         val uri = UriComponentsBuilder
             .fromHttpUrl("https://open.neis.go.kr/hub/SchoolSchedule")
-            .queryParam("KEY", scheduleProperties.neisApiKey)
+            .queryParam("KEY", neisProperties.apiKey)
             .queryParam("Type", "json")
             .queryParam("pIndex", 1)
             .queryParam("pSize", 100)
-            .queryParam("ATPT_OFCDC_SC_CODE", scheduleProperties.eduOfficeCode)
-            .queryParam("SD_SCHUL_CODE", scheduleProperties.schoolCode)
+            .queryParam("ATPT_OFCDC_SC_CODE", neisProperties.eduOfficeCode)
+            .queryParam("SD_SCHUL_CODE", neisProperties.schoolCode)
             .queryParam("AA_FROM_YMD", startDate)
             .queryParam("AA_TO_YMD", endDate)
             .build()
             .toUri()
 
-        log.info("NEIS 학사일정 요청 URL: {}", uri)
         val response = restTemplate.getForObject(uri, NeisScheduleApiResponse::class.java)
         val rows = response?.schoolSchedule
             ?.flatMap { it.row ?: emptyList() }
