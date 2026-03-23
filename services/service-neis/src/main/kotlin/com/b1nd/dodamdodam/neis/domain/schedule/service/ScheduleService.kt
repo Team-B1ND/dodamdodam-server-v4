@@ -5,7 +5,6 @@ import com.b1nd.dodamdodam.neis.domain.schedule.entity.ScheduleTargetEntity
 import com.b1nd.dodamdodam.neis.domain.schedule.enums.ScheduleTarget
 import com.b1nd.dodamdodam.neis.domain.schedule.enums.ScheduleType
 import com.b1nd.dodamdodam.neis.domain.schedule.exception.ScheduleNotFoundException
-import com.b1nd.dodamdodam.neis.domain.schedule.repository.ScheduleQueryRepository
 import com.b1nd.dodamdodam.neis.domain.schedule.repository.ScheduleRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -16,13 +15,19 @@ import java.util.UUID
 @Service
 class ScheduleService(
     private val scheduleRepository: ScheduleRepository,
-    private val scheduleQueryRepository: ScheduleQueryRepository,
 ) {
     fun create(title: String, startDate: LocalDate, endDate: LocalDate, type: ScheduleType, targets: List<ScheduleTarget>): ScheduleEntity {
         val schedule = ScheduleEntity(title, startDate, endDate, type)
         targets.forEach { target ->
             schedule.targets.add(ScheduleTargetEntity(schedule, target))
         }
+        return scheduleRepository.save(schedule)
+    }
+
+    fun update(publicId: UUID, title: String, startDate: LocalDate, endDate: LocalDate, targets: List<ScheduleTarget>): ScheduleEntity {
+        val schedule = scheduleRepository.findByPublicId(publicId)
+            ?: throw ScheduleNotFoundException()
+        schedule.update(title, startDate, endDate, targets)
         return scheduleRepository.save(schedule)
     }
 
@@ -37,5 +42,5 @@ class ScheduleService(
     }
 
     fun getSchedulesByMonth(startOfMonth: LocalDate, endOfMonth: LocalDate, pageable: Pageable): Page<ScheduleEntity> =
-        scheduleQueryRepository.findSchedulesByMonth(startOfMonth, endOfMonth, pageable)
+        scheduleRepository.findSchedulesByMonth(startOfMonth, endOfMonth, pageable)
 }

@@ -2,6 +2,7 @@ package com.b1nd.dodamdodam.neis.application.schedule
 
 import com.b1nd.dodamdodam.core.common.data.Response
 import com.b1nd.dodamdodam.neis.application.schedule.data.request.CreateScheduleRequest
+import com.b1nd.dodamdodam.neis.application.schedule.data.request.UpdateScheduleRequest
 import com.b1nd.dodamdodam.neis.application.schedule.data.response.PageResponse
 import com.b1nd.dodamdodam.neis.application.schedule.data.response.ScheduleResponse
 import com.b1nd.dodamdodam.neis.application.schedule.data.toResponse
@@ -23,6 +24,11 @@ class ScheduleUseCase(
     fun createSchedule(request: CreateScheduleRequest): Response<ScheduleResponse> {
         val schedule = scheduleService.create(request.title, request.startDate, request.endDate, ScheduleType.ADMIN, request.targets)
         return Response.created("학사일정이 등록되었어요.", schedule.toResponse())
+    }
+
+    fun updateSchedule(request: UpdateScheduleRequest): Response<ScheduleResponse> {
+        val schedule = scheduleService.update(request.publicId, request.title, request.startDate, request.endDate, request.targets)
+        return Response.ok("학사일정이 수정되었어요.", schedule.toResponse())
     }
 
     fun deleteSchedule(publicId: UUID): Response<Any> {

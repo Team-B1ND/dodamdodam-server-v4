@@ -15,19 +15,20 @@ import jakarta.persistence.PrePersist
 import jakarta.persistence.Table
 import org.hibernate.annotations.BatchSize
 import java.time.LocalDate
+import com.b1nd.dodamdodam.neis.domain.schedule.enums.ScheduleTarget
 import java.util.UUID
 
 @Entity
 @Table(name = "schedules")
 class ScheduleEntity(
     @Column(nullable = false, length = 100)
-    val title: String,
+    var title: String,
 
     @Column(name = "start_date", nullable = false)
-    val startDate: LocalDate,
+    var startDate: LocalDate,
 
     @Column(name = "end_date", nullable = false)
-    val endDate: LocalDate,
+    var endDate: LocalDate,
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
@@ -48,5 +49,15 @@ class ScheduleEntity(
     @PrePersist
     fun generatePublicId() {
         publicId = UUID.randomUUID()
+    }
+
+    fun update(title: String, startDate: LocalDate, endDate: LocalDate, targets: List<ScheduleTarget>) {
+        this.title = title
+        this.startDate = startDate
+        this.endDate = endDate
+        this.targets.clear()
+        targets.forEach { target ->
+            this.targets.add(ScheduleTargetEntity(this, target))
+        }
     }
 }

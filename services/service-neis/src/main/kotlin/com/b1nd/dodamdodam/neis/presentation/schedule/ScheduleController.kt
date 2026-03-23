@@ -4,10 +4,12 @@ import com.b1nd.dodamdodam.core.security.annotation.authentication.UserAccess
 import com.b1nd.dodamdodam.core.security.passport.enumerations.RoleType
 import com.b1nd.dodamdodam.neis.application.schedule.ScheduleUseCase
 import com.b1nd.dodamdodam.neis.application.schedule.data.request.CreateScheduleRequest
+import com.b1nd.dodamdodam.neis.application.schedule.data.request.UpdateScheduleRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -26,6 +28,11 @@ class ScheduleController(
     @PostMapping
     fun createSchedule(@RequestBody request: CreateScheduleRequest) =
         scheduleUseCase.createSchedule(request)
+
+    @UserAccess(roles = [RoleType.ADMIN, RoleType.TEACHER])
+    @PatchMapping
+    fun updateSchedule(@RequestBody request: UpdateScheduleRequest) =
+        scheduleUseCase.updateSchedule(request)
 
     @UserAccess(roles = [RoleType.ADMIN, RoleType.TEACHER])
     @DeleteMapping("/{publicId}")
