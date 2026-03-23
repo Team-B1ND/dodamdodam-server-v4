@@ -4,10 +4,10 @@ import com.b1nd.dodamdodam.neis.application.schedule.data.response.ScheduleRespo
 import com.b1nd.dodamdodam.neis.domain.schedule.entity.ScheduleEntity
 
 fun ScheduleEntity.toResponse() = ScheduleResponse(
-    date = date,
-    grade = grade,
-    room = room,
-    period = period,
-    subject = subject,
-    teacher = teacher,
+    publicId = publicId!!,
+    title = title,
+    startDate = startDate,
+    endDate = endDate,
+    type = type,
+    targets = targets.map { it.target },
 )

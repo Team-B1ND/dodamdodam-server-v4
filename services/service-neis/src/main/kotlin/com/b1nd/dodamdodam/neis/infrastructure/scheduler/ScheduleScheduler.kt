@@ -1,53 +1,47 @@
 package com.b1nd.dodamdodam.neis.infrastructure.scheduler
 
+import com.b1nd.dodamdodam.neis.domain.schedule.enums.ScheduleType
 import com.b1nd.dodamdodam.neis.domain.schedule.service.ScheduleService
-import com.b1nd.dodamdodam.neis.infrastructure.comcigan.ComciganClient
+import com.b1nd.dodamdodam.neis.infrastructure.neis.NeisScheduleClient
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import java.time.DayOfWeek
-import java.time.LocalDate
+import java.time.YearMonth
 
 @Component
 class ScheduleScheduler(
-    private val comciganClient: ComciganClient,
+    private val neisScheduleClient: NeisScheduleClient,
     private val scheduleService: ScheduleService,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    @Scheduled(cron = "0 0 18 * * FRI")
+    @Scheduled(cron = "0 0 3 L-2 * *")
     @Transactional
-    fun fetchNextWeekSchedules() {
-        val nextMonday = LocalDate.now().with(DayOfWeek.MONDAY).plusWeeks(1)
-        syncWeekly(nextMonday)
+    fun fetchNextMonthSchedules() {
+        val nextMonth = YearMonth.now().plusMonths(1)
+        syncSchedules(nextMonth)
     }
 
-    @Scheduled(cron = "0 40 8 * * MON-FRI")
+    @Scheduled(cron = "0 0 4 1 * *")
     @Transactional
-    fun fetchTodaySchedules() {
-        syncDaily(LocalDate.now())
+    fun fetchCurrentMonthSchedules() {
+        syncSchedules(YearMonth.now())
     }
 
-    private fun syncWeekly(mondayDate: LocalDate) {
+    private fun syncSchedules(yearMonth: YearMonth) {
         try {
-            val schedules = comciganClient.fetchWeeklySchedules(mondayDate)
-            schedules.forEach {
-                scheduleService.saveOrUpdate(it.date, it.grade, it.room, it.period, it.subject, it.teacher)
+            val startOfMonth = yearMonth.atDay(1)
+            val endOfMonth = yearMonth.atEndOfMonth()
+
+            scheduleService.deleteAllNeisSchedulesByMonth(startOfMonth, endOfMonth)
+
+            val schedules = neisScheduleClient.fetchMonthlySchedules(yearMonth)
+            schedules.forEach { parsed ->
+                scheduleService.create(parsed.title, parsed.date, parsed.date, ScheduleType.NEIS, parsed.targets)
             }
         } catch (e: Exception) {
-            log.error("다음 주 시간표 동기화 실패: {}", mondayDate, e)
-        }
-    }
-
-    private fun syncDaily(date: LocalDate) {
-        try {
-            val schedules = comciganClient.fetchDailySchedules(date)
-            schedules.forEach {
-                scheduleService.saveOrUpdate(it.date, it.grade, it.room, it.period, it.subject, it.teacher)
-            }
-        } catch (e: Exception) {
-            log.error("당일 시간표 동기화 실패: {}", date, e)
+            log.error("학사일정 동기화 실패: {}", yearMonth, e)
         }
     }
 }
