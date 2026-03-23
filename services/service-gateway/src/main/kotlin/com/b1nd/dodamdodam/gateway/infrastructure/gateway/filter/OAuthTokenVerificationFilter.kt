@@ -10,7 +10,6 @@ import org.springframework.core.Ordered
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
-import org.springframework.http.server.reactive.ServerHttpRequestDecorator
 import org.springframework.stereotype.Component
 import org.springframework.web.server.ServerWebExchange
 import reactor.core.publisher.Mono
@@ -30,33 +29,30 @@ class OAuthTokenVerificationFilter(
 
         if (properties.skipPaths.any { path.startsWith(it) }) return chain.filter(exchange)
 
-        val token = extractBearerToken(exchange) ?: return chain.filter(exchange)
-        val jwt = parseJwt(token) ?: return chain.filter(exchange)
+        val jwt = exchange.extractBearerToken()
+            ?.let(::parseJwt)
+            ?.takeIf { it.header.keyID.orEmpty().startsWith(properties.kidPrefix) }
+            ?: return chain.filter(exchange)
 
-        if (!jwt.header.keyID.orEmpty().startsWith(properties.kidPrefix)) return chain.filter(exchange)
-
-        val claims = try { extractClaims(jwt) } catch (e: Exception) {
+        val claims = try {
+            extractClaims(jwt)
+        } catch (e: Exception) {
             log.error("OAuth token verification failed: {}", e.message)
-            exchange.response.statusCode = HttpStatus.UNAUTHORIZED
-            return exchange.response.setComplete()
+            return exchange.respond(HttpStatus.UNAUTHORIZED)
         }
 
         if (!claims.trusted) {
             val required = resolveRequiredScope(path, exchange.request.method)
             if (required != null && required !in claims.scopes) {
-                exchange.response.statusCode = HttpStatus.FORBIDDEN
-                return exchange.response.setComplete()
+                return exchange.respond(HttpStatus.FORBIDDEN)
             }
         }
 
-        val decorated = object : ServerHttpRequestDecorator(exchange.request) {
-            override fun getHeaders() = HttpHeaders().apply {
-                putAll(super.getHeaders())
-                set(HttpHeaders.AUTHORIZATION, "Bearer ${claims.innerToken}")
-                set("X-OAuth-Scope", claims.scopes.joinToString(" "))
-                set("X-OAuth-Client-Id", claims.clientId)
-            }
-        }
+        val decorated = exchange.decorateHeaders(
+            HttpHeaders.AUTHORIZATION to "Bearer ${claims.innerToken}",
+            "X-OAuth-Scope" to claims.scopes.joinToString(" "),
+            "X-OAuth-Client-Id" to claims.clientId,
+        )
 
         return chain.filter(exchange.mutate().request(decorated).build())
     }
@@ -79,17 +75,18 @@ class OAuthTokenVerificationFilter(
 
     private fun resolveRequiredScope(path: String, method: HttpMethod?): String? {
         val rule = properties.scopeRules.find { path.startsWith(it.path) } ?: return null
-        val writeMethods = setOf(HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE, HttpMethod.PATCH)
-        return if (method != null && method in writeMethods) (rule.write ?: rule.read) else rule.read
+        return if (method in WRITE_METHODS) (rule.write ?: rule.read) else rule.read
     }
 
-    private fun extractBearerToken(exchange: ServerWebExchange): String? =
-        exchange.request.headers.getFirst(HttpHeaders.AUTHORIZATION)
-            ?.takeIf { it.startsWith("Bearer ") }
-            ?.removePrefix("Bearer ")
-            ?.trim()
+    private fun ServerWebExchange.respond(status: HttpStatus): Mono<Void> {
+        response.statusCode = status
+        return response.setComplete()
+    }
 
     private fun parseJwt(token: String): SignedJWT? =
         try { SignedJWT.parse(token) } catch (_: Exception) { null }
 
+    companion object {
+        private val WRITE_METHODS = setOf(HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE, HttpMethod.PATCH)
+    }
 }
