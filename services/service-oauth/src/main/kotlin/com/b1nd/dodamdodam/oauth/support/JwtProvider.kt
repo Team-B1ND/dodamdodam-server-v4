@@ -20,11 +20,11 @@ class JwtProvider(private val rsaKey: RSAKey, private val properties: OauthPrope
     private val signer = RSASSASigner(rsaKey)
     private val verifier = RSASSAVerifier(rsaKey.toRSAPublicKey())
 
-    fun createAccessToken(userPublicId: String, clientId: String, scopes: String, roles: List<String>, authAccessToken: String, trusted: Boolean = false): String {
+    fun createAccessToken(userPublicId: UUID, clientId: String, scopes: String, roles: List<String>, authAccessToken: String, trusted: Boolean = false): String {
         val now = Instant.now()
         val builder = JWTClaimsSet.Builder()
             .issuer(properties.issuer)
-            .subject(userPublicId)
+            .subject(userPublicId.toString())
             .audience(clientId)
             .expirationTime(Date.from(now.plusSeconds(properties.accessTokenExpirySeconds)))
             .issueTime(Date.from(now))

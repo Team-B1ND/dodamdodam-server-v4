@@ -5,9 +5,7 @@ import com.b1nd.dodamdodam.oauth.application.data.request.ConsentRequest
 import com.b1nd.dodamdodam.oauth.application.data.response.AuthorizeResponse
 import com.b1nd.dodamdodam.oauth.application.data.response.ConsentRedirectResponse
 import com.b1nd.dodamdodam.oauth.application.usecase.OauthAuthorizeUseCase
-import com.b1nd.dodamdodam.oauth.infrastructure.exception.OauthException
-import com.b1nd.dodamdodam.oauth.infrastructure.exception.OauthExceptionCode
-import com.b1nd.dodamdodam.oauth.support.PassportParser
+import com.b1nd.dodamdodam.core.security.passport.PassportResolver
 import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.*
 
@@ -27,7 +25,7 @@ class AuthorizeController(private val authorizeUseCase: OauthAuthorizeUseCase) {
         @RequestHeader("X-User-Passport", required = false) passport: String?,
     ): Response<AuthorizeResponse> {
         val userPublicId = passport?.let {
-            try { PassportParser.extractUserPublicId(it) } catch (_: Exception) { null }
+            try { PassportResolver.extractUserId(it) } catch (_: Exception) { null }
         }
         val result = authorizeUseCase.authorize(responseType, clientId, redirectUri, scope, state, codeChallenge, codeChallengeMethod, userPublicId)
         return Response.ok("Authorization request validated", result)
@@ -38,11 +36,7 @@ class AuthorizeController(private val authorizeUseCase: OauthAuthorizeUseCase) {
         @RequestHeader("X-User-Passport") passport: String,
         @Valid @RequestBody request: ConsentRequest,
     ): Response<ConsentRedirectResponse> {
-        val userPublicId = try {
-            PassportParser.extractUserPublicId(passport)
-        } catch (_: Exception) {
-            throw OauthException(OauthExceptionCode.INVALID_REQUEST)
-        }
+        val userPublicId = PassportResolver.extractUserId(passport)
         val result = authorizeUseCase.consent(request, userPublicId)
         return Response.ok("Consent processed", result)
     }

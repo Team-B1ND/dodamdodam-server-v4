@@ -10,6 +10,7 @@ configurations {
 
 dependencies {
     implementation(project(":core:core-common"))
+    implementation(project(":core:core-security"))
     implementation(project(":core:core-grpc"))
     implementation(libs.springGrpc)
 

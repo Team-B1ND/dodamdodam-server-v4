@@ -4,22 +4,20 @@ import com.b1nd.dodamdodam.oauth.domain.client.entity.OauthClient
 import com.b1nd.dodamdodam.oauth.domain.client.repository.OauthClientRepository
 import com.b1nd.dodamdodam.oauth.infrastructure.exception.OauthException
 import com.b1nd.dodamdodam.oauth.infrastructure.exception.OauthExceptionCode
-import kotlinx.coroutines.reactor.awaitSingle
-import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.stereotype.Service
 
 @Service
 class OauthClientService(private val repository: OauthClientRepository) {
 
-    suspend fun save(client: OauthClient): OauthClient = repository.save(client).awaitSingle()
+    suspend fun save(client: OauthClient): OauthClient = repository.save(client)
 
     suspend fun findByClientId(clientId: String): OauthClient {
-        return repository.findByClientId(clientId).awaitSingleOrNull()
+        return repository.findByClientId(clientId)
             ?: throw OauthException(OauthExceptionCode.CLIENT_NOT_FOUND)
     }
 
     suspend fun findActiveByClientId(clientId: String): OauthClient {
-        return repository.findByClientIdAndIsActiveTrue(clientId).awaitSingleOrNull()
+        return repository.findByClientIdAndIsActiveTrue(clientId)
             ?: throw OauthException(OauthExceptionCode.INVALID_CLIENT)
     }
 

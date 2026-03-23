@@ -4,6 +4,7 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
 import java.time.LocalDateTime
+import java.util.UUID
 
 @Table("oauth_tokens")
 data class OauthToken(
@@ -12,7 +13,7 @@ data class OauthToken(
     @Column("access_token") val accessToken: String,
     @Column("refresh_token") val refreshToken: String,
     @Column("client_id") val clientId: String,
-    @Column("user_public_id") val userPublicId: String,
+    @Column("user_public_id") val userPublicId: UUID,
     val scopes: String,
     @Column("access_expires_at") val accessExpiresAt: LocalDateTime,
     @Column("refresh_expires_at") val refreshExpiresAt: LocalDateTime,

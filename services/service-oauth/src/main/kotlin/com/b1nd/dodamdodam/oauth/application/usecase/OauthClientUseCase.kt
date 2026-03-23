@@ -8,7 +8,7 @@ import com.b1nd.dodamdodam.oauth.domain.client.service.OauthClientService
 import com.b1nd.dodamdodam.oauth.domain.scope.repository.OauthScopeRepository
 import com.b1nd.dodamdodam.oauth.infrastructure.exception.OauthException
 import com.b1nd.dodamdodam.oauth.infrastructure.exception.OauthExceptionCode
-import kotlinx.coroutines.reactor.awaitSingle
+import kotlinx.coroutines.flow.toList
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -22,7 +22,7 @@ class OauthClientUseCase(
 ) {
 
     @Transactional
-    suspend fun register(request: RegisterClientRequest, ownerPublicId: String): ClientResponse {
+    suspend fun register(request: RegisterClientRequest, ownerPublicId: UUID): ClientResponse {
         validateRedirectUris(request.redirectUris)
         validateScopes(request.scopes)
 
@@ -92,7 +92,7 @@ class OauthClientUseCase(
     }
 
     @Transactional
-    suspend fun ownerResetSecret(clientId: String, ownerPublicId: String): ClientResponse {
+    suspend fun ownerResetSecret(clientId: String, ownerPublicId: UUID): ClientResponse {
         val client = clientService.findByClientId(clientId)
         if (client.ownerPublicId != ownerPublicId) throw OauthException(OauthExceptionCode.ACCESS_DENIED)
 
@@ -103,7 +103,7 @@ class OauthClientUseCase(
     }
 
     @Transactional
-    suspend fun transferOwnership(clientId: String, clientSecret: String, newOwnerPublicId: String): ClientResponse {
+    suspend fun transferOwnership(clientId: String, clientSecret: String, newOwnerPublicId: UUID): ClientResponse {
         val client = clientService.findByClientId(clientId)
         clientService.verifyClientSecret(client, clientSecret, passwordEncoder)
         val updated = clientService.save(client.copy(ownerPublicId = newOwnerPublicId))
@@ -121,7 +121,7 @@ class OauthClientUseCase(
 
     private suspend fun validateScopes(scopes: List<String>) {
         val validScopes = scopeRepository.findByScopeKeyIn(scopes)
-            .collectList().awaitSingle()
+            .toList()
             .map { it.scopeKey }
             .toSet()
 

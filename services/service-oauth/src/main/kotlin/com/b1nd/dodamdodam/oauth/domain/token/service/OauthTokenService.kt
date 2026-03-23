@@ -7,8 +7,6 @@ import com.b1nd.dodamdodam.oauth.domain.token.repository.OauthTokenRepository
 import com.b1nd.dodamdodam.oauth.infrastructure.exception.OauthException
 import com.b1nd.dodamdodam.oauth.infrastructure.exception.OauthExceptionCode
 import com.b1nd.dodamdodam.oauth.support.TokenHashUtil
-import kotlinx.coroutines.reactor.awaitSingle
-import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.stereotype.Service
 
 @Service
@@ -17,27 +15,27 @@ class OauthTokenService(
     private val codeRepository: OauthAuthorizationCodeRepository,
 ) {
 
-    suspend fun saveCode(code: OauthAuthorizationCode): OauthAuthorizationCode = codeRepository.save(code).awaitSingle()
+    suspend fun saveCode(code: OauthAuthorizationCode): OauthAuthorizationCode = codeRepository.save(code)
 
     suspend fun findByCode(code: String): OauthAuthorizationCode {
-        return codeRepository.findByCode(code).awaitSingleOrNull()
+        return codeRepository.findByCode(code)
             ?: throw OauthException(OauthExceptionCode.INVALID_GRANT)
     }
 
     suspend fun markCodeUsed(code: OauthAuthorizationCode) {
-        codeRepository.save(code.copy(used = true)).awaitSingle()
+        codeRepository.save(code.copy(used = true))
     }
 
-    suspend fun saveToken(token: OauthToken): OauthToken = tokenRepository.save(token).awaitSingle()
+    suspend fun saveToken(token: OauthToken): OauthToken = tokenRepository.save(token)
 
     suspend fun findByAccessToken(accessToken: String): OauthToken? {
         val hash = TokenHashUtil.sha256(accessToken)
-        return tokenRepository.findByAccessTokenHash(hash).awaitSingleOrNull()
+        return tokenRepository.findByAccessTokenHash(hash)
     }
 
-    suspend fun findByRefreshToken(refreshToken: String): OauthToken? = tokenRepository.findByRefreshToken(refreshToken).awaitSingleOrNull()
+    suspend fun findByRefreshToken(refreshToken: String): OauthToken? = tokenRepository.findByRefreshToken(refreshToken)
 
     suspend fun revokeToken(token: OauthToken) {
-        tokenRepository.save(token.copy(revoked = true)).awaitSingle()
+        tokenRepository.save(token.copy(revoked = true))
     }
 }

@@ -13,14 +13,14 @@ import com.b1nd.dodamdodam.oauth.domain.token.service.OauthTokenService
 import com.b1nd.dodamdodam.oauth.infrastructure.exception.OauthException
 import com.b1nd.dodamdodam.oauth.infrastructure.exception.OauthExceptionCode
 import com.b1nd.dodamdodam.oauth.infrastructure.security.OauthProperties
-import kotlinx.coroutines.reactor.awaitSingle
-import kotlinx.coroutines.reactor.awaitSingleOrNull
+import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.util.UriComponentsBuilder
 import java.security.SecureRandom
 import java.time.LocalDateTime
 import java.util.Base64
+import java.util.UUID
 
 @Component
 class OauthAuthorizeUseCase(
@@ -41,7 +41,7 @@ class OauthAuthorizeUseCase(
         state: String?,
         codeChallenge: String?,
         codeChallengeMethod: String?,
-        userPublicId: String?,
+        userPublicId: UUID?,
     ): AuthorizeResponse {
         if (responseType != "code") throw OauthException(OauthExceptionCode.INVALID_REQUEST)
         if (codeChallenge != null && codeChallengeMethod != "S256") throw OauthException(OauthExceptionCode.INVALID_REQUEST)
@@ -53,11 +53,11 @@ class OauthAuthorizeUseCase(
         val allowedScopes = client.getScopeList()
         if (!allowedScopes.containsAll(requestedScopes)) throw OauthException(OauthExceptionCode.INVALID_SCOPE)
 
-        val scopeDetails = scopeRepository.findByScopeKeyIn(requestedScopes).collectList().awaitSingle()
+        val scopeDetails = scopeRepository.findByScopeKeyIn(requestedScopes).toList()
         if (scopeDetails.size != requestedScopes.size) throw OauthException(OauthExceptionCode.INVALID_SCOPE)
 
         val consented = if (userPublicId != null) {
-            val existing = consentRepository.findByUserPublicIdAndClientId(userPublicId, clientId).awaitSingleOrNull()
+            val existing = consentRepository.findByUserPublicIdAndClientId(userPublicId, clientId)
             existing != null && requestedScopes.toSet() == existing.scopes.split(" ").toSet()
         } else false
 
@@ -75,7 +75,7 @@ class OauthAuthorizeUseCase(
     }
 
     @Transactional
-    suspend fun consent(request: ConsentRequest, userPublicId: String): ConsentRedirectResponse {
+    suspend fun consent(request: ConsentRequest, userPublicId: UUID): ConsentRedirectResponse {
         if (!request.approved) {
             val uri = UriComponentsBuilder.fromUriString(request.redirectUri)
                 .queryParam("error", "access_denied")
@@ -87,11 +87,11 @@ class OauthAuthorizeUseCase(
         val client = clientService.findActiveByClientId(request.clientId)
         if (request.redirectUri !in client.getRedirectUriList()) throw OauthException(OauthExceptionCode.INVALID_REDIRECT_URI)
 
-        val existing = consentRepository.findByUserPublicIdAndClientId(userPublicId, request.clientId).awaitSingleOrNull()
+        val existing = consentRepository.findByUserPublicIdAndClientId(userPublicId, request.clientId)
         if (existing != null) {
-            consentRepository.save(existing.copy(scopes = request.scope)).awaitSingle()
+            consentRepository.save(existing.copy(scopes = request.scope))
         } else {
-            consentRepository.save(OauthConsent(userPublicId = userPublicId, clientId = request.clientId, scopes = request.scope)).awaitSingle()
+            consentRepository.save(OauthConsent(userPublicId = userPublicId, clientId = request.clientId, scopes = request.scope))
         }
 
         val code = generateCode()

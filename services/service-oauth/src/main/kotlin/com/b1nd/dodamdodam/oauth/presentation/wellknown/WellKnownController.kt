@@ -5,7 +5,8 @@ import com.b1nd.dodamdodam.oauth.domain.scope.repository.OauthScopeRepository
 import com.b1nd.dodamdodam.oauth.infrastructure.security.OauthProperties
 import com.nimbusds.jose.jwk.JWKSet
 import com.nimbusds.jose.jwk.RSAKey
-import kotlinx.coroutines.reactor.awaitSingle
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 
@@ -20,7 +21,7 @@ class WellKnownController(
     suspend fun openIdConfiguration(): OpenIdConfigurationResponse {
         val scopes = scopeRepository.findAllByIsActiveTrue()
             .map { it.scopeKey }
-            .collectList().awaitSingle()
+            .toList()
 
         val base = properties.issuer
         return OpenIdConfigurationResponse(
