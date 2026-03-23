@@ -1,5 +1,6 @@
 plugins {
     id("buildsrc.convention.spring-boot-application")
+    kotlin("kapt")
 }
 
 dependencies {
@@ -11,6 +12,10 @@ dependencies {
     runtimeOnly(libs.mysql.jdbcDriver)
     implementation(libs.springBootStarterData.jpa)
     implementation(libs.springdoc.openapi.webmvc.ui)
+
+    // querydsl
+    implementation(libs.querydsl.jpa) { artifact { classifier = "jakarta" } }
+    kapt(libs.querydsl.apt) { artifact { classifier = "jakarta" } }
 
     // flyway
     implementation(libs.flywayCore)

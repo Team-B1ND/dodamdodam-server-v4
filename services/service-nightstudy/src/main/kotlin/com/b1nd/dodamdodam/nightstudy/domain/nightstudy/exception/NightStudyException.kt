@@ -7,3 +7,7 @@ class NightStudyNotFoundException: BasicException(NightStudyExceptionCode.NIGHT_
 class NightStudyBannedException: BasicException(NightStudyExceptionCode.NIGHT_STUDY_BANNED)
 
 class NotMyNightStudyException: BasicException(NightStudyExceptionCode.NOT_MY_NIGHT_STUDY)
+
+class NotLeaderException: BasicException(NightStudyExceptionCode.NOT_LEADER)
+
+class PeriodOverlappedException: BasicException(NightStudyExceptionCode.PERIOD_OVERLAPPED)

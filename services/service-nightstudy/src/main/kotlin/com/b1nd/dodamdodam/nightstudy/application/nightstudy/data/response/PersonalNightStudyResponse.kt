@@ -1,9 +1,10 @@
 package com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response
 
 import java.time.LocalDate
+import java.util.UUID
 
 data class PersonalNightStudyResponse(
-    val id: Long,
+    val id: UUID,
     val description: String,
     val period: Int,
     val startAt: LocalDate,

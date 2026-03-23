@@ -22,5 +22,5 @@ class NightStudyBannedEntity (
 ): BaseTimeEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id: Long? = null
+    val id: Long? = null
 }

@@ -6,97 +6,104 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudySt
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyBannedException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyNotFoundException
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NotLeaderException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NotMyNightStudyException
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.PeriodOverlappedException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.NightStudyBannedRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.NightStudyMemberRepository
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.NightStudyQueryRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.NightStudyRepository
-import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
 
 @Service
 class NightStudyService(
     private val nightStudyRepository: NightStudyRepository,
+    private val nightStudyQueryRepository: NightStudyQueryRepository,
     private val nightStudyMemberRepository: NightStudyMemberRepository,
     private val bannedRepository: NightStudyBannedRepository
 ) {
     @Transactional
-    fun save(nightStudy: NightStudyEntity, members: List<UUID>?) {
-        if(isBanned(nightStudy.leaderId)) throw NightStudyBannedException()
-        members?.forEach { member ->
-            if (isBanned(member)) throw NightStudyBannedException()
+    fun save(nightStudy: NightStudyEntity, userId: UUID, members: List<UUID>?) {
+        if(isBanned(userId)) throw NightStudyBannedException()
+
+        if(hasPeriodOverlap(userId, nightStudy.startAt, nightStudy.endAt)) {
+            throw PeriodOverlappedException()
         }
 
-        val saved = nightStudyRepository.save(nightStudy)
         members?.forEach { member ->
-            nightStudyMemberRepository.save(NightStudyMemberEntity(saved.id!!, member))
+            if (isBanned(member)) throw NightStudyBannedException()
+            if(hasPeriodOverlap(member, nightStudy.startAt, nightStudy.endAt)) {
+                throw PeriodOverlappedException()
+            }
+        }
+
+        val savedNightStudy = nightStudyRepository.save(nightStudy)
+
+        nightStudyMemberRepository.save(NightStudyMemberEntity(savedNightStudy, userId, true))
+        members?.forEach { memberId ->
+            nightStudyMemberRepository.save(NightStudyMemberEntity(savedNightStudy, memberId))
         }
     }
 
     fun findAllByUserIdAndStatusAndType(userId: UUID, status: NightStudyStatusType, type: NightStudyType): List<NightStudyEntity> {
-        val asLeader = findAllByLeaderId(userId, status, type)
-
-        val asMember = findAllByMemberId(userId, status, type)
-
-        return (asLeader + asMember).sortedBy { it.id }
+        return nightStudyQueryRepository.findAllByUserIdAndStatusAndType(userId, status, type)
     }
 
     fun findAllByType(type: NightStudyType): List<NightStudyEntity> {
-        return nightStudyRepository.findAllByType(type)
+        return nightStudyQueryRepository.findAllByType(type)
     }
 
-    fun findById(id: Long): NightStudyEntity? {
-        return nightStudyRepository.findById(id).orElseThrow { NightStudyNotFoundException() }
+    fun findByPublicId(publicId: UUID): NightStudyEntity {
+        return nightStudyQueryRepository.findByPublicId(publicId) ?: throw NightStudyNotFoundException()
     }
 
-    fun findMembersByNightStudyId(id: Long): List<UUID> {
-        return nightStudyMemberRepository.findAllByNightStudyId(id)
+    fun findMembersByNightStudy(nightStudy: NightStudyEntity): List<UUID> {
+        return nightStudyMemberRepository.findAllUserIdsByNightStudy(nightStudy)
+    }
+    
+    fun findLeaderByNightStudy(nightStudy: NightStudyEntity): UUID? {
+        return nightStudyMemberRepository.findLeaderUserIdByNightStudy(nightStudy)
     }
 
     @Transactional
-    fun delete(userId: UUID, id: Long) {
-        val isExist = isExist(id)
-        val isMine = isMine(userId, id)
+    fun delete(userId: UUID, publicId: UUID) {
+        val nightStudy = findByPublicId(publicId)
+        val isMine = isMine(userId, nightStudy)
 
-        if(!isExist) throw NightStudyNotFoundException()
-        if (isMine) throw NotMyNightStudyException()
+        if (!isMine) throw NotMyNightStudyException()
 
-        nightStudyRepository.deleteById(id)
-        nightStudyMemberRepository.deleteAllByNightStudyId(id)
+        if (nightStudy.type == NightStudyType.PROJECT) {
+            val leaderId = findLeaderByNightStudy(nightStudy)
+            if (leaderId != userId) throw NotLeaderException()
+        }
+
+        nightStudyMemberRepository.deleteAllByNightStudy(nightStudy)
+        nightStudyRepository.delete(nightStudy)
     }
 
-    fun allow(id: Long) {
-        nightStudyRepository.findById(id).ifPresent { it.allow() }
+    fun allow(publicId: UUID) {
+        findByPublicId(publicId).allow()
     }
 
-    fun reject(id: Long, rejectionReason: String) {
-        nightStudyRepository.findById(id).ifPresent { it.reject(rejectionReason) }
+    fun reject(publicId: UUID, rejectionReason: String) {
+        findByPublicId(publicId).reject(rejectionReason)
     }
 
-    fun pending(id: Long) {
-        nightStudyRepository.findById(id).ifPresent { it.pending() }
-    }
-
-    private fun findAllByLeaderId(leaderId: UUID, status: NightStudyStatusType, type: NightStudyType): List<NightStudyEntity> {
-        return nightStudyRepository.findAllByLeaderIdAndStatusAndType(leaderId, status, type)
-    }
-
-    private fun findAllByMemberId(memberId: UUID, status: NightStudyStatusType, type: NightStudyType): List<NightStudyEntity> {
-        val ids = nightStudyMemberRepository.findAllByUserId(memberId).map { it.nightStudyId }
-        return nightStudyRepository.findAllByIdsAndStatusAndType(ids, status, type)
+    fun pending(publicId: UUID) {
+        findByPublicId(publicId).pending()
     }
 
     private fun isBanned(userId: UUID): Boolean {
         return bannedRepository.existsByUserId(userId)
     }
 
-    private fun isExist(nightStudyId: Long): Boolean {
-        return nightStudyRepository.existsById(nightStudyId)
+    private fun isMine(userId: UUID, nightStudy: NightStudyEntity): Boolean {
+        return nightStudyMemberRepository.existsByNightStudyAndUserId(nightStudy, userId)
     }
 
-    private fun isMine(userId: UUID, nightStudyId: Long): Boolean {
-        val asLeader = nightStudyRepository.existsByIdAndLeaderId(nightStudyId, userId)
-        val asMember = nightStudyMemberRepository.existsByIdAndUserId(nightStudyId, userId)
-        return asLeader || asMember
+    private fun hasPeriodOverlap(userId: UUID, startAt: java.time.LocalDate, endAt: java.time.LocalDate): Boolean {
+        return nightStudyQueryRepository.existsByUserIdAndPeriodOverlap(userId, startAt, endAt)
     }
 }

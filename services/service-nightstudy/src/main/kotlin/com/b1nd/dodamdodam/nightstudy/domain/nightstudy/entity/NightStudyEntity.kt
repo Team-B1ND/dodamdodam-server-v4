@@ -10,6 +10,7 @@ import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.PrePersist
 import jakarta.persistence.Table
 import java.time.LocalDate
 import java.util.UUID
@@ -37,9 +38,6 @@ class NightStudyEntity (
     @Column(length = 10)
     var status: NightStudyStatusType = NightStudyStatusType.PENDING,
 
-    @Column(name = "fk_user_id", columnDefinition = "BINARY(16)")
-    var leaderId: UUID,
-
     var rejectionReason: String? = null,
 
     @Enumerated(EnumType.STRING)
@@ -48,7 +46,16 @@ class NightStudyEntity (
 ): BaseTimeEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id: Long? = null
+    val id: Long? = null
+
+    @Column(nullable = false, unique = true, columnDefinition = "BINARY(16)")
+    var publicId: UUID? = null
+        protected set
+
+    @PrePersist
+    fun generatePublicId() {
+        publicId = UUID.randomUUID()
+    }
 
     fun allow() {
         this.status = NightStudyStatusType.ALLOWED

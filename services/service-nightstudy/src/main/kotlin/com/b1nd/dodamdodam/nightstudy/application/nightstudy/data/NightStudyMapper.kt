@@ -11,8 +11,7 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
 import java.util.UUID
 
-fun ApplyPersonalNightStudyRequest.toEntity(userId: UUID) = NightStudyEntity(
-    leaderId = userId,
+fun ApplyPersonalNightStudyRequest.toEntity() = NightStudyEntity(
     type = NightStudyType.PERSONAL,
     description = description,
     period = period,
@@ -22,19 +21,18 @@ fun ApplyPersonalNightStudyRequest.toEntity(userId: UUID) = NightStudyEntity(
     needPhoneReason = needPhoneReason,
 )
 
-fun ApplyProjectNightStudyRequest.toEntity(userId: UUID) = NightStudyEntity(
+fun ApplyProjectNightStudyRequest.toEntity() = NightStudyEntity(
     name = name,
     description = description,
     period = period,
     startAt = startAt,
     endAt = endAt,
-    leaderId = userId,
     type = NightStudyType.PROJECT,
     needPhone = false
 )
 
 fun NightStudyEntity.toPersonalNightStudyResponse() = PersonalNightStudyResponse(
-    id = id!!,
+    id = publicId!!,
     description = description,
     period = period,
     startAt = startAt,
@@ -46,17 +44,16 @@ fun NightStudyEntity.toPersonalNightStudyResponse() = PersonalNightStudyResponse
 
 fun List<NightStudyEntity>.toPersonalNightStudyListResponse() = map { it.toPersonalNightStudyResponse() }
 
-fun NightStudyEntity.toProjectNightStudyResponse() = ProjectNightStudyResponse(
-    id = id!!,
+fun NightStudyEntity.toProjectNightStudyResponse(isLeader: Boolean) = ProjectNightStudyResponse(
+    id = publicId!!,
     description = description,
     period = period,
     startAt = startAt,
     endAt = endAt,
     name = name!!,
     rejectionReason = rejectionReason,
+    isLeader = isLeader,
 )
-
-fun List<NightStudyEntity>.toProjectNightStudyListResponse() = map { it.toProjectNightStudyResponse() }
 
 fun UserResponse.toOpenApiUserInfoResponse() = OpenApiUserInfoResponse(
     publicId = UUID.fromString(publicId),
@@ -84,7 +81,7 @@ fun NightStudyEntity.toOpenApiNightStudyResponse(
     leader: OpenApiUserInfoResponse,
     members: List<OpenApiUserInfoResponse>
 ) = OpenApiNightStudyResponse(
-    id = id!!,
+    id = publicId!!,
     name = name,
     description = description,
     period = period,

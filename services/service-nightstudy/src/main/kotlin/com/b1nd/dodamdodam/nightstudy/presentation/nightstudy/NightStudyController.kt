@@ -13,6 +13,7 @@ import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.Proje
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
 import org.springframework.web.bind.annotation.*
+import java.util.UUID
 
 @RestController
 class NightStudyController(
@@ -40,7 +41,7 @@ class NightStudyController(
 
     @UserAccess(roles = [RoleType.STUDENT])
     @DeleteMapping("/{id}")
-    fun cancelNightStudy(@PathVariable id: Long): Response<Any> =
+    fun cancelNightStudy(@PathVariable id: UUID): Response<Any> =
         nightStudyUseCase.cancelNightStudy(id)
 
     @UserAccess(roles = [RoleType.DORMITORY_MANAGER])
@@ -50,22 +51,22 @@ class NightStudyController(
 
     @UserAccess(roles = [RoleType.DORMITORY_MANAGER])
     @GetMapping("/applications/{id}")
-    fun findById(@PathVariable id: Long): Response<OpenApiNightStudyResponse> =
+    fun findById(@PathVariable id: UUID): Response<OpenApiNightStudyResponse> =
         nightStudyUseCase.findById(id)
 
     @UserAccess(roles = [RoleType.DORMITORY_MANAGER])
     @PatchMapping("/applications/{id}/allow")
-    fun allow(@PathVariable id: Long): Response<Any> =
+    fun allow(@PathVariable id: UUID): Response<Any> =
         nightStudyUseCase.allow(id)
 
     @UserAccess(roles = [RoleType.DORMITORY_MANAGER])
     @PatchMapping("/applications/{id}/reject")
-    fun reject(@PathVariable id: Long, @RequestBody request: RejectNightStudyRequest): Response<Any> =
+    fun reject(@PathVariable id: UUID, @RequestBody request: RejectNightStudyRequest): Response<Any> =
         nightStudyUseCase.reject(id, request.rejectionReason)
 
     @UserAccess(roles = [RoleType.DORMITORY_MANAGER])
     @PatchMapping("/applications/{id}/pending")
-    fun pending(@PathVariable id: Long): Response<Any> =
+    fun pending(@PathVariable id: UUID): Response<Any> =
         nightStudyUseCase.pending(id)
 }
 
