@@ -5,7 +5,8 @@ import com.b1nd.dodamdodam.core.security.passport.holder.PassportHolder
 import com.b1nd.dodamdodam.core.security.passport.requireUserId
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.ApplyPersonalNightStudyRequest
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.ApplyProjectNightStudyRequest
-import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.OpenApiNightStudyResponse
+import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.ApplicationResponse
+import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.ApplicantResponse
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.PersonalNightStudyResponse
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.ProjectNightStudyResponse
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.toEntity
@@ -13,6 +14,7 @@ import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.toOpenApiNight
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.toOpenApiUserInfoResponse
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.toPersonalNightStudyListResponse
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.toProjectNightStudyResponse
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service.NightStudyService
@@ -42,15 +44,15 @@ class NightStudyUseCase (
 
     fun getMyPersonalNightStudy(status: NightStudyStatusType): Response<List<PersonalNightStudyResponse>> {
         val userId = PassportHolder.current().requireUserId()
-        val result = nightStudyService.findAllByUserIdAndStatusAndType(userId, status, NightStudyType.PERSONAL)
+        val result = nightStudyService.getAllByUserIdAndStatusAndType(userId, status, NightStudyType.PERSONAL)
         return Response.ok("개인 심자 신청 목록을 조회했어요.", result.toPersonalNightStudyListResponse())
     }
 
     fun getMyProjectNightStudy(status: NightStudyStatusType): Response<List<ProjectNightStudyResponse>> {
         val userId = PassportHolder.current().requireUserId()
-        val result = nightStudyService.findAllByUserIdAndStatusAndType(userId, status, NightStudyType.PROJECT)
+        val result = nightStudyService.getAllByUserIdAndStatusAndType(userId, status, NightStudyType.PROJECT)
         val responses = result.map { nightStudy ->
-            val leaderId = nightStudyService.findLeaderByNightStudy(nightStudy)
+            val leaderId = nightStudyService.getLeaderByNightStudy(nightStudy)
             nightStudy.toProjectNightStudyResponse(isLeader = leaderId == userId)
         }
         return Response.ok("프로젝트 심자 신청 목록을 조회했어요.", responses)
@@ -62,49 +64,23 @@ class NightStudyUseCase (
         return Response.ok("심자 신청을 취소했어요.")
     }
 
-    fun findAllByType(type: NightStudyType): Response<List<OpenApiNightStudyResponse>> {
-        val nightStudies = nightStudyService.findAllByType(type)
-        val nightStudyWithMembers = nightStudies.map { ns ->
-            val members = nightStudyService.findMembersByNightStudy(ns)
-            val leader = nightStudyService.findLeaderByNightStudy(ns)
-            Triple(ns, leader, members)
-        }
+    fun findAllByType(type: NightStudyType): Response<List<ApplicationResponse>> {
+        val nightStudies = nightStudyService.getAllByType(type)
+        val nightStudiesWithMembers = getNightStudiesWithMembersAndLeaders(nightStudies)
+        val usersMap = fetchUsersMap(nightStudiesWithMembers)
+        val responses = buildOpenApiResponses(nightStudiesWithMembers, usersMap)
 
-        val allUserIds = nightStudyWithMembers.flatMap { (_, leader, members) -> listOfNotNull(leader) + members }
-            .map { it.toString() }
-            .distinct()
-
-        val usersMap = if (allUserIds.isNotEmpty()) {
-            runBlocking { userQueryClient.getUsers(allUserIds) }.usersList
-                .associate { it.publicId to it.toOpenApiUserInfoResponse() }
-        } else emptyMap()
-
-        val responses = nightStudyWithMembers.mapNotNull { (nightStudy, leaderId, memberIds) ->
-            leaderId?.let {
-                usersMap[it.toString()]?.let { leader ->
-                    nightStudy.toOpenApiNightStudyResponse(
-                        leader = leader,
-                        members = memberIds.mapNotNull { memberId -> usersMap[memberId.toString()] }
-                    )
-                }
-            }
-        }
         return Response.ok("전체 심자 신청 목록을 조회했어요.", responses)
     }
 
-    fun findById(id: UUID): Response<OpenApiNightStudyResponse> {
-        val nightStudy = nightStudyService.findByPublicId(id)
-        val memberIds = nightStudyService.findMembersByNightStudy(nightStudy)
-        val leaderId = nightStudyService.findLeaderByNightStudy(nightStudy)
-        val userIds = (listOfNotNull(leaderId) + memberIds).map { it.toString() }
+    fun findById(id: UUID): Response<ApplicationResponse> {
+        val nightStudy = nightStudyService.getByPublicId(id)
+        val memberIds = nightStudyService.getMembersByNightStudy(nightStudy)
+        val leaderId = nightStudyService.getLeaderByNightStudy(nightStudy)
 
-        val usersMap = runBlocking { userQueryClient.getUsers(userIds) }.usersList
-            .associate { it.publicId to it.toOpenApiUserInfoResponse() }
+        val usersMap = fetchUsersMapForSingleNightStudy(leaderId, memberIds)
+        val response = buildSingleOpenApiResponse(nightStudy, leaderId, memberIds, usersMap)
 
-        val response = nightStudy.toOpenApiNightStudyResponse(
-            leader = usersMap[leaderId.toString()]!!,
-            members = memberIds.mapNotNull { usersMap[it.toString()] }
-        )
         return Response.ok("심자 신청을 조회했어요.", response)
     }
 
@@ -121,6 +97,69 @@ class NightStudyUseCase (
     fun pending(id: UUID): Response<Any> {
         nightStudyService.pending(id)
         return Response.ok("심자 신청을 대기 상태로 변경했어요.")
+    }
+
+    private fun getNightStudiesWithMembersAndLeaders(
+        nightStudies: List<NightStudyEntity>
+    ): List<Triple<NightStudyEntity, UUID?, List<UUID>>> {
+        return nightStudies.map { nightStudy ->
+            val members = nightStudyService.getMembersByNightStudy(nightStudy)
+            val leader = nightStudyService.getLeaderByNightStudy(nightStudy)
+            Triple(nightStudy, leader, members)
+        }
+    }
+
+    private fun fetchUsersMap(
+        nightStudiesWithMembers: List<Triple<NightStudyEntity, UUID?, List<UUID>>>
+    ): Map<String, ApplicantResponse> {
+        val allUserIds = nightStudiesWithMembers
+            .flatMap { (_, leader, members) -> listOfNotNull(leader) + members }
+            .map { it.toString() }
+            .distinct()
+
+        return if (allUserIds.isNotEmpty()) {
+            runBlocking { userQueryClient.getUsers(allUserIds) }.usersList
+                .associate { it.publicId to it.toOpenApiUserInfoResponse() }
+        } else {
+            emptyMap()
+        }
+    }
+
+    private fun buildOpenApiResponses(
+        nightStudiesWithMembers: List<Triple<NightStudyEntity, UUID?, List<UUID>>>,
+        usersMap: Map<String, ApplicantResponse>
+    ): List<ApplicationResponse> {
+        return nightStudiesWithMembers.mapNotNull { (nightStudy, leaderId, memberIds) ->
+            leaderId?.let {
+                usersMap[it.toString()]?.let { leader ->
+                    nightStudy.toOpenApiNightStudyResponse(
+                        leader = leader,
+                        members = memberIds.mapNotNull { memberId -> usersMap[memberId.toString()] }
+                    )
+                }
+            }
+        }
+    }
+
+    private fun fetchUsersMapForSingleNightStudy(
+        leaderId: UUID?,
+        memberIds: List<UUID>
+    ): Map<String, ApplicantResponse> {
+        val userIds = (listOfNotNull(leaderId) + memberIds).map { it.toString() }
+        return runBlocking { userQueryClient.getUsers(userIds) }.usersList
+            .associate { it.publicId to it.toOpenApiUserInfoResponse() }
+    }
+
+    private fun buildSingleOpenApiResponse(
+        nightStudy: NightStudyEntity,
+        leaderId: UUID?,
+        memberIds: List<UUID>,
+        usersMap: Map<String, ApplicantResponse>
+    ): ApplicationResponse {
+        return nightStudy.toOpenApiNightStudyResponse(
+            leader = usersMap[leaderId.toString()]!!,
+            members = memberIds.mapNotNull { usersMap[it.toString()] }
+        )
     }
 }
 

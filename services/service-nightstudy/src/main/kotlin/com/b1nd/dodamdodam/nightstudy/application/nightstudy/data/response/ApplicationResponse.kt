@@ -5,7 +5,7 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyTy
 import java.time.LocalDate
 import java.util.UUID
 
-data class OpenApiNightStudyResponse(
+data class ApplicationResponse(
     val id: UUID,
     val name: String?,
     val description: String,
@@ -15,8 +15,8 @@ data class OpenApiNightStudyResponse(
     val needPhone: Boolean,
     val needPhoneReason: String?,
     val status: NightStudyStatusType,
-    val leader: OpenApiUserInfoResponse,
-    val members: List<OpenApiUserInfoResponse>,
+    val leader: ApplicantResponse,
+    val members: List<ApplicantResponse>,
     val rejectionReason: String?,
     val type: NightStudyType,
 )

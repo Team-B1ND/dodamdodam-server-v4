@@ -7,7 +7,7 @@ import com.b1nd.dodamdodam.nightstudy.application.nightstudy.NightStudyUseCase
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.ApplyPersonalNightStudyRequest
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.ApplyProjectNightStudyRequest
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.RejectNightStudyRequest
-import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.OpenApiNightStudyResponse
+import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.ApplicationResponse
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.PersonalNightStudyResponse
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.ProjectNightStudyResponse
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
@@ -46,12 +46,12 @@ class NightStudyController(
 
     @UserAccess(roles = [RoleType.DORMITORY_MANAGER])
     @GetMapping("/applications")
-    fun findAllByType(@RequestParam type: NightStudyType): Response<List<OpenApiNightStudyResponse>> =
+    fun findAllByType(@RequestParam type: NightStudyType): Response<List<ApplicationResponse>> =
         nightStudyUseCase.findAllByType(type)
 
     @UserAccess(roles = [RoleType.DORMITORY_MANAGER])
     @GetMapping("/applications/{id}")
-    fun findById(@PathVariable id: UUID): Response<OpenApiNightStudyResponse> =
+    fun findById(@PathVariable id: UUID): Response<ApplicationResponse> =
         nightStudyUseCase.findById(id)
 
     @UserAccess(roles = [RoleType.DORMITORY_MANAGER])

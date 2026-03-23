@@ -3,8 +3,8 @@ package com.b1nd.dodamdodam.nightstudy.application.nightstudy.data
 import com.b1nd.dodamdodam.grpc.user.UserResponse
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.ApplyPersonalNightStudyRequest
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.ApplyProjectNightStudyRequest
-import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.OpenApiNightStudyResponse
-import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.OpenApiUserInfoResponse
+import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.ApplicationResponse
+import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.ApplicantResponse
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.PersonalNightStudyResponse
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.ProjectNightStudyResponse
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
@@ -55,7 +55,7 @@ fun NightStudyEntity.toProjectNightStudyResponse(isLeader: Boolean) = ProjectNig
     isLeader = isLeader,
 )
 
-fun UserResponse.toOpenApiUserInfoResponse() = OpenApiUserInfoResponse(
+fun UserResponse.toOpenApiUserInfoResponse() = ApplicantResponse(
     publicId = UUID.fromString(publicId),
     username = username,
     name = name,
@@ -64,23 +64,23 @@ fun UserResponse.toOpenApiUserInfoResponse() = OpenApiUserInfoResponse(
     status = status,
     roles = rolesList,
     student = if (hasStudent()) {
-        OpenApiUserInfoResponse.StudentInfo(
+        ApplicantResponse.StudentInfo(
             grade = student.grade,
             room = student.room,
             number = student.number,
         )
     } else null,
     teacher = if (hasTeacher()) {
-        OpenApiUserInfoResponse.TeacherInfo(
+        ApplicantResponse.TeacherInfo(
             position = teacher.position,
         )
     } else null,
 )
 
 fun NightStudyEntity.toOpenApiNightStudyResponse(
-    leader: OpenApiUserInfoResponse,
-    members: List<OpenApiUserInfoResponse>
-) = OpenApiNightStudyResponse(
+    leader: ApplicantResponse,
+    members: List<ApplicantResponse>
+) = ApplicationResponse(
     id = publicId!!,
     name = name,
     description = description,

@@ -10,11 +10,11 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NotLeaderExcep
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NotMyNightStudyException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.PeriodOverlappedException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.NightStudyBannedRepository
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.NightStudyMemberQueryRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.NightStudyMemberRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.NightStudyQueryRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.NightStudyRepository
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
 
 @Service
@@ -22,9 +22,9 @@ class NightStudyService(
     private val nightStudyRepository: NightStudyRepository,
     private val nightStudyQueryRepository: NightStudyQueryRepository,
     private val nightStudyMemberRepository: NightStudyMemberRepository,
+    private val nightStudyMemberQueryRepository: NightStudyMemberQueryRepository,
     private val bannedRepository: NightStudyBannedRepository
 ) {
-    @Transactional
     fun save(nightStudy: NightStudyEntity, userId: UUID, members: List<UUID>?) {
         if(isBanned(userId)) throw NightStudyBannedException()
 
@@ -47,35 +47,34 @@ class NightStudyService(
         }
     }
 
-    fun findAllByUserIdAndStatusAndType(userId: UUID, status: NightStudyStatusType, type: NightStudyType): List<NightStudyEntity> {
+    fun getAllByUserIdAndStatusAndType(userId: UUID, status: NightStudyStatusType, type: NightStudyType): List<NightStudyEntity> {
         return nightStudyQueryRepository.findAllByUserIdAndStatusAndType(userId, status, type)
     }
 
-    fun findAllByType(type: NightStudyType): List<NightStudyEntity> {
+    fun getAllByType(type: NightStudyType): List<NightStudyEntity> {
         return nightStudyQueryRepository.findAllByType(type)
     }
 
-    fun findByPublicId(publicId: UUID): NightStudyEntity {
+    fun getByPublicId(publicId: UUID): NightStudyEntity {
         return nightStudyQueryRepository.findByPublicId(publicId) ?: throw NightStudyNotFoundException()
     }
 
-    fun findMembersByNightStudy(nightStudy: NightStudyEntity): List<UUID> {
-        return nightStudyMemberRepository.findAllUserIdsByNightStudy(nightStudy)
-    }
-    
-    fun findLeaderByNightStudy(nightStudy: NightStudyEntity): UUID? {
-        return nightStudyMemberRepository.findLeaderUserIdByNightStudy(nightStudy)
+    fun getMembersByNightStudy(nightStudy: NightStudyEntity): List<UUID> {
+        return nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(nightStudy)
     }
 
-    @Transactional
+    fun getLeaderByNightStudy(nightStudy: NightStudyEntity): UUID? {
+        return nightStudyMemberQueryRepository.findLeaderUserIdByNightStudy(nightStudy)
+    }
+
     fun delete(userId: UUID, publicId: UUID) {
-        val nightStudy = findByPublicId(publicId)
+        val nightStudy = getByPublicId(publicId)
         val isMine = isMine(userId, nightStudy)
 
         if (!isMine) throw NotMyNightStudyException()
 
         if (nightStudy.type == NightStudyType.PROJECT) {
-            val leaderId = findLeaderByNightStudy(nightStudy)
+            val leaderId = getLeaderByNightStudy(nightStudy)
             if (leaderId != userId) throw NotLeaderException()
         }
 
@@ -84,15 +83,15 @@ class NightStudyService(
     }
 
     fun allow(publicId: UUID) {
-        findByPublicId(publicId).allow()
+        getByPublicId(publicId).allow()
     }
 
     fun reject(publicId: UUID, rejectionReason: String) {
-        findByPublicId(publicId).reject(rejectionReason)
+        getByPublicId(publicId).reject(rejectionReason)
     }
 
     fun pending(publicId: UUID) {
-        findByPublicId(publicId).pending()
+        getByPublicId(publicId).pending()
     }
 
     private fun isBanned(userId: UUID): Boolean {
