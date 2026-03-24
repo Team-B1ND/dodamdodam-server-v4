@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank
 import java.time.LocalDate
 
 data class PersonalNightStudyApplyRequest(
-    @field:NotBlank
+    @NotBlank
     val description: String,
     val period: Int,
     @JsonFormat(pattern = "yyyy-MM-dd")
