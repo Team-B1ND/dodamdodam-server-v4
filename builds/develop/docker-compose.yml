@@ -184,6 +184,19 @@ services:
       mysql:
         condition: service_healthy
 
+  service-nightstudy:
+    image: ${DOCKERHUB_USERNAME}/dodam-nightstudy:dev
+    container_name: dodam-nightstudy
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      MYSQL_HOST: mysql://mysql:3306/dodam-nightstudy
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    depends_on:
+      mysql:
+        condition: service_healthy
+
   service-file:
     image: ${DOCKERHUB_USERNAME}/dodam-file:dev
     container_name: dodam-file
