@@ -1,4 +1,4 @@
-package com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository
+package com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy
 
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyBannedEntity
 import org.springframework.data.jpa.repository.JpaRepository

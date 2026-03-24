@@ -9,12 +9,12 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyNotF
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NotLeaderException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NotMyNightStudyException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.PeriodOverlappedException
-import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.NightStudyBannedRepository
-import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.NightStudyMemberQueryRepository
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyBannedRepository
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudyMember.NightStudyMemberQueryRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand
-import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.NightStudyMemberRepository
-import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.NightStudyQueryRepository
-import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.NightStudyRepository
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudyMember.NightStudyMemberRepository
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyQueryRepository
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service

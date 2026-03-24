@@ -1,4 +1,4 @@
-package com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository
+package com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudyMember
 
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyMemberEntity
