@@ -57,6 +57,12 @@ spring:
             - Path=/openapi/user/**
           filters:
             - StripPrefix=2
+        - id: nightstudy-service
+          uri: http://localhost:8087
+          predicates:
+            - Path=/night-study/**
+          filters:
+            - StripPrefix=1
 
 app:
   auth:
