@@ -4,14 +4,16 @@ import com.b1nd.dodamdodam.core.common.data.Response
 import com.b1nd.dodamdodam.core.security.annotation.authentication.UserAccess
 import com.b1nd.dodamdodam.core.security.passport.enumerations.RoleType
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.NightStudyUseCase
-import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.ApplyPersonalNightStudyRequest
-import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.ApplyProjectNightStudyRequest
+import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.PersonalNightStudyApplyRequest
+import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.ProjectNightStudyApplyRequest
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.RejectNightStudyRequest
-import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.ApplicationResponse
+import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyApplicationResponse
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.PersonalNightStudyResponse
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.ProjectNightStudyResponse
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
+import com.b1nd.dodamdodam.core.common.data.InfinityScrollPageResponse
+import org.springframework.data.domain.Pageable
 import org.springframework.web.bind.annotation.*
 import java.util.UUID
 
@@ -21,12 +23,12 @@ class NightStudyController(
 ) {
     @UserAccess(roles = [RoleType.STUDENT])
     @PostMapping("/personal")
-    fun applyPersonalNightStudy(@RequestBody request: ApplyPersonalNightStudyRequest): Response<Any> =
+    fun applyPersonalNightStudy(@RequestBody request: PersonalNightStudyApplyRequest): Response<Any> =
         nightStudyUseCase.applyPersonalNightStudy(request)
 
     @UserAccess(roles = [RoleType.STUDENT])
     @PostMapping("/project")
-    fun applyProjectNightStudy(@RequestBody request: ApplyProjectNightStudyRequest): Response<Any> =
+    fun applyProjectNightStudy(@RequestBody request: ProjectNightStudyApplyRequest): Response<Any> =
         nightStudyUseCase.applyProjectNightStudy(request)
 
     @UserAccess(roles = [RoleType.STUDENT])
@@ -46,12 +48,12 @@ class NightStudyController(
 
     @UserAccess(roles = [RoleType.DORMITORY_MANAGER])
     @GetMapping("/applications")
-    fun findAllByType(@RequestParam type: NightStudyType): Response<List<ApplicationResponse>> =
-        nightStudyUseCase.findAllByType(type)
+    fun findAllByType(@RequestParam type: NightStudyType, pageable: Pageable): Response<InfinityScrollPageResponse<NightStudyApplicationResponse>> =
+        nightStudyUseCase.findAllByType(type, pageable)
 
     @UserAccess(roles = [RoleType.DORMITORY_MANAGER])
     @GetMapping("/applications/{id}")
-    fun findById(@PathVariable id: UUID): Response<ApplicationResponse> =
+    fun findById(@PathVariable id: UUID): Response<NightStudyApplicationResponse> =
         nightStudyUseCase.findById(id)
 
     @UserAccess(roles = [RoleType.DORMITORY_MANAGER])

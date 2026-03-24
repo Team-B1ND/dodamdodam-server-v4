@@ -1,17 +1,18 @@
 package com.b1nd.dodamdodam.nightstudy.application.nightstudy.data
 
 import com.b1nd.dodamdodam.grpc.user.UserResponse
-import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.ApplyPersonalNightStudyRequest
-import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.ApplyProjectNightStudyRequest
-import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.ApplicationResponse
-import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.ApplicantResponse
+import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.PersonalNightStudyApplyRequest
+import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.ProjectNightStudyApplyRequest
+import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyApplicationResponse
+import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyApplicantResponse
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.PersonalNightStudyResponse
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.ProjectNightStudyResponse
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
 import java.util.UUID
 
-fun ApplyPersonalNightStudyRequest.toEntity() = NightStudyEntity(
+fun PersonalNightStudyApplyRequest.toEntity() = NightStudyEntity(
     type = NightStudyType.PERSONAL,
     description = description,
     period = period,
@@ -21,7 +22,7 @@ fun ApplyPersonalNightStudyRequest.toEntity() = NightStudyEntity(
     needPhoneReason = needPhoneReason,
 )
 
-fun ApplyProjectNightStudyRequest.toEntity() = NightStudyEntity(
+fun ProjectNightStudyApplyRequest.toEntity() = NightStudyEntity(
     name = name,
     description = description,
     period = period,
@@ -55,7 +56,7 @@ fun NightStudyEntity.toProjectNightStudyResponse(isLeader: Boolean) = ProjectNig
     isLeader = isLeader,
 )
 
-fun UserResponse.toOpenApiUserInfoResponse() = ApplicantResponse(
+fun UserResponse.toOpenApiUserInfoResponse() = NightStudyApplicantResponse(
     publicId = UUID.fromString(publicId),
     username = username,
     name = name,
@@ -64,23 +65,23 @@ fun UserResponse.toOpenApiUserInfoResponse() = ApplicantResponse(
     status = status,
     roles = rolesList,
     student = if (hasStudent()) {
-        ApplicantResponse.StudentInfo(
+        NightStudyApplicantResponse.StudentInfo(
             grade = student.grade,
             room = student.room,
             number = student.number,
         )
     } else null,
     teacher = if (hasTeacher()) {
-        ApplicantResponse.TeacherInfo(
+        NightStudyApplicantResponse.TeacherInfo(
             position = teacher.position,
         )
     } else null,
 )
 
 fun NightStudyEntity.toOpenApiNightStudyResponse(
-    leader: ApplicantResponse,
-    members: List<ApplicantResponse>
-) = ApplicationResponse(
+    leader: NightStudyApplicantResponse,
+    members: List<NightStudyApplicantResponse>
+) = NightStudyApplicationResponse(
     id = publicId!!,
     name = name,
     description = description,
@@ -95,3 +96,29 @@ fun NightStudyEntity.toOpenApiNightStudyResponse(
     rejectionReason = rejectionReason,
     type = type,
 )
+
+fun List<NightStudyWithMembersCommand>.toNightStudyApplicationResponses(
+    usersMap: Map<String, NightStudyApplicantResponse>
+): List<NightStudyApplicationResponse> {
+    return mapNotNull { command ->
+        command.leaderId?.let { leaderId ->
+            usersMap[leaderId.toString()]?.let { leader ->
+                command.nightStudy.toOpenApiNightStudyResponse(
+                    leader = leader,
+                    members = command.memberIds.mapNotNull { memberId -> usersMap[memberId.toString()] }
+                )
+            }
+        }
+    }
+}
+
+fun NightStudyEntity.toNightStudyApplicationDetailResponse(
+    leaderId: UUID?,
+    memberIds: List<UUID>,
+    usersMap: Map<String, NightStudyApplicantResponse>
+): NightStudyApplicationResponse {
+    return toOpenApiNightStudyResponse(
+        leader = usersMap[leaderId.toString()]!!,
+        members = memberIds.mapNotNull { usersMap[it.toString()] }
+    )
+}

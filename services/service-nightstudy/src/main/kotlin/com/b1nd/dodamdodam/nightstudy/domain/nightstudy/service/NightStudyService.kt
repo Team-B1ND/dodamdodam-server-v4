@@ -11,9 +11,12 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NotMyNightStud
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.PeriodOverlappedException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.NightStudyBannedRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.NightStudyMemberQueryRepository
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.NightStudyMemberRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.NightStudyQueryRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.NightStudyRepository
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import java.util.UUID
 
@@ -51,8 +54,8 @@ class NightStudyService(
         return nightStudyQueryRepository.findAllByUserIdAndStatusAndType(userId, status, type)
     }
 
-    fun getAllByType(type: NightStudyType): List<NightStudyEntity> {
-        return nightStudyQueryRepository.findAllByType(type)
+    fun getAllByType(type: NightStudyType, pageable: Pageable): Page<NightStudyEntity> {
+        return nightStudyQueryRepository.findAllByType(type, pageable)
     }
 
     fun getByPublicId(publicId: UUID): NightStudyEntity {
@@ -65,6 +68,16 @@ class NightStudyService(
 
     fun getLeaderByNightStudy(nightStudy: NightStudyEntity): UUID? {
         return nightStudyMemberQueryRepository.findLeaderUserIdByNightStudy(nightStudy)
+    }
+
+    fun getNightStudyWithMembers(nightStudy: NightStudyEntity): NightStudyWithMembersCommand {
+        val memberIds = getMembersByNightStudy(nightStudy)
+        val leaderId = getLeaderByNightStudy(nightStudy)
+        return NightStudyWithMembersCommand(
+            nightStudy = nightStudy,
+            leaderId = leaderId,
+            memberIds = memberIds
+        )
     }
 
     fun delete(userId: UUID, publicId: UUID) {

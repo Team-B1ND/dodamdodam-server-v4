@@ -2,7 +2,7 @@ package com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response
 
 import java.util.UUID
 
-data class ApplicantResponse(
+data class NightStudyApplicantResponse(
     val publicId: UUID,
     val username: String,
     val name: String,

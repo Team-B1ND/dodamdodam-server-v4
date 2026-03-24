@@ -6,6 +6,9 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyMember
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
 import com.querydsl.jpa.impl.JPAQueryFactory
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+import org.springframework.data.support.PageableExecutionUtils
 import org.springframework.stereotype.Repository
 import java.time.LocalDate
 import java.util.UUID
@@ -37,10 +40,27 @@ class NightStudyQueryRepositoryImpl(
             .fetch()
     }
 
-    override fun findAllByType(type: NightStudyType): List<NightStudyEntity> {
-        return queryFactory.selectFrom(nightStudyEntity)
-            .where(nightStudyEntity.type.eq(type))
+    override fun findAllByType(type: NightStudyType, pageable: Pageable): Page<NightStudyEntity> {
+        val today = LocalDate.now()
+
+        val content = queryFactory.selectFrom(nightStudyEntity)
+            .where(
+                nightStudyEntity.type.eq(type),
+                nightStudyEntity.endAt.goe(today)
+            )
+            .offset(pageable.offset)
+            .limit(pageable.pageSize.toLong())
             .fetch()
+
+        val countQuery = queryFactory
+            .select(nightStudyEntity.count())
+            .from(nightStudyEntity)
+            .where(
+                nightStudyEntity.type.eq(type),
+                nightStudyEntity.endAt.goe(today)
+            )
+
+        return PageableExecutionUtils.getPage(content, pageable) { countQuery.fetchOne() ?: 0L }
     }
 
     override fun existsByPublicIdAndUserId(publicId: UUID, userId: UUID): Boolean {
