@@ -50,8 +50,8 @@ class NightStudyService(
         }
     }
 
-    fun getAllByUserIdAndStatusAndType(userId: UUID, status: NightStudyStatusType, type: NightStudyType): List<NightStudyEntity> {
-        return nightStudyQueryRepository.findAllByUserIdAndStatusAndType(userId, status, type)
+    fun getAllByUserIdAndStatusAndType(userId: UUID, status: NightStudyStatusType, type: NightStudyType, pageable: Pageable): Page<NightStudyEntity> {
+        return nightStudyQueryRepository.findAllByUserIdAndStatusAndType(userId, status, type, pageable)
     }
 
     fun getAllByType(type: NightStudyType, pageable: Pageable): Page<NightStudyEntity> {
@@ -68,6 +68,14 @@ class NightStudyService(
 
     fun getLeaderByNightStudy(nightStudy: NightStudyEntity): UUID? {
         return nightStudyMemberQueryRepository.findLeaderUserIdByNightStudy(nightStudy)
+    }
+
+    fun getLeadersByNightStudies(nightStudies: List<NightStudyEntity>): Map<Long, UUID> {
+        return nightStudyMemberQueryRepository.findLeaderUserIdsByNightStudies(nightStudies)
+    }
+
+    fun getMembersByNightStudies(nightStudies: List<NightStudyEntity>): Map<Long, List<UUID>> {
+        return nightStudyMemberQueryRepository.findAllMemberUserIdsByNightStudies(nightStudies)
     }
 
     fun getNightStudyWithMembers(nightStudy: NightStudyEntity): NightStudyWithMembersCommand {

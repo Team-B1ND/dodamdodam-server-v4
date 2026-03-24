@@ -60,22 +60,22 @@ fun UserResponse.toOpenApiUserInfoResponse() = NightStudyApplicantResponse(
     publicId = UUID.fromString(publicId),
     username = username,
     name = name,
-    phone = if (hasPhone()) phone else null,
-    profileImage = if (hasProfileImage()) profileImage else null,
+    phone = phone?.takeIf { it.isNotBlank() },
+    profileImage = profileImage?.takeIf { it.isNotBlank() },
     status = status,
     roles = rolesList,
-    student = if (hasStudent()) {
+    student = student?.let {
         NightStudyApplicantResponse.StudentInfo(
-            grade = student.grade,
-            room = student.room,
-            number = student.number,
+            grade = it.grade,
+            room = it.room,
+            number = it.number,
         )
-    } else null,
-    teacher = if (hasTeacher()) {
+    },
+    teacher = teacher?.let {
         NightStudyApplicantResponse.TeacherInfo(
-            position = teacher.position,
+            position = it.position,
         )
-    } else null,
+    },
 )
 
 fun NightStudyEntity.toOpenApiNightStudyResponse(

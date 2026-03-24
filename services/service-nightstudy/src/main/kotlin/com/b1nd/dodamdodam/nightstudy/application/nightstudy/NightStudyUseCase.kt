@@ -46,20 +46,33 @@ class NightStudyUseCase (
         return Response.created("프로젝트 심자 신청이 완료됐어요.")
     }
 
-    fun getMyPersonalNightStudy(status: NightStudyStatusType): Response<List<PersonalNightStudyResponse>> {
+    fun getMyPersonalNightStudy(status: NightStudyStatusType, pageable: Pageable): Response<InfinityScrollPageResponse<PersonalNightStudyResponse>> {
         val userId = PassportHolder.current().requireUserId()
-        val result = nightStudyService.getAllByUserIdAndStatusAndType(userId, status, NightStudyType.PERSONAL)
-        return Response.ok("개인 심자 신청 목록을 조회했어요.", result.toPersonalNightStudyListResponse())
+        val resultPage = nightStudyService.getAllByUserIdAndStatusAndType(userId, status, NightStudyType.PERSONAL, pageable)
+        return Response.ok(
+            "개인 심자 신청 목록을 조회했어요.",
+            InfinityScrollPageResponse(
+                content = resultPage.content.toPersonalNightStudyListResponse(),
+                hasNext = resultPage.hasNext()
+            )
+        )
     }
 
-    fun getMyProjectNightStudy(status: NightStudyStatusType): Response<List<ProjectNightStudyResponse>> {
+    fun getMyProjectNightStudy(status: NightStudyStatusType, pageable: Pageable): Response<InfinityScrollPageResponse<ProjectNightStudyResponse>> {
         val userId = PassportHolder.current().requireUserId()
-        val result = nightStudyService.getAllByUserIdAndStatusAndType(userId, status, NightStudyType.PROJECT)
-        val responses = result.map { nightStudy ->
-            val leaderId = nightStudyService.getLeaderByNightStudy(nightStudy)
+        val resultPage = nightStudyService.getAllByUserIdAndStatusAndType(userId, status, NightStudyType.PROJECT, pageable)
+        val leaderMap = nightStudyService.getLeadersByNightStudies(resultPage.content)
+        val responses = resultPage.content.map { nightStudy ->
+            val leaderId = leaderMap[nightStudy.id]
             nightStudy.toProjectNightStudyResponse(isLeader = leaderId == userId)
         }
-        return Response.ok("프로젝트 심자 신청 목록을 조회했어요.", responses)
+        return Response.ok(
+            "프로젝트 심자 신청 목록을 조회했어요.",
+            InfinityScrollPageResponse(
+                content = responses,
+                hasNext = resultPage.hasNext()
+            )
+        )
     }
 
     fun cancelNightStudy(id: UUID): Response<Any> {
@@ -112,8 +125,15 @@ class NightStudyUseCase (
     private fun getNightStudiesWithMembersAndLeaders(
         nightStudies: List<NightStudyEntity>
     ): List<NightStudyWithMembersCommand> {
+        val leaderMap = nightStudyService.getLeadersByNightStudies(nightStudies)
+        val membersMap = nightStudyService.getMembersByNightStudies(nightStudies)
+
         return nightStudies.map { nightStudy ->
-            nightStudyService.getNightStudyWithMembers(nightStudy)
+            NightStudyWithMembersCommand(
+                nightStudy = nightStudy,
+                leaderId = leaderMap[nightStudy.id],
+                memberIds = membersMap[nightStudy.id] ?: emptyList()
+            )
         }
     }
 

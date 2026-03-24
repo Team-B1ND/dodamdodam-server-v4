@@ -29,4 +29,34 @@ class NightStudyMemberQueryRepositoryImpl(
             )
             .fetchOne()
     }
+
+    override fun findLeaderUserIdsByNightStudies(nightStudies: List<NightStudyEntity>): Map<Long, UUID> {
+        if (nightStudies.isEmpty()) return emptyMap()
+
+        return queryFactory
+            .select(nightStudyMemberEntity.nightStudy.id, nightStudyMemberEntity.userId)
+            .from(nightStudyMemberEntity)
+            .where(
+                nightStudyMemberEntity.nightStudy.`in`(nightStudies),
+                nightStudyMemberEntity.isLeader.eq(true)
+            )
+            .fetch()
+            .associate { tuple ->
+                tuple.get(0, Long::class.java)!! to tuple.get(1, UUID::class.java)!!
+            }
+    }
+
+    override fun findAllMemberUserIdsByNightStudies(nightStudies: List<NightStudyEntity>): Map<Long, List<UUID>> {
+        if (nightStudies.isEmpty()) return emptyMap()
+
+        return queryFactory
+            .select(nightStudyMemberEntity.nightStudy.id, nightStudyMemberEntity.userId)
+            .from(nightStudyMemberEntity)
+            .where(nightStudyMemberEntity.nightStudy.`in`(nightStudies))
+            .fetch()
+            .groupBy(
+                { tuple -> tuple.get(0, Long::class.java)!! },
+                { tuple -> tuple.get(1, UUID::class.java)!! }
+            )
+    }
 }

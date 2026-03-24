@@ -27,9 +27,10 @@ class NightStudyQueryRepositoryImpl(
     override fun findAllByUserIdAndStatusAndType(
         userId: UUID,
         status: NightStudyStatusType,
-        type: NightStudyType
-    ): List<NightStudyEntity> {
-        return queryFactory.select(nightStudyMemberEntity.nightStudy)
+        type: NightStudyType,
+        pageable: Pageable
+    ): Page<NightStudyEntity> {
+        val content = queryFactory.select(nightStudyMemberEntity.nightStudy)
             .from(nightStudyMemberEntity)
             .where(
                 nightStudyMemberEntity.userId.eq(userId),
@@ -37,7 +38,20 @@ class NightStudyQueryRepositoryImpl(
                 nightStudyMemberEntity.nightStudy.type.eq(type)
             )
             .orderBy(nightStudyMemberEntity.nightStudy.id.asc())
+            .offset(pageable.offset)
+            .limit(pageable.pageSize.toLong())
             .fetch()
+
+        val countQuery = queryFactory
+            .select(nightStudyMemberEntity.count())
+            .from(nightStudyMemberEntity)
+            .where(
+                nightStudyMemberEntity.userId.eq(userId),
+                nightStudyMemberEntity.nightStudy.status.eq(status),
+                nightStudyMemberEntity.nightStudy.type.eq(type)
+            )
+
+        return PageableExecutionUtils.getPage(content, pageable) { countQuery.fetchOne() ?: 0L }
     }
 
     override fun findAllByType(type: NightStudyType, pageable: Pageable): Page<NightStudyEntity> {
