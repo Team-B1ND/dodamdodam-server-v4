@@ -4,7 +4,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 
 @ConfigurationProperties(prefix = "neis")
 data class NeisProperties(
-    val apiKey: String,
     val eduOfficeCode: String,
     val schoolCode: String,
-)
+    val meal: ApiKeyConfig,
+    val schedule: ApiKeyConfig,
+) {
+    data class ApiKeyConfig(val apiKey: String)
+}

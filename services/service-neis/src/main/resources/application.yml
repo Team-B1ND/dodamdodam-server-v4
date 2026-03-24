@@ -24,9 +24,12 @@ management:
         include: health,info
 
 neis:
-  api-key: ${NEIS_API_KEY:}
   edu-office-code: D10
   school-code: 7240454
+  meal:
+    api-key: ${NEIS_MEAL_API_KEY:}
+  schedule:
+    api-key: ${NEIS_SCHEDULE_API_KEY:}
 
 time-table:
   school-name: 대구소프트웨어고등학교

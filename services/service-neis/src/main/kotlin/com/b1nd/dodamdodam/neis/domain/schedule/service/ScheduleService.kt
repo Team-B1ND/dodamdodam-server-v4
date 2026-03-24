@@ -17,9 +17,7 @@ class ScheduleService(
 ) {
     fun create(title: String, startAt: LocalDate, endAt: LocalDate, targets: List<ScheduleTarget>): ScheduleEntity {
         val schedule = scheduleRepository.save(ScheduleEntity(title, startAt, endAt))
-        targets.forEach { target ->
-            scheduleTargetRepository.save(ScheduleTargetEntity(schedule, target))
-        }
+        scheduleTargetRepository.saveAll(targets.map { ScheduleTargetEntity(schedule, it) })
         return schedule
     }
 
@@ -28,9 +26,7 @@ class ScheduleService(
             ?: throw ScheduleNotFoundException()
         schedule.update(title, startAt, endAt)
         scheduleTargetRepository.deleteAllBySchedule(schedule)
-        targets.forEach { target ->
-            scheduleTargetRepository.save(ScheduleTargetEntity(schedule, target))
-        }
+        scheduleTargetRepository.saveAll(targets.map { ScheduleTargetEntity(schedule, it) })
         return scheduleRepository.save(schedule)
     }
 
@@ -41,7 +37,7 @@ class ScheduleService(
     }
 
     fun getSchedulesByMonth(startAt: LocalDate, endAt: LocalDate): List<ScheduleEntity> =
-        scheduleRepository.findAllByMonth(startAt, endAt)
+        scheduleRepository.findAllByStartAtLessThanEqualAndEndAtGreaterThanEqualOrderByStartAtAsc(endAt, startAt)
 
     fun getTargetsBySchedules(schedules: List<ScheduleEntity>): Map<Long?, List<ScheduleTarget>> {
         if (schedules.isEmpty()) return emptyMap()

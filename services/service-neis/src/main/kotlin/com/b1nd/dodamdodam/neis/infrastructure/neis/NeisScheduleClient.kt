@@ -27,7 +27,7 @@ class NeisScheduleClient(
 
         val uri = UriComponentsBuilder
             .fromHttpUrl("https://open.neis.go.kr/hub/SchoolSchedule")
-            .queryParam("KEY", neisProperties.apiKey)
+            .queryParam("KEY", neisProperties.schedule.apiKey)
             .queryParam("Type", "json")
             .queryParam("pIndex", 1)
             .queryParam("pSize", 100)

@@ -34,7 +34,7 @@ class NeisClient(
 
         val uri = UriComponentsBuilder
             .fromHttpUrl("https://open.neis.go.kr/hub/mealServiceDietInfo")
-            .queryParam("KEY", neisProperties.apiKey)
+            .queryParam("KEY", neisProperties.meal.apiKey)
             .queryParam("Type", "json")
             .queryParam("pIndex", 1)
             .queryParam("pSize", 100)
