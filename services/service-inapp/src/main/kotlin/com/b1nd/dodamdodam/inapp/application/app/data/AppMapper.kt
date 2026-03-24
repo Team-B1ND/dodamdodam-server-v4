@@ -1,26 +1,18 @@
 package com.b1nd.dodamdodam.inapp.application.app.data
 
-import com.b1nd.dodamdodam.inapp.application.app.data.request.AppServerInfoRequest
 import com.b1nd.dodamdodam.inapp.application.app.data.request.CreateAppRequest
-import com.b1nd.dodamdodam.inapp.application.app.data.request.CreateAppServerRequest
 import com.b1nd.dodamdodam.inapp.application.app.data.request.EditAppRequest
-import com.b1nd.dodamdodam.inapp.application.app.data.request.EditAppServerInfoRequest
-import com.b1nd.dodamdodam.inapp.application.app.data.request.EditAppServerRequest
 import com.b1nd.dodamdodam.grpc.user.UserResponse
 import com.b1nd.dodamdodam.inapp.application.app.data.response.ActiveAppResponse
 import com.b1nd.dodamdodam.inapp.application.app.data.response.AppDetailResponse
 import com.b1nd.dodamdodam.inapp.application.app.data.response.AppReleaseDetailResponse
 import com.b1nd.dodamdodam.inapp.application.app.data.response.AppReleaseResponse
-import com.b1nd.dodamdodam.inapp.application.app.data.response.AppServerResponse
 import com.b1nd.dodamdodam.inapp.application.app.data.response.AppSummaryResponse
 import com.b1nd.dodamdodam.inapp.application.app.data.response.ReleaseUserResponse
 import com.b1nd.dodamdodam.inapp.domain.app.command.CreateAppCommand
-import com.b1nd.dodamdodam.inapp.domain.app.command.CreateServerCommand
 import com.b1nd.dodamdodam.inapp.domain.app.command.EditAppCommand
-import com.b1nd.dodamdodam.inapp.domain.app.command.EditServerCommand
 import com.b1nd.dodamdodam.inapp.domain.app.entity.AppEntity
 import com.b1nd.dodamdodam.inapp.domain.app.entity.AppReleaseEntity
-import com.b1nd.dodamdodam.inapp.domain.app.entity.AppServerEntity
 import java.util.UUID
 
 fun AppReleaseEntity.toResponse(userMap: Map<UUID, UserResponse>) = AppReleaseResponse(
@@ -55,20 +47,7 @@ fun AppReleaseEntity.toDetailResponse(releaseNote: String?) = AppReleaseDetailRe
     modifiedAt = modifiedAt,
 )
 
-fun AppServerEntity.toResponse() = AppServerResponse(
-    name = name,
-    serverAddress = serverAddress,
-    redirectPath = redirectPath,
-    prefixLevel = prefixLevel,
-    omitApiPrefix = prefixLevel == 1,
-    usePushNotification = usePushNotification,
-    enabled = enabled,
-    status = status,
-    denyResult = denyResult,
-)
-
 fun AppEntity.toDetailResponse(
-    server: AppServerEntity?,
     releases: List<AppReleaseEntity>,
     userMap: Map<UUID, UserResponse> = emptyMap(),
 ) = AppDetailResponse(
@@ -80,7 +59,6 @@ fun AppEntity.toDetailResponse(
     iconUrl = iconUrl,
     darkIconUrl = darkIconUrl,
     inquiryMail = inquiryMail,
-    server = server?.toResponse(),
     active = releases.any { it.enabled },
     releases = releases.toResponses(userMap),
 )
@@ -121,17 +99,6 @@ fun AppEntity.toActiveAppResponse(releasePublicId: java.util.UUID?, s3BaseUrl: S
     } else null,
 )
 
-private fun Boolean.toPrefixLevel() = if (this) 1 else 0
-
-fun AppServerInfoRequest.toCreateServerCommand() = CreateServerCommand(
-    appId = null,
-    name = name,
-    serverAddress = serverAddress,
-    redirectPath = redirectPath,
-    prefixLevel = omitApiPrefix.toPrefixLevel(),
-    usePushNotification = usePushNotification,
-)
-
 fun CreateAppRequest.toCommand() = CreateAppCommand(
     teamId = teamId,
     name = name,
@@ -141,16 +108,6 @@ fun CreateAppRequest.toCommand() = CreateAppCommand(
     darkIconUrl = darkIconUrl,
     inquiryMail = inquiryMail,
     githubReleaseUrl = githubReleaseUrl,
-    server = server?.toCreateServerCommand(),
-)
-
-fun CreateAppServerRequest.toCommand() = CreateServerCommand(
-    appId = appId,
-    name = name,
-    serverAddress = serverAddress,
-    redirectPath = redirectPath,
-    prefixLevel = omitApiPrefix.toPrefixLevel(),
-    usePushNotification = usePushNotification,
 )
 
 fun EditAppRequest.toCommand() = EditAppCommand(
@@ -161,23 +118,4 @@ fun EditAppRequest.toCommand() = EditAppCommand(
     iconUrl = iconUrl,
     darkIconUrl = darkIconUrl,
     inquiryMail = inquiryMail,
-    server = server?.toEditServerCommand(),
-)
-
-fun EditAppServerInfoRequest.toEditServerCommand() = EditServerCommand(
-    appId = null,
-    name = name,
-    serverAddress = serverAddress,
-    redirectPath = redirectPath,
-    prefixLevel = omitApiPrefix?.toPrefixLevel(),
-    usePushNotification = usePushNotification,
-)
-
-fun EditAppServerRequest.toCommand() = EditServerCommand(
-    appId = appId,
-    name = name,
-    serverAddress = serverAddress,
-    redirectPath = redirectPath,
-    prefixLevel = omitApiPrefix?.toPrefixLevel(),
-    usePushNotification = usePushNotification,
 )

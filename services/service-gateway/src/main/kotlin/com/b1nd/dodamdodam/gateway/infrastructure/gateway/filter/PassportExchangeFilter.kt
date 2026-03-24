@@ -1,10 +1,6 @@
 package com.b1nd.dodamdodam.gateway.infrastructure.gateway.filter
 
 import com.b1nd.dodamdodam.core.common.data.webclient.WebClientApiResponse
-import com.b1nd.dodamdodam.core.common.exception.base.BaseInternalServerException
-import com.b1nd.dodamdodam.core.common.exception.auth.AuthTokenExceptionCode
-import com.b1nd.dodamdodam.core.common.exception.auth.InvalidTokenSignatureException
-import com.b1nd.dodamdodam.core.common.exception.auth.TokenExpiredException
 import com.b1nd.dodamdodam.gateway.domain.passport.repository.PassportCacheRepository
 import com.b1nd.dodamdodam.gateway.infrastructure.auth.client.data.ExchangePassportResponse
 import com.b1nd.dodamdodam.gateway.infrastructure.auth.properties.AuthProperties
@@ -12,7 +8,6 @@ import org.springframework.cloud.gateway.filter.GatewayFilterChain
 import org.springframework.cloud.gateway.filter.GlobalFilter
 import org.springframework.core.Ordered
 import org.springframework.http.HttpHeaders
-import org.springframework.http.server.reactive.ServerHttpRequestDecorator
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.ClientResponse
 import org.springframework.web.reactive.function.client.WebClient
@@ -23,94 +18,72 @@ import java.time.Duration
 
 @Component
 class PassportExchangeFilter(
-    private val webClientBuilder: WebClient.Builder,
+    webClientBuilder: WebClient.Builder,
     private val properties: AuthProperties,
-    private val repository: PassportCacheRepository
-): GlobalFilter, Ordered {
-    private val webClient = webClientBuilder.baseUrl(properties.url).build()
+    private val cache: PassportCacheRepository,
+) : GlobalFilter, Ordered {
+
+    private val authClient = webClientBuilder.baseUrl(properties.url).build()
 
     override fun getOrder(): Int = 0
 
     override fun filter(exchange: ServerWebExchange, chain: GatewayFilterChain): Mono<Void> {
         val path = exchange.request.uri.path
-        if (path.startsWith("/openapi/") || path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs")) {
-            return chain.filter(exchange)
-        }
 
-        val headerJwt = exchange.request.headers
-            .getFirst(HttpHeaders.AUTHORIZATION)
-            ?.removePrefix("Bearer ")
-            ?.trim()
+        if (SKIP_PATHS.any { path.startsWith(it) }) return chain.filter(exchange)
 
+        val jwt = resolveJwt(exchange, path)
+
+        return resolvePassport(jwt)
+            .onErrorResume { it.rethrowIfAuthError(); exchangeGuest() }
+            .flatMap { passport -> forwardWithPassport(exchange, chain, passport) }
+            .switchIfEmpty(chain.filter(exchange))
+    }
+
+    private fun resolveJwt(exchange: ServerWebExchange, path: String): String? {
+        val headerJwt = exchange.extractBearerToken()
         val cookieJwt = exchange.request.cookies
             .getFirst(properties.accessTokenCookie)
             ?.value
 
-        val ignoreCookie = path == "/auth/login" || path == "/auth/refresh"
-        val jwt = headerJwt ?: if (ignoreCookie) null else cookieJwt
-
-        return extractPassport(jwt)
-            .onErrorResume { e ->
-                if (e is TokenExpiredException || e is InvalidTokenSignatureException) {
-                    Mono.error(e)
-                } else {
-                    exchangePassport()
-                }
-            }
-            .flatMap { passport ->
-                val decoratedRequest = object : ServerHttpRequestDecorator(exchange.request) {
-                    override fun getHeaders(): HttpHeaders {
-                        val headers = HttpHeaders()
-                        headers.putAll(super.getHeaders())
-                        headers.set("X-User-Passport", passport)
-                        return headers
-                    }
-                }
-
-                chain.filter(
-                    exchange.mutate()
-                        .request(decoratedRequest)
-                        .build()
-                )
-            }
-            .switchIfEmpty(chain.filter(exchange))
+        return headerJwt ?: if (path in IGNORE_COOKIE_PATHS) null else cookieJwt
     }
 
-    private fun extractPassport(jwt: String?): Mono<String> {
-        if (jwt.isNullOrBlank()) return exchangePassport()
+    private fun resolvePassport(jwt: String?): Mono<String> {
+        if (jwt.isNullOrBlank()) return exchangeGuest()
 
-        return repository.get(jwt)
+        return cache.get(jwt)
             .switchIfEmpty(
-                exchangePassport(jwt)
-                    .flatMap { passport ->
-                        repository.set(jwt, passport, Duration.ofMinutes(2))
-                            .thenReturn(passport)
-                    }
+                exchange(jwt).flatMap { passport ->
+                    cache.set(jwt, passport, CACHE_TTL).thenReturn(passport)
+                }
             )
     }
 
-    private fun exchangePassport(jwt: String? = null): Mono<String> {
-        return webClient.post()
+    private fun exchange(jwt: String): Mono<String> =
+        authClient.post()
             .uri("/passport")
-            .headers { headers -> jwt?.takeIf { it.isNotBlank() }?.let { headers.setBearerAuth(it) } }
-            .exchangeToMono(::extractPassportFromResponse)
+            .headers { it.setBearerAuth(jwt) }
+            .exchangeToMono(::parseResponse)
+
+    private fun exchangeGuest(): Mono<String> =
+        authClient.post()
+            .uri("/passport")
+            .exchangeToMono(::parseResponse)
+
+    private fun parseResponse(response: ClientResponse): Mono<String> =
+        response.bodyToMono<WebClientApiResponse<ExchangePassportResponse>>()
+            .defaultIfEmpty(WebClientApiResponse(status = response.statusCode().value(), message = "empty"))
+            .map { it.toPassportOrThrow() }
+
+    private fun forwardWithPassport(exchange: ServerWebExchange, chain: GatewayFilterChain, passport: String): Mono<Void> {
+        val decorated = exchange.decorateHeaders("X-User-Passport" to passport)
+        return chain.filter(exchange.mutate().request(decorated).build())
     }
 
-    private fun extractPassportFromResponse(response: ClientResponse): Mono<String> {
-        val status = response.statusCode().value()
-
-        return response.bodyToMono<WebClientApiResponse<ExchangePassportResponse>>()
-            .defaultIfEmpty(WebClientApiResponse(status = status, message = "empty response"))
-            .map(::extractPassportOrThrow)
-    }
-
-    private fun extractPassportOrThrow(wrapper: WebClientApiResponse<ExchangePassportResponse>): String {
-        when {
-            wrapper.code == AuthTokenExceptionCode.TOKEN_EXPIRED.name -> throw TokenExpiredException()
-            wrapper.is4xxError() -> throw InvalidTokenSignatureException()
-            wrapper.is5xxError() -> throw BaseInternalServerException()
-        }
-
-        return wrapper.data?.passport ?: throw BaseInternalServerException()
+    companion object {
+        private val CACHE_TTL = Duration.ofMinutes(2)
+        private val SKIP_PATHS = listOf("/swagger-ui", "/v3/api-docs")
+        private val IGNORE_COOKIE_PATHS = setOf("/auth/login", "/auth/refresh")
     }
 }

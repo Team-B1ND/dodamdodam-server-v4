@@ -33,3 +33,15 @@ management:
 app:
   auth:
     access-token-cookie: ${COOKIE_ACCESS_TOKEN_NAME:access_token}
+  oauth:
+    scope-rules:
+      - path: /nightstudy/
+        read: nightstudy:read
+        write: nightstudy:write
+      - path: /outgoing/
+        read: outgoing:read
+      - path: /wakeup-song/
+        read: wakeupsong:read
+        write: wakeupsong:write
+      - path: /user/
+        read: profile:read

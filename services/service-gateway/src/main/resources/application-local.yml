@@ -51,11 +51,16 @@ spring:
             - Path=/neis/**
           filters:
             - StripPrefix=1
-        - id: openapi-user-service
-          uri: http://localhost:8081
+        - id: oauth-service
+          uri: http://localhost:8088
           predicates:
-            - Path=/openapi/user/**
+            - Path=/oauth/**
           filters:
+            - StripPrefix=1
+        - id: oauth-wellknown
+          uri: http://localhost:8088
+          predicates:
+            - Path=/.well-known/**
             - StripPrefix=2
         - id: nightstudy-service
           uri: http://localhost:8087

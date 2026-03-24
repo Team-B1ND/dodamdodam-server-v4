@@ -51,12 +51,6 @@ spring:
             - Path=/neis/**
           filters:
             - StripPrefix=1
-        - id: openapi-user-service
-          uri: http://service-user:8080
-          predicates:
-            - Path=/openapi/user/**
-          filters:
-            - StripPrefix=2
 
 app:
   auth:

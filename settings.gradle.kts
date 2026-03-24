@@ -40,6 +40,7 @@ include(":services:service-wakeup-song")
 include(":services:service-out-sleeping")
 include(":services:service-file")
 include(":services:service-neis")
+include(":services:service-oauth")
 include(":services:service-nightstudy")
 
 rootProject.name = "dodamdodam-server"

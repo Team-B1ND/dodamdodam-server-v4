@@ -1,0 +1,21 @@
+package com.b1nd.dodamdodam.oauth.domain.token.entity
+
+import org.springframework.data.annotation.Id
+import org.springframework.data.relational.core.mapping.Column
+import org.springframework.data.relational.core.mapping.Table
+import java.time.LocalDateTime
+import java.util.UUID
+
+@Table("oauth_tokens")
+data class OauthToken(
+    @Id val id: Long? = null,
+    @Column("access_token_hash") val accessTokenHash: String,
+    @Column("refresh_token_hash") val refreshTokenHash: String,
+    @Column("client_id") val clientId: String,
+    @Column("user_public_id") val userPublicId: UUID,
+    val scopes: String,
+    @Column("access_expires_at") val accessExpiresAt: LocalDateTime,
+    @Column("refresh_expires_at") val refreshExpiresAt: LocalDateTime,
+    val revoked: Boolean = false,
+    @Column("created_at") val createdAt: LocalDateTime? = null,
+)

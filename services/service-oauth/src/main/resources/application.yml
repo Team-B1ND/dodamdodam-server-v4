@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: service-oauth
+  main:
+    web-application-type: reactive
+  profiles:
+    active: local
+  flyway:
+    locations: classpath:database/migration
+server:
+  port: 8087
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    disable-swagger-default-url: true
+    config-url: /oauth/v3/api-docs/swagger-config
+    url: /oauth/v3/api-docs
+
+oauth:
+  issuer: ${OAUTH_ISSUER:https://dodam.b1nd.com}
+  access-token-expiry-seconds: ${OAUTH_ACCESS_EXPIRY:5184000}
+  refresh-token-expiry-days: ${OAUTH_REFRESH_EXPIRY_DAYS:30}
+  authorization-code-expiry-minutes: 10
+  rsa-private-key: ${OAUTH_RSA_PRIVATE_KEY:}
+  rsa-public-key: ${OAUTH_RSA_PUBLIC_KEY:}
