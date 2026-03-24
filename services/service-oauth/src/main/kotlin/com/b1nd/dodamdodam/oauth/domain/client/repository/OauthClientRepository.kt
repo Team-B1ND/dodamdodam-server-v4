@@ -1,10 +1,12 @@
 package com.b1nd.dodamdodam.oauth.domain.client.repository
 
 import com.b1nd.dodamdodam.oauth.domain.client.entity.OauthClient
-import org.springframework.data.repository.reactive.ReactiveCrudRepository
-import reactor.core.publisher.Mono
+import kotlinx.coroutines.flow.Flow
+import org.springframework.data.repository.kotlin.CoroutineCrudRepository
+import java.util.UUID
 
-interface OauthClientRepository : ReactiveCrudRepository<OauthClient, Long> {
-    fun findByClientId(clientId: String): Mono<OauthClient>
-    fun findByClientIdAndIsActiveTrue(clientId: String): Mono<OauthClient>
+interface OauthClientRepository : CoroutineCrudRepository<OauthClient, Long> {
+    suspend fun findByClientId(clientId: String): OauthClient?
+    suspend fun findByClientIdAndIsActiveTrue(clientId: String): OauthClient?
+    fun findAllByOwnerPublicIdAndIsActiveTrue(ownerPublicId: UUID): Flow<OauthClient>
 }

@@ -4,23 +4,26 @@ import com.b1nd.dodamdodam.oauth.domain.client.entity.OauthClient
 import com.b1nd.dodamdodam.oauth.domain.client.repository.OauthClientRepository
 import com.b1nd.dodamdodam.oauth.infrastructure.exception.OauthException
 import com.b1nd.dodamdodam.oauth.infrastructure.exception.OauthExceptionCode
-import kotlinx.coroutines.reactor.awaitSingle
-import kotlinx.coroutines.reactor.awaitSingleOrNull
+import kotlinx.coroutines.flow.Flow
 import org.springframework.stereotype.Service
+import java.util.UUID
 
 @Service
 class OauthClientService(private val repository: OauthClientRepository) {
 
-    suspend fun save(client: OauthClient): OauthClient = repository.save(client).awaitSingle()
+    fun findAllByOwner(ownerPublicId: UUID): Flow<OauthClient> =
+        repository.findAllByOwnerPublicIdAndIsActiveTrue(ownerPublicId)
+
+    suspend fun save(client: OauthClient): OauthClient = repository.save(client)
 
     suspend fun findByClientId(clientId: String): OauthClient {
-        return repository.findByClientId(clientId).awaitSingleOrNull()
+        return repository.findByClientId(clientId)
             ?: throw OauthException(OauthExceptionCode.CLIENT_NOT_FOUND)
     }
 
     suspend fun findActiveByClientId(clientId: String): OauthClient {
-        return repository.findByClientIdAndIsActiveTrue(clientId).awaitSingleOrNull()
-            ?: throw OauthException(OauthExceptionCode.INVALID_CLIENT)
+        return repository.findByClientIdAndIsActiveTrue(clientId)
+            ?: throw OauthException(OauthExceptionCode.CLIENT_NOT_FOUND)
     }
 
     suspend fun verifyClientSecret(client: OauthClient, rawSecret: String, passwordEncoder: org.springframework.security.crypto.password.PasswordEncoder) {

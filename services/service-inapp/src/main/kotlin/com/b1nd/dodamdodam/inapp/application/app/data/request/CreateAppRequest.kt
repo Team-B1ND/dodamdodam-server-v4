@@ -11,5 +11,4 @@ data class CreateAppRequest(
     val darkIconUrl: String? = null,
     val inquiryMail: String,
     val githubReleaseUrl: String,
-    val server: AppServerInfoRequest? = null,
 )

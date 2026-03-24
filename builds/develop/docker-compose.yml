@@ -157,6 +157,22 @@ services:
       kafka:
         condition: service_healthy
 
+  service-oauth:
+    image: ${DOCKERHUB_USERNAME}/dodam-oauth:dev
+    container_name: dodam-oauth
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      MYSQL_HOST: mysql://mysql:3306/dodam-oauth
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      OAUTH_ISSUER: ${OAUTH_ISSUER}
+      OAUTH_RSA_PRIVATE_KEY: ${OAUTH_RSA_PRIVATE_KEY}
+      OAUTH_RSA_PUBLIC_KEY: ${OAUTH_RSA_PUBLIC_KEY}
+    depends_on:
+      mysql:
+        condition: service_healthy
+
   service-neis:
     image: ${DOCKERHUB_USERNAME}/dodam-neis:dev
     container_name: dodam-neis
@@ -167,6 +183,32 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       NEIS_API_KEY: ${NEIS_API_KEY}
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  service-out-sleeping:
+    image: ${DOCKERHUB_USERNAME}/dodam-out-sleeping:dev
+    container_name: dodam-out-sleeping
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      MYSQL_HOST: mysql://mysql:3306/dodam-out-sleeping
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  service-nightstudy:
+    image: ${DOCKERHUB_USERNAME}/dodam-nightstudy:dev
+    container_name: dodam-nightstudy
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      MYSQL_HOST: mysql://mysql:3306/dodam-nightstudy
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     depends_on:
       mysql:
         condition: service_healthy

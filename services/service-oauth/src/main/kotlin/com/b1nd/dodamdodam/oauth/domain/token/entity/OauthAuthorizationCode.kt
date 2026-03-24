@@ -4,13 +4,14 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
 import java.time.LocalDateTime
+import java.util.UUID
 
 @Table("oauth_authorization_codes")
 data class OauthAuthorizationCode(
     @Id val id: Long? = null,
     val code: String,
     @Column("client_id") val clientId: String,
-    @Column("user_public_id") val userPublicId: String,
+    @Column("user_public_id") val userPublicId: UUID,
     @Column("redirect_uri") val redirectUri: String,
     val scopes: String,
     @Column("code_challenge") val codeChallenge: String? = null,

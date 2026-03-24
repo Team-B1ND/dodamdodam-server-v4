@@ -5,10 +5,9 @@ import com.b1nd.dodamdodam.oauth.application.data.request.UpdateClientRequest
 import com.b1nd.dodamdodam.oauth.application.data.response.ClientResponse
 import com.b1nd.dodamdodam.oauth.domain.client.entity.OauthClient
 import com.b1nd.dodamdodam.oauth.domain.client.service.OauthClientService
-import com.b1nd.dodamdodam.oauth.domain.scope.repository.OauthScopeRepository
+import com.b1nd.dodamdodam.oauth.domain.scope.service.OauthScopeService
 import com.b1nd.dodamdodam.oauth.infrastructure.exception.OauthException
 import com.b1nd.dodamdodam.oauth.infrastructure.exception.OauthExceptionCode
-import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -17,12 +16,12 @@ import java.util.UUID
 @Component
 class OauthClientUseCase(
     private val clientService: OauthClientService,
-    private val scopeRepository: OauthScopeRepository,
+    private val scopeService: OauthScopeService,
     private val passwordEncoder: PasswordEncoder,
 ) {
 
     @Transactional
-    suspend fun register(request: RegisterClientRequest, ownerPublicId: String): ClientResponse {
+    suspend fun register(request: RegisterClientRequest, ownerPublicId: UUID): ClientResponse {
         validateRedirectUris(request.redirectUris)
         validateScopes(request.scopes)
 
@@ -92,7 +91,7 @@ class OauthClientUseCase(
     }
 
     @Transactional
-    suspend fun ownerResetSecret(clientId: String, ownerPublicId: String): ClientResponse {
+    suspend fun ownerResetSecret(clientId: String, ownerPublicId: UUID): ClientResponse {
         val client = clientService.findByClientId(clientId)
         if (client.ownerPublicId != ownerPublicId) throw OauthException(OauthExceptionCode.ACCESS_DENIED)
 
@@ -103,7 +102,7 @@ class OauthClientUseCase(
     }
 
     @Transactional
-    suspend fun transferOwnership(clientId: String, clientSecret: String, newOwnerPublicId: String): ClientResponse {
+    suspend fun transferOwnership(clientId: String, clientSecret: String, newOwnerPublicId: UUID): ClientResponse {
         val client = clientService.findByClientId(clientId)
         clientService.verifyClientSecret(client, clientSecret, passwordEncoder)
         val updated = clientService.save(client.copy(ownerPublicId = newOwnerPublicId))
@@ -120,11 +119,7 @@ class OauthClientUseCase(
     }
 
     private suspend fun validateScopes(scopes: List<String>) {
-        val validScopes = scopeRepository.findByScopeKeyIn(scopes)
-            .collectList().awaitSingle()
-            .map { it.scopeKey }
-            .toSet()
-
+        val validScopes = scopeService.findByKeys(scopes).map { it.scopeKey }.toSet()
         if (!validScopes.containsAll(scopes)) {
             throw OauthException(OauthExceptionCode.INVALID_SCOPE)
         }

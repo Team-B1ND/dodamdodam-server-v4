@@ -10,24 +10,8 @@ class AppReleaseNotFoundException: BasicException(AppExceptionCode.APP_RELEASE_N
 
 class AppReleaseEnableNotAllowedException: BasicException(AppExceptionCode.APP_RELEASE_ENABLE_NOT_ALLOWED)
 
-class AppServerAlreadyExistException: BasicException(AppExceptionCode.APP_SERVER_ALREADY_EXIST)
-
-class AppServerNotFoundException: BasicException(AppExceptionCode.APP_SERVER_NOT_FOUND)
-
-class AppServerEnableNotAllowedException: BasicException(AppExceptionCode.APP_SERVER_ENABLE_NOT_ALLOWED)
-
-class AppServerPrefixLevelInvalidException: BasicException(AppExceptionCode.APP_SERVER_PREFIX_LEVEL_INVALID)
-
-class AppServerRedirectPathInvalidException: BasicException(AppExceptionCode.APP_SERVER_REDIRECT_PATH_INVALID)
-
-class AppServerInfoIncompleteException: BasicException(AppExceptionCode.APP_SERVER_INFO_INCOMPLETE)
-
 class AppDenyReasonRequiredException: BasicException(AppExceptionCode.APP_DENY_REASON_REQUIRED)
 
 class AppTeamMemberPermissionRequiredException: BasicException(AppExceptionCode.APP_TEAM_MEMBER_PERMISSION_REQUIRED)
 
 class AppTeamOwnerPermissionRequiredException: BasicException(AppExceptionCode.APP_TEAM_OWNER_PERMISSION_REQUIRED)
-
-class AppApiKeyAlreadyExistException: BasicException(AppExceptionCode.APP_API_KEY_ALREADY_EXIST)
-
-class AppApiKeyNotFoundException: BasicException(AppExceptionCode.APP_API_KEY_NOT_FOUND)

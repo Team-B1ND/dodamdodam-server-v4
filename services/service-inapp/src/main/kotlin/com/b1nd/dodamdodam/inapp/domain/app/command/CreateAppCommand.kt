@@ -13,7 +13,6 @@ data class CreateAppCommand(
     val darkIconUrl: String?,
     val inquiryMail: String,
     val githubReleaseUrl: String,
-    val server: CreateServerCommand?,
 ) {
     fun toEntity(team: TeamEntity) = AppEntity(
         name = name,

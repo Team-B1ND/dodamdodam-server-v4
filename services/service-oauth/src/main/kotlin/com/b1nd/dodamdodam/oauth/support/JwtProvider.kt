@@ -1,7 +1,7 @@
 package com.b1nd.dodamdodam.oauth.support
 
-import com.b1nd.dodamdodam.oauth.infrastructure.security.JwtConfig
-import com.b1nd.dodamdodam.oauth.infrastructure.security.OauthProperties
+import com.b1nd.dodamdodam.oauth.infrastructure.security.configuration.JwtConfig
+import com.b1nd.dodamdodam.oauth.infrastructure.security.properties.OauthProperties
 import com.nimbusds.jose.JWSAlgorithm
 import com.nimbusds.jose.JWSHeader
 import com.nimbusds.jose.crypto.RSASSASigner
@@ -20,11 +20,11 @@ class JwtProvider(private val rsaKey: RSAKey, private val properties: OauthPrope
     private val signer = RSASSASigner(rsaKey)
     private val verifier = RSASSAVerifier(rsaKey.toRSAPublicKey())
 
-    fun createAccessToken(userPublicId: String, clientId: String, scopes: String, roles: List<String>, authAccessToken: String, trusted: Boolean = false): String {
+    fun createAccessToken(userPublicId: UUID, clientId: String, scopes: String, roles: List<String>, authAccessToken: String): String {
         val now = Instant.now()
-        val builder = JWTClaimsSet.Builder()
+        val claims = JWTClaimsSet.Builder()
             .issuer(properties.issuer)
-            .subject(userPublicId)
+            .subject(userPublicId.toString())
             .audience(clientId)
             .expirationTime(Date.from(now.plusSeconds(properties.accessTokenExpirySeconds)))
             .issueTime(Date.from(now))
@@ -32,8 +32,7 @@ class JwtProvider(private val rsaKey: RSAKey, private val properties: OauthPrope
             .claim("scope", scopes)
             .claim("roles", roles)
             .claim("aat", authAccessToken)
-        if (trusted) builder.claim("trusted", true)
-        val claims = builder.build()
+            .build()
 
         val header = JWSHeader.Builder(JWSAlgorithm.RS256)
             .keyID(JwtConfig.KID)
