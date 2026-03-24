@@ -5,10 +5,9 @@ import com.b1nd.dodamdodam.oauth.application.data.request.UpdateClientRequest
 import com.b1nd.dodamdodam.oauth.application.data.response.ClientResponse
 import com.b1nd.dodamdodam.oauth.domain.client.entity.OauthClient
 import com.b1nd.dodamdodam.oauth.domain.client.service.OauthClientService
-import com.b1nd.dodamdodam.oauth.domain.scope.repository.OauthScopeRepository
+import com.b1nd.dodamdodam.oauth.domain.scope.service.OauthScopeService
 import com.b1nd.dodamdodam.oauth.infrastructure.exception.OauthException
 import com.b1nd.dodamdodam.oauth.infrastructure.exception.OauthExceptionCode
-import kotlinx.coroutines.flow.toList
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -17,7 +16,7 @@ import java.util.UUID
 @Component
 class OauthClientUseCase(
     private val clientService: OauthClientService,
-    private val scopeRepository: OauthScopeRepository,
+    private val scopeService: OauthScopeService,
     private val passwordEncoder: PasswordEncoder,
 ) {
 
@@ -120,11 +119,7 @@ class OauthClientUseCase(
     }
 
     private suspend fun validateScopes(scopes: List<String>) {
-        val validScopes = scopeRepository.findByScopeKeyIn(scopes)
-            .toList()
-            .map { it.scopeKey }
-            .toSet()
-
+        val validScopes = scopeService.findByKeys(scopes).map { it.scopeKey }.toSet()
         if (!validScopes.containsAll(scopes)) {
             throw OauthException(OauthExceptionCode.INVALID_SCOPE)
         }

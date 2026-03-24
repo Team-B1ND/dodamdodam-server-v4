@@ -7,13 +7,12 @@ import com.b1nd.dodamdodam.oauth.application.data.response.ScopeResponse
 import com.b1nd.dodamdodam.oauth.domain.client.service.OauthClientService
 import com.b1nd.dodamdodam.oauth.domain.consent.entity.OauthConsent
 import com.b1nd.dodamdodam.oauth.domain.consent.repository.OauthConsentRepository
-import com.b1nd.dodamdodam.oauth.domain.scope.repository.OauthScopeRepository
+import com.b1nd.dodamdodam.oauth.domain.scope.service.OauthScopeService
 import com.b1nd.dodamdodam.oauth.domain.token.entity.OauthAuthorizationCode
 import com.b1nd.dodamdodam.oauth.domain.token.service.OauthTokenService
 import com.b1nd.dodamdodam.oauth.infrastructure.exception.OauthException
 import com.b1nd.dodamdodam.oauth.infrastructure.exception.OauthExceptionCode
-import com.b1nd.dodamdodam.oauth.infrastructure.security.OauthProperties
-import kotlinx.coroutines.flow.toList
+import com.b1nd.dodamdodam.oauth.infrastructure.security.properties.OauthProperties
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.util.UriComponentsBuilder
@@ -26,7 +25,7 @@ import java.util.UUID
 class OauthAuthorizeUseCase(
     private val clientService: OauthClientService,
     private val tokenService: OauthTokenService,
-    private val scopeRepository: OauthScopeRepository,
+    private val scopeService: OauthScopeService,
     private val consentRepository: OauthConsentRepository,
     private val properties: OauthProperties,
 ) {
@@ -53,7 +52,7 @@ class OauthAuthorizeUseCase(
         val allowedScopes = client.getScopeList()
         if (!allowedScopes.containsAll(requestedScopes)) throw OauthException(OauthExceptionCode.INVALID_SCOPE)
 
-        val scopeDetails = scopeRepository.findByScopeKeyIn(requestedScopes).toList()
+        val scopeDetails = scopeService.findByKeys(requestedScopes)
         if (scopeDetails.size != requestedScopes.size) throw OauthException(OauthExceptionCode.INVALID_SCOPE)
 
         val consented = if (userPublicId != null) {

@@ -11,7 +11,7 @@ import com.b1nd.dodamdodam.oauth.application.data.response.ClientResponse
 import com.b1nd.dodamdodam.oauth.application.data.response.ScopeResponse
 import com.b1nd.dodamdodam.oauth.application.usecase.OauthClientUseCase
 import com.b1nd.dodamdodam.oauth.domain.client.service.OauthClientService
-import com.b1nd.dodamdodam.oauth.domain.scope.repository.OauthScopeRepository
+import com.b1nd.dodamdodam.oauth.domain.scope.service.OauthScopeService
 import com.b1nd.dodamdodam.oauth.infrastructure.exception.OauthException
 import com.b1nd.dodamdodam.oauth.infrastructure.exception.OauthExceptionCode
 import jakarta.validation.Valid
@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.*
 class ClientController(
     private val clientUseCase: OauthClientUseCase,
     private val clientService: OauthClientService,
-    private val scopeRepository: OauthScopeRepository,
+    private val scopeService: OauthScopeService,
 ) {
 
     @PostMapping
@@ -87,7 +87,7 @@ class ClientController(
 
     @GetMapping("/scopes")
     suspend fun getScopes(): Response<List<ScopeResponse>> {
-        val scopes = scopeRepository.findAllByIsActiveTrue()
+        val scopes = scopeService.findAllActive()
             .map { ScopeResponse.of(it) }
             .toList()
         return Response.ok("Scopes found", scopes)

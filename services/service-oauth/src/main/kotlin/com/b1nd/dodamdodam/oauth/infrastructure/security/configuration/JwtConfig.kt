@@ -1,5 +1,6 @@
-package com.b1nd.dodamdodam.oauth.infrastructure.security
+package com.b1nd.dodamdodam.oauth.infrastructure.security.configuration
 
+import com.b1nd.dodamdodam.oauth.infrastructure.security.properties.OauthProperties
 import com.nimbusds.jose.jwk.RSAKey
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Bean

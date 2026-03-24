@@ -1,11 +1,12 @@
 package com.b1nd.dodamdodam.oauth.presentation.authorize
 
 import com.b1nd.dodamdodam.core.common.data.Response
+import com.b1nd.dodamdodam.core.security.annotation.authentication.UserAccess
+import com.b1nd.dodamdodam.core.security.passport.PassportResolver
 import com.b1nd.dodamdodam.oauth.application.data.request.ConsentRequest
 import com.b1nd.dodamdodam.oauth.application.data.response.AuthorizeResponse
 import com.b1nd.dodamdodam.oauth.application.data.response.ConsentRedirectResponse
 import com.b1nd.dodamdodam.oauth.application.usecase.OauthAuthorizeUseCase
-import com.b1nd.dodamdodam.core.security.passport.PassportResolver
 import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.*
 
@@ -31,6 +32,7 @@ class AuthorizeController(private val authorizeUseCase: OauthAuthorizeUseCase) {
         return Response.ok("Authorization request validated", result)
     }
 
+    @UserAccess(hasAnyRoleOnly = true)
     @PostMapping("/consent")
     suspend fun consent(
         @RequestHeader("X-User-Passport") passport: String,

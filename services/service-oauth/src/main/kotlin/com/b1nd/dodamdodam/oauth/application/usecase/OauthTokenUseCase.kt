@@ -7,7 +7,7 @@ import com.b1nd.dodamdodam.oauth.domain.token.entity.OauthToken
 import com.b1nd.dodamdodam.oauth.domain.token.service.OauthTokenService
 import com.b1nd.dodamdodam.oauth.infrastructure.exception.OauthException
 import com.b1nd.dodamdodam.oauth.infrastructure.exception.OauthExceptionCode
-import com.b1nd.dodamdodam.oauth.infrastructure.security.OauthProperties
+import com.b1nd.dodamdodam.oauth.infrastructure.security.properties.OauthProperties
 import com.b1nd.dodamdodam.oauth.support.AuthTokenClient
 import com.b1nd.dodamdodam.oauth.support.JwtProvider
 import com.b1nd.dodamdodam.oauth.support.TokenHashUtil
@@ -18,6 +18,7 @@ import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.time.LocalDateTime
 import java.util.Base64
+import java.util.UUID
 
 @Component
 class OauthTokenUseCase(
@@ -55,32 +56,7 @@ class OauthTokenUseCase(
         }
 
         tokenService.markCodeUsed(authCode)
-
-        val authAccessToken = authTokenClient.issueToken(authCode.userPublicId)
-        val roles = listOf("ROLE_STUDENT")
-        val accessToken = jwtProvider.createAccessToken(authCode.userPublicId, clientId, authCode.scopes, roles, authAccessToken, client.trusted)
-        val newRefreshToken = jwtProvider.createRefreshToken()
-        val now = LocalDateTime.now()
-
-        tokenService.saveToken(
-            OauthToken(
-                accessTokenHash = TokenHashUtil.sha256(accessToken),
-                accessToken = accessToken,
-                refreshToken = newRefreshToken,
-                clientId = clientId,
-                userPublicId = authCode.userPublicId,
-                scopes = authCode.scopes,
-                accessExpiresAt = now.plusSeconds(properties.accessTokenExpirySeconds),
-                refreshExpiresAt = now.plusDays(properties.refreshTokenExpiryDays),
-            )
-        )
-
-        return TokenResponse(
-            accessToken = accessToken,
-            expiresIn = properties.accessTokenExpirySeconds,
-            refreshToken = newRefreshToken,
-            scope = authCode.scopes,
-        )
+        return issueTokenPair(authCode.userPublicId, clientId, authCode.scopes, client.trusted)
     }
 
     private suspend fun refreshAccessToken(refreshToken: String, clientId: String, clientSecret: String): TokenResponse {
@@ -95,32 +71,7 @@ class OauthTokenUseCase(
         if (token.clientId != clientId) throw OauthException(OauthExceptionCode.INVALID_GRANT)
 
         tokenService.revokeToken(token)
-
-        val authAccessToken = authTokenClient.issueToken(token.userPublicId)
-        val roles = listOf("ROLE_STUDENT")
-        val accessToken = jwtProvider.createAccessToken(token.userPublicId, clientId, token.scopes, roles, authAccessToken, client.trusted)
-        val newRefreshToken = jwtProvider.createRefreshToken()
-        val now = LocalDateTime.now()
-
-        tokenService.saveToken(
-            OauthToken(
-                accessTokenHash = TokenHashUtil.sha256(accessToken),
-                accessToken = accessToken,
-                refreshToken = newRefreshToken,
-                clientId = clientId,
-                userPublicId = token.userPublicId,
-                scopes = token.scopes,
-                accessExpiresAt = now.plusSeconds(properties.accessTokenExpirySeconds),
-                refreshExpiresAt = now.plusDays(properties.refreshTokenExpiryDays),
-            )
-        )
-
-        return TokenResponse(
-            accessToken = accessToken,
-            expiresIn = properties.accessTokenExpirySeconds,
-            refreshToken = newRefreshToken,
-            scope = token.scopes,
-        )
+        return issueTokenPair(token.userPublicId, clientId, token.scopes, client.trusted)
     }
 
     suspend fun revokeToken(token: String) {
@@ -146,6 +97,33 @@ class OauthTokenUseCase(
             exp = claims.expirationTime?.time?.div(1000),
             iat = claims.issueTime?.time?.div(1000),
             tokenType = "Bearer",
+        )
+    }
+
+    private suspend fun issueTokenPair(userPublicId: UUID, clientId: String, scopes: String, trusted: Boolean): TokenResponse {
+        val authResult = authTokenClient.issueToken(userPublicId)
+        val accessToken = jwtProvider.createAccessToken(userPublicId, clientId, scopes, authResult.roles.map { it.value }, authResult.accessToken, trusted)
+        val refreshToken = jwtProvider.createRefreshToken()
+        val now = LocalDateTime.now()
+
+        tokenService.saveToken(
+            OauthToken(
+                accessTokenHash = TokenHashUtil.sha256(accessToken),
+                accessToken = accessToken,
+                refreshToken = refreshToken,
+                clientId = clientId,
+                userPublicId = userPublicId,
+                scopes = scopes,
+                accessExpiresAt = now.plusSeconds(properties.accessTokenExpirySeconds),
+                refreshExpiresAt = now.plusDays(properties.refreshTokenExpiryDays),
+            )
+        )
+
+        return TokenResponse(
+            accessToken = accessToken,
+            expiresIn = properties.accessTokenExpirySeconds,
+            refreshToken = refreshToken,
+            scope = scopes,
         )
     }
 

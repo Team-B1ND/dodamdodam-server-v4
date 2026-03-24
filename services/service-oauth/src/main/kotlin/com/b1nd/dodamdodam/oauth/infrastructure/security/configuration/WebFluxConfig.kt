@@ -1,4 +1,4 @@
-package com.b1nd.dodamdodam.oauth.infrastructure.security
+package com.b1nd.dodamdodam.oauth.infrastructure.security.configuration
 
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.reactive.config.ResourceHandlerRegistry

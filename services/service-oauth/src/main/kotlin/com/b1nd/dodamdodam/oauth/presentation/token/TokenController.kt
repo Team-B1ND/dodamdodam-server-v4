@@ -1,9 +1,10 @@
 package com.b1nd.dodamdodam.oauth.presentation.token
 
 import com.b1nd.dodamdodam.oauth.application.data.response.IntrospectResponse
-import com.b1nd.dodamdodam.oauth.application.data.response.OauthErrorResponse
+import com.b1nd.dodamdodam.oauth.application.data.response.TokenResponse
 import com.b1nd.dodamdodam.oauth.application.usecase.OauthTokenUseCase
 import com.b1nd.dodamdodam.oauth.infrastructure.exception.OauthException
+import com.b1nd.dodamdodam.oauth.infrastructure.exception.OauthExceptionCode
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -15,24 +16,17 @@ import kotlinx.coroutines.reactor.awaitSingle
 class TokenController(private val tokenUseCase: OauthTokenUseCase) {
 
     @PostMapping
-    suspend fun token(exchange: ServerWebExchange): ResponseEntity<Any> {
+    suspend fun token(exchange: ServerWebExchange): TokenResponse {
         val formData = exchange.formData.awaitSingle()
-        val grantType = formData.getFirst("grant_type") ?: return badRequest("grant_type is required")
-        val clientId = formData.getFirst("client_id") ?: return badRequest("client_id is required")
+        val grantType = formData.getFirst("grant_type") ?: throw OauthException(OauthExceptionCode.INVALID_REQUEST)
+        val clientId = formData.getFirst("client_id") ?: throw OauthException(OauthExceptionCode.INVALID_REQUEST)
         val clientSecret = formData.getFirst("client_secret") ?: ""
         val code = formData.getFirst("code")
         val redirectUri = formData.getFirst("redirect_uri")
         val refreshToken = formData.getFirst("refresh_token")
         val codeVerifier = formData.getFirst("code_verifier")
 
-        return try {
-            val response = tokenUseCase.exchangeToken(grantType, code, redirectUri, clientId, clientSecret, refreshToken, codeVerifier)
-            ResponseEntity.ok(response)
-        } catch (e: OauthException) {
-            ResponseEntity.status(e.oauthCode.status).body(
-                OauthErrorResponse(error = e.oauthCode.code.lowercase(), errorDescription = e.oauthCode.message)
-            )
-        }
+        return tokenUseCase.exchangeToken(grantType, code, redirectUri, clientId, clientSecret, refreshToken, codeVerifier)
     }
 
     @PostMapping("/revoke")
@@ -55,9 +49,5 @@ class TokenController(private val tokenUseCase: OauthTokenUseCase) {
         val token = formData.getFirst("token") ?: return ResponseEntity.badRequest().build()
         val response = tokenUseCase.introspect(token)
         return ResponseEntity.ok(response)
-    }
-
-    private fun badRequest(message: String): ResponseEntity<Any> {
-        return ResponseEntity.badRequest().body(OauthErrorResponse(error = "invalid_request", errorDescription = message))
     }
 }

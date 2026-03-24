@@ -1,7 +1,7 @@
 package com.b1nd.dodamdodam.oauth.support
 
-import com.b1nd.dodamdodam.oauth.infrastructure.security.JwtConfig
-import com.b1nd.dodamdodam.oauth.infrastructure.security.OauthProperties
+import com.b1nd.dodamdodam.oauth.infrastructure.security.configuration.JwtConfig
+import com.b1nd.dodamdodam.oauth.infrastructure.security.properties.OauthProperties
 import com.nimbusds.jose.JWSAlgorithm
 import com.nimbusds.jose.JWSHeader
 import com.nimbusds.jose.crypto.RSASSASigner

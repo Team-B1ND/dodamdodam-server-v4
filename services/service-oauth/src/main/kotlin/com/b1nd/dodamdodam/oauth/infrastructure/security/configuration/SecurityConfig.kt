@@ -1,4 +1,4 @@
-package com.b1nd.dodamdodam.oauth.infrastructure.security
+package com.b1nd.dodamdodam.oauth.infrastructure.security.configuration
 
 import com.b1nd.dodamdodam.core.security.filter.ReactivePassportFilter
 import org.springframework.context.annotation.Bean
