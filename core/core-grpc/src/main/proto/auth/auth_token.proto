@@ -17,4 +17,5 @@ message IssueTokenRequest {
 
 message IssueTokenResponse {
   string access_token = 1;
+  repeated string roles = 2;
 }

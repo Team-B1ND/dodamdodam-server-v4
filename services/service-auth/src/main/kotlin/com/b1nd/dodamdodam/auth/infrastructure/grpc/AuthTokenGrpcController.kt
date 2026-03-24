@@ -23,6 +23,7 @@ class AuthTokenGrpcController(
 
         return IssueTokenResponse.newBuilder()
             .setAccessToken(tokens.accessToken)
+            .addAllRoles(principal.roles.map { it.name })
             .build()
     }
 }
