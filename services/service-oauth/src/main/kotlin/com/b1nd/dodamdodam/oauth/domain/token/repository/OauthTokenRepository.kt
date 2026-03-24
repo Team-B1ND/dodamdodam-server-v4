@@ -5,5 +5,5 @@ import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 
 interface OauthTokenRepository : CoroutineCrudRepository<OauthToken, Long> {
     suspend fun findByAccessTokenHash(accessTokenHash: String): OauthToken?
-    suspend fun findByRefreshToken(refreshToken: String): OauthToken?
+    suspend fun findByRefreshTokenHash(refreshTokenHash: String): OauthToken?
 }

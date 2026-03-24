@@ -8,6 +8,5 @@ data class AuthorizeResponse(
     val state: String?,
     val codeChallenge: String?,
     val codeChallengeMethod: String?,
-    val trusted: Boolean,
     val consented: Boolean,
 )

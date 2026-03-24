@@ -56,7 +56,7 @@ class OauthTokenUseCase(
         }
 
         tokenService.markCodeUsed(authCode)
-        return issueTokenPair(authCode.userPublicId, clientId, authCode.scopes, client.trusted)
+        return issueTokenPair(authCode.userPublicId, clientId, authCode.scopes)
     }
 
     private suspend fun refreshAccessToken(refreshToken: String, clientId: String, clientSecret: String): TokenResponse {
@@ -71,7 +71,7 @@ class OauthTokenUseCase(
         if (token.clientId != clientId) throw OauthException(OauthExceptionCode.INVALID_GRANT)
 
         tokenService.revokeToken(token)
-        return issueTokenPair(token.userPublicId, clientId, token.scopes, client.trusted)
+        return issueTokenPair(token.userPublicId, clientId, token.scopes)
     }
 
     suspend fun revokeToken(token: String) {
@@ -100,17 +100,16 @@ class OauthTokenUseCase(
         )
     }
 
-    private suspend fun issueTokenPair(userPublicId: UUID, clientId: String, scopes: String, trusted: Boolean): TokenResponse {
+    private suspend fun issueTokenPair(userPublicId: UUID, clientId: String, scopes: String): TokenResponse {
         val authResult = authTokenClient.issueToken(userPublicId)
-        val accessToken = jwtProvider.createAccessToken(userPublicId, clientId, scopes, authResult.roles.map { it.value }, authResult.accessToken, trusted)
+        val accessToken = jwtProvider.createAccessToken(userPublicId, clientId, scopes, authResult.roles.map { it.value }, authResult.accessToken)
         val refreshToken = jwtProvider.createRefreshToken()
         val now = LocalDateTime.now()
 
         tokenService.saveToken(
             OauthToken(
                 accessTokenHash = TokenHashUtil.sha256(accessToken),
-                accessToken = accessToken,
-                refreshToken = refreshToken,
+                refreshTokenHash = TokenHashUtil.sha256(refreshToken),
                 clientId = clientId,
                 userPublicId = userPublicId,
                 scopes = scopes,

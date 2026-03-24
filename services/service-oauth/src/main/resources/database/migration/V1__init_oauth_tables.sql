@@ -10,7 +10,6 @@ CREATE TABLE oauth_clients(
  description TEXT NULL,
  logo_url VARCHAR(512) NULL,
  is_active BOOLEAN NOT NULL DEFAULT TRUE,
- trusted BOOLEAN NOT NULL DEFAULT FALSE,
  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -37,8 +36,7 @@ ALTER TABLE oauth_authorization_codes
 CREATE TABLE oauth_tokens(
  id BIGINT AUTO_INCREMENT NOT NULL PRIMARY KEY,
  access_token_hash VARCHAR(64) NOT NULL UNIQUE,
- access_token TEXT NOT NULL,
- refresh_token VARCHAR(256) NOT NULL UNIQUE,
+ refresh_token_hash VARCHAR(64) NOT NULL UNIQUE,
  client_id VARCHAR(64) NOT NULL,
  user_public_id VARCHAR(64) NOT NULL,
  scopes TEXT NOT NULL,
@@ -47,9 +45,6 @@ CREATE TABLE oauth_tokens(
  revoked BOOLEAN NOT NULL DEFAULT FALSE,
  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
-ALTER TABLE oauth_tokens
- ADD INDEX idx_refresh_token (refresh_token);
 ALTER TABLE oauth_tokens
  ADD INDEX idx_user_client (user_public_id, client_id);
 
@@ -71,6 +66,7 @@ CREATE TABLE oauth_scopes(
 
 INSERT INTO oauth_scopes (scope_key, description) VALUES
  ('nightstudy:read', '야간 자율학습 정보 조회'),
+ ('nightstudy:write', '야간 자율학습 신청/취소'),
  ('outgoing:read', '외출/외박 정보 조회'),
  ('wakeupsong:read', '기상송 정보 조회'),
  ('wakeupsong:write', '기상송 신청'),

@@ -10,7 +10,4 @@ data class OauthProperties(
     val authorizationCodeExpiryMinutes: Long,
     val rsaPrivateKey: String,
     val rsaPublicKey: String,
-    val dauthClientId: String? = null,
-    val dauthClientSecret: String? = null,
-    val dauthRedirectUri: String? = null,
 )

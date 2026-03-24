@@ -27,6 +27,3 @@ oauth:
   authorization-code-expiry-minutes: 10
   rsa-private-key: ${OAUTH_RSA_PRIVATE_KEY:}
   rsa-public-key: ${OAUTH_RSA_PUBLIC_KEY:}
-  dauth-client-id: ${DAUTH_CLIENT_ID:dodam_dauth_self}
-  dauth-client-secret: ${DAUTH_CLIENT_SECRET:dcs_dauth_local_dev_secret}
-  dauth-redirect-uri: ${DAUTH_REDIRECT_URI:http://localhost:3000/callback}

@@ -11,7 +11,6 @@ data class AppDetailResponse(
     val iconUrl: String,
     val darkIconUrl: String?,
     val inquiryMail: String,
-    val server: AppServerResponse?,
     val active: Boolean,
     val releases: List<AppReleaseResponse>,
 )

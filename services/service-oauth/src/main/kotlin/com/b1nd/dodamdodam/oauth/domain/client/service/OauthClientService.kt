@@ -4,10 +4,15 @@ import com.b1nd.dodamdodam.oauth.domain.client.entity.OauthClient
 import com.b1nd.dodamdodam.oauth.domain.client.repository.OauthClientRepository
 import com.b1nd.dodamdodam.oauth.infrastructure.exception.OauthException
 import com.b1nd.dodamdodam.oauth.infrastructure.exception.OauthExceptionCode
+import kotlinx.coroutines.flow.Flow
 import org.springframework.stereotype.Service
+import java.util.UUID
 
 @Service
 class OauthClientService(private val repository: OauthClientRepository) {
+
+    fun findAllByOwner(ownerPublicId: UUID): Flow<OauthClient> =
+        repository.findAllByOwnerPublicIdAndIsActiveTrue(ownerPublicId)
 
     suspend fun save(client: OauthClient): OauthClient = repository.save(client)
 
@@ -18,7 +23,7 @@ class OauthClientService(private val repository: OauthClientRepository) {
 
     suspend fun findActiveByClientId(clientId: String): OauthClient {
         return repository.findByClientIdAndIsActiveTrue(clientId)
-            ?: throw OauthException(OauthExceptionCode.INVALID_CLIENT)
+            ?: throw OauthException(OauthExceptionCode.CLIENT_NOT_FOUND)
     }
 
     suspend fun verifyClientSecret(client: OauthClient, rawSecret: String, passwordEncoder: org.springframework.security.crypto.password.PasswordEncoder) {

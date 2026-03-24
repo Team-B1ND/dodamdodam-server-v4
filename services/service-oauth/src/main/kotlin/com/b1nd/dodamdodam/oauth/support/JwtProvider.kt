@@ -20,9 +20,9 @@ class JwtProvider(private val rsaKey: RSAKey, private val properties: OauthPrope
     private val signer = RSASSASigner(rsaKey)
     private val verifier = RSASSAVerifier(rsaKey.toRSAPublicKey())
 
-    fun createAccessToken(userPublicId: UUID, clientId: String, scopes: String, roles: List<String>, authAccessToken: String, trusted: Boolean = false): String {
+    fun createAccessToken(userPublicId: UUID, clientId: String, scopes: String, roles: List<String>, authAccessToken: String): String {
         val now = Instant.now()
-        val builder = JWTClaimsSet.Builder()
+        val claims = JWTClaimsSet.Builder()
             .issuer(properties.issuer)
             .subject(userPublicId.toString())
             .audience(clientId)
@@ -32,8 +32,7 @@ class JwtProvider(private val rsaKey: RSAKey, private val properties: OauthPrope
             .claim("scope", scopes)
             .claim("roles", roles)
             .claim("aat", authAccessToken)
-        if (trusted) builder.claim("trusted", true)
-        val claims = builder.build()
+            .build()
 
         val header = JWSHeader.Builder(JWSAlgorithm.RS256)
             .keyID(JwtConfig.KID)

@@ -29,7 +29,7 @@ class AuthorizeController(private val authorizeUseCase: OauthAuthorizeUseCase) {
             try { PassportResolver.extractUserId(it) } catch (_: Exception) { null }
         }
         val result = authorizeUseCase.authorize(responseType, clientId, redirectUri, scope, state, codeChallenge, codeChallengeMethod, userPublicId)
-        return Response.ok("Authorization request validated", result)
+        return Response.ok("인가 요청이 검증되었어요.", result)
     }
 
     @UserAccess(hasAnyRoleOnly = true)
@@ -40,6 +40,6 @@ class AuthorizeController(private val authorizeUseCase: OauthAuthorizeUseCase) {
     ): Response<ConsentRedirectResponse> {
         val userPublicId = PassportResolver.extractUserId(passport)
         val result = authorizeUseCase.consent(request, userPublicId)
-        return Response.ok("Consent processed", result)
+        return Response.ok("동의가 처리되었어요.", result)
     }
 }

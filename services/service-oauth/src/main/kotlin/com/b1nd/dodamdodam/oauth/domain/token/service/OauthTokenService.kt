@@ -33,7 +33,10 @@ class OauthTokenService(
         return tokenRepository.findByAccessTokenHash(hash)
     }
 
-    suspend fun findByRefreshToken(refreshToken: String): OauthToken? = tokenRepository.findByRefreshToken(refreshToken)
+    suspend fun findByRefreshToken(refreshToken: String): OauthToken? {
+        val hash = TokenHashUtil.sha256(refreshToken)
+        return tokenRepository.findByRefreshTokenHash(hash)
+    }
 
     suspend fun revokeToken(token: OauthToken) {
         tokenRepository.save(token.copy(revoked = true))

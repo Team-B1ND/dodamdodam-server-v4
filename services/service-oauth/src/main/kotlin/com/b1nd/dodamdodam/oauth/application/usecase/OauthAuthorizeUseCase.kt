@@ -68,7 +68,6 @@ class OauthAuthorizeUseCase(
             state = state,
             codeChallenge = codeChallenge,
             codeChallengeMethod = codeChallengeMethod,
-            trusted = client.trusted,
             consented = consented,
         )
     }

@@ -37,6 +37,7 @@ app:
     scope-rules:
       - path: /nightstudy/
         read: nightstudy:read
+        write: nightstudy:write
       - path: /outgoing/
         read: outgoing:read
       - path: /wakeup-song/

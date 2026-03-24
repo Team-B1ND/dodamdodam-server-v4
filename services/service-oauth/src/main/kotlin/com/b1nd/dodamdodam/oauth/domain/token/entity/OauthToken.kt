@@ -10,8 +10,7 @@ import java.util.UUID
 data class OauthToken(
     @Id val id: Long? = null,
     @Column("access_token_hash") val accessTokenHash: String,
-    @Column("access_token") val accessToken: String,
-    @Column("refresh_token") val refreshToken: String,
+    @Column("refresh_token_hash") val refreshTokenHash: String,
     @Column("client_id") val clientId: String,
     @Column("user_public_id") val userPublicId: UUID,
     val scopes: String,

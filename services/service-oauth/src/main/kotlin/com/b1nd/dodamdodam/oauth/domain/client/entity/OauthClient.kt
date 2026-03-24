@@ -19,7 +19,6 @@ data class OauthClient(
     val description: String? = null,
     @Column("logo_url") val logoUrl: String? = null,
     @Column("is_active") val isActive: Boolean = true,
-    val trusted: Boolean = false,
     @Column("created_at") val createdAt: LocalDateTime? = null,
     @Column("updated_at") val updatedAt: LocalDateTime? = null,
 ) {

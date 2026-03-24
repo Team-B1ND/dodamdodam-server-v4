@@ -41,11 +41,9 @@ class OAuthTokenVerificationFilter(
             return exchange.respond(HttpStatus.UNAUTHORIZED)
         }
 
-        if (!claims.trusted) {
-            val required = resolveRequiredScope(path, exchange.request.method)
-            if (required != null && required !in claims.scopes) {
-                return exchange.respond(HttpStatus.FORBIDDEN)
-            }
+        val required = resolveRequiredScope(path, exchange.request.method)
+        if (required != null && required !in claims.scopes) {
+            return exchange.respond(HttpStatus.FORBIDDEN)
         }
 
         val decorated = exchange.decorateHeaders(
@@ -69,7 +67,6 @@ class OAuthTokenVerificationFilter(
             innerToken = innerToken,
             clientId = claims.audience?.firstOrNull() ?: "",
             scopes = claims.getStringClaim("scope")?.split(" ")?.toSet() ?: emptySet(),
-            trusted = claims.getBooleanClaim("trusted") ?: false,
         )
     }
 
