@@ -22,8 +22,6 @@ server:
   port: 8087
 
 grpc:
-  server:
-    port: 9092
   client:
     service-user:
       address: 'static://localhost:9091'
