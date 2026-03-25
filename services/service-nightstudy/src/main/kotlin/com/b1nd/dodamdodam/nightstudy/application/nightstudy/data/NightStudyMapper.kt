@@ -41,6 +41,7 @@ fun NightStudyEntity.toPersonalNightStudyResponse() = PersonalNightStudyResponse
     needPhone = needPhone,
     needPhoneReason = needPhoneReason,
     rejectionReason = rejectionReason,
+    status = status
 )
 
 fun List<NightStudyEntity>.toPersonalNightStudyListResponse() = map { it.toPersonalNightStudyResponse() }
@@ -54,6 +55,7 @@ fun NightStudyEntity.toProjectNightStudyResponse(isLeader: Boolean) = ProjectNig
     name = name!!,
     rejectionReason = rejectionReason,
     isLeader = isLeader,
+    status = status,
 )
 
 fun UserResponse.toOpenApiUserInfoResponse() = NightStudyApplicantResponse(

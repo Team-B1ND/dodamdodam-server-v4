@@ -75,7 +75,7 @@ class OpenApiUserService(
                 profileImage = user.profileImage,
                 status = user.status,
                 roles = roles[userId] ?: emptySet(),
-                student = student?.let { StudentDetails(it.grade, it.room, it.number) },
+                student = student?.let { StudentDetails(it.grade, it.room, it.number, it.isGraduated) },
                 teacher = teacher?.let { TeacherDetails(it.position) },
                 createdAt = user.createdAt!!,
             )

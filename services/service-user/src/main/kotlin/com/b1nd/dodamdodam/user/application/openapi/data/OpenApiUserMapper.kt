@@ -17,7 +17,7 @@ fun UserWithDetails.toUserInfoResponse() = UserInfoResponse(
     profileImage = profileImage,
     status = status,
     roles = roles,
-    student = student?.let { StudentInfoResponse(it.grade, it.room, it.number) },
+    student = student?.let { StudentInfoResponse(it.grade, it.room, it.number, it.isGraduated) },
     teacher = teacher?.let { TeacherInfoResponse(it.position) },
     createdAt = createdAt,
 )
