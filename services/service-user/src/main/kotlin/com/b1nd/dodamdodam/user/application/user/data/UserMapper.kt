@@ -5,8 +5,13 @@ import com.b1nd.dodamdodam.core.kafka.event.user.UserUpdatedEvent
 import com.b1nd.dodamdodam.core.security.passport.enumerations.RoleType
 import com.b1nd.dodamdodam.user.application.user.data.request.StudentRegisterRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.TeacherRegisterRequest
+import com.b1nd.dodamdodam.user.application.user.data.response.AdminInfoResponse
+import com.b1nd.dodamdodam.user.application.user.data.response.StudentInfoResponse
+import com.b1nd.dodamdodam.user.application.user.data.response.TeacherInfoResponse
+import com.b1nd.dodamdodam.user.application.user.data.response.UserSearchResponse
 import com.b1nd.dodamdodam.user.domain.student.entity.StudentEntity
 import com.b1nd.dodamdodam.user.domain.teacher.entity.TeacherEntity
+import com.b1nd.dodamdodam.user.domain.user.command.UserSearchCommand
 import com.b1nd.dodamdodam.user.domain.user.entity.UserEntity
 import com.b1nd.dodamdodam.user.domain.user.enumeration.StatusType
 
@@ -67,3 +72,17 @@ fun UserEntity.toUserUpdatedEvent(roles: Collection<RoleType>): UserUpdatedEvent
         phone = phone,
         profileImage = profileImage
     )
+
+fun UserSearchCommand.toResponse() = UserSearchResponse(
+    publicId = user.publicId!!,
+    username = user.username,
+    name = user.name,
+    phone = user.phone,
+    profileImage = user.profileImage,
+    status = user.status,
+    roles = roles,
+    student = student?.let { StudentInfoResponse.fromStudentEntity(it) },
+    teacher = teacher?.let { TeacherInfoResponse.fromTeacherEntity(it) },
+    admin = admin?.let { AdminInfoResponse.fromAdminEntity(it) },
+    createdAt = user.createdAt!!,
+)
