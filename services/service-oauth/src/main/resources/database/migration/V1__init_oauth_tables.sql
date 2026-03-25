@@ -70,4 +70,5 @@ INSERT INTO oauth_scopes (scope_key, description) VALUES
  ('outgoing:read', '외출/외박 정보 조회'),
  ('wakeupsong:read', '기상송 정보 조회'),
  ('wakeupsong:write', '기상송 신청'),
- ('profile:read', '기본 프로필 조회 (이름, 학번)');
+ ('profile:read', '기본 프로필 조회 (이름, 학번)'),
+ ('notification:write', '푸시 알림 발송');
