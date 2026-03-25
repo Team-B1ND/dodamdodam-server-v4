@@ -26,4 +26,4 @@ management:
 app:
   swagger:
     enabled: true
-    gateway-prefix: /night-study
+    gateway-prefix: /nightstudy
