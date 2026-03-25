@@ -5,8 +5,7 @@ import java.time.LocalDate
 import java.util.UUID
 
 data class MyOutSleepingListResponse(
-    val student: StudentResponse?,
-    val outSleepings: List<MyOutSleepingResponse>,
+    val outSleeping: List<MyOutSleepingResponse>,
 )
 
 data class MyOutSleepingResponse(

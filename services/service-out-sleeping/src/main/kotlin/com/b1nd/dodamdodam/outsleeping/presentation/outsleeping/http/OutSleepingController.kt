@@ -22,7 +22,6 @@ import java.time.LocalDate
 import java.util.UUID
 
 @RestController
-@RequestMapping("/out-sleeping")
 class OutSleepingController(
     private val outSleepingUseCase: OutSleepingUseCase,
 ) {
@@ -43,7 +42,7 @@ class OutSleepingController(
         outSleepingUseCase.cancel(publicId)
 
     @UserAccess(roles = [RoleType.STUDENT])
-    @GetMapping("/my")
+    @GetMapping("/me")
     fun getMy() =
         outSleepingUseCase.getMy()
 

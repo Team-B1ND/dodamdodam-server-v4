@@ -14,7 +14,6 @@ import com.b1nd.dodamdodam.core.common.data.InfinityScrollPageResponse
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.toEntity
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.toMyResponse
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.toResponse
-import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.toStudentResponse
 import com.b1nd.dodamdodam.outsleeping.domain.deadline.service.OutSleepingDeadlineService
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.service.OutSleepingService
 import com.b1nd.dodamdodam.outsleeping.infrastructure.user.client.UserQueryClient
@@ -61,12 +60,10 @@ class OutSleepingUseCase(
     fun getMy(): Response<MyOutSleepingListResponse> {
         val userId = currentUserId()
         val outSleepings = outSleepingService.getByUserId(userId)
-        val userInfo = runBlocking { userQueryClient.getUser(userId) }
         return Response.ok(
             "내 외박 신청 목록을 조회했어요.",
             MyOutSleepingListResponse(
-                student = userInfo.student?.toStudentResponse(userInfo.name),
-                outSleepings = outSleepings.map { it.toMyResponse() },
+                outSleeping = outSleepings.map { it.toMyResponse() },
             )
         )
     }
@@ -116,7 +113,7 @@ class OutSleepingUseCase(
     }
 
     @Transactional(readOnly = true)
-    fun getDeadline(): Response<DeadlineResponse?> {
+    fun getDeadline(): Response<DeadlineResponse> {
         val deadline = deadlineService.get()
         return Response.ok("외박 신청 마감 시간을 조회했어요.", deadline?.toResponse())
     }
