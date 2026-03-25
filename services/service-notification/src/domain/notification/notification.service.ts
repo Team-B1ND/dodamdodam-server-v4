@@ -54,6 +54,7 @@ export class NotificationService {
       data: {
         appPublicId: target.appInfo.appPublicId,
         appName: target.appInfo.name,
+        ...(target.appInfo.iconUrl ? { iconUrl: target.appInfo.iconUrl } : {}),
         ...(target.appInfo.appUrl ? { appUrl: target.appInfo.appUrl } : {}),
         ...target.extraData,
       },
