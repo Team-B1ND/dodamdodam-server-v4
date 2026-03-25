@@ -1,6 +1,14 @@
-name: "CD Develop: Push"
+name: "CD Develop: Push & Deploy"
 
 on:
+  workflow_call:
+    inputs:
+      spring-services:
+        type: string
+        required: true
+      node-services:
+        type: string
+        required: true
   workflow_dispatch:
     inputs:
       spring-services:
@@ -8,9 +16,6 @@ on:
         required: true
       node-services:
         description: "JSON array of node services"
-        required: true
-      run-id:
-        description: "Build workflow run ID for artifact download"
         required: true
 
 env:
@@ -34,8 +39,6 @@ jobs:
         with:
           name: spring-jars
           path: services/
-          run-id: ${{ inputs.run-id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -82,8 +85,6 @@ jobs:
         with:
           name: node-builds
           path: services/service-${{ matrix.service }}/
-          run-id: ${{ inputs.run-id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -108,18 +109,8 @@ jobs:
           push: true
           tags: ${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:dev
 
-  trigger-deploy:
+  deploy:
     needs: [push-spring, push-node]
     if: always() && (needs.push-spring.result == 'success' || needs.push-spring.result == 'skipped') && (needs.push-node.result == 'success' || needs.push-node.result == 'skipped')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger deploy workflow
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'cd-develop-deploy.yml',
-              ref: 'develop'
-            });
+    uses: ./.github/workflows/cd-develop-deploy.yml
+    secrets: inherit

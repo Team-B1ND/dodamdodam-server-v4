@@ -119,23 +119,11 @@ jobs:
           retention-days: 1
           path: services/service-notification/
 
-  trigger-push:
+  push-and-deploy:
     needs: [detect-changes, build-gradle, build-node]
     if: always() && (needs.build-gradle.result == 'success' || needs.build-gradle.result == 'skipped') && (needs.build-node.result == 'success' || needs.build-node.result == 'skipped') && !(needs.build-gradle.result == 'skipped' && needs.build-node.result == 'skipped')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger push workflow
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'cd-develop-push.yml',
-              ref: 'develop',
-              inputs: {
-                'spring-services': '${{ needs.detect-changes.outputs.spring-services }}',
-                'node-services': '${{ needs.detect-changes.outputs.node-services }}',
-                'run-id': '${{ github.run_id }}'
-              }
-            });
+    uses: ./.github/workflows/cd-develop-push.yml
+    secrets: inherit
+    with:
+      spring-services: ${{ needs.detect-changes.outputs.spring-services }}
+      node-services: ${{ needs.detect-changes.outputs.node-services }}
