@@ -1,5 +1,6 @@
 package com.b1nd.dodamdodam.user.application.user
 
+import com.b1nd.dodamdodam.core.common.data.InfinityScrollPageResponse
 import com.b1nd.dodamdodam.core.common.data.Response
 import com.b1nd.dodamdodam.core.kafka.constants.KafkaTopics
 import com.b1nd.dodamdodam.core.kafka.producer.KafkaMessageProducer
@@ -19,6 +20,8 @@ import com.b1nd.dodamdodam.user.application.user.data.request.UpdateTeacherInfoR
 import com.b1nd.dodamdodam.user.application.user.data.request.UpdateUserInfoRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.VerifyPasswordRequest
 import com.b1nd.dodamdodam.user.application.user.data.response.UserInfoResponse
+import com.b1nd.dodamdodam.user.application.user.data.response.UserSearchResponse
+import com.b1nd.dodamdodam.user.application.user.data.toResponse
 import com.b1nd.dodamdodam.user.application.user.data.toUserCreatedEvent
 import com.b1nd.dodamdodam.user.application.user.data.toUserUpdatedEvent
 import com.b1nd.dodamdodam.user.application.user.data.toStudentEntity
@@ -27,15 +30,18 @@ import com.b1nd.dodamdodam.user.application.user.data.toUserEntity
 import com.b1nd.dodamdodam.user.domain.student.service.StudentService
 import com.b1nd.dodamdodam.user.domain.teacher.service.TeacherService
 import com.b1nd.dodamdodam.user.domain.user.entity.UserEntity
+import com.b1nd.dodamdodam.user.domain.user.service.UserQueryService
 import com.b1nd.dodamdodam.user.domain.user.service.UserService
 import com.b1nd.dodamdodam.user.infrastructure.phoneverification.service.PhoneVerificationStore
 import jakarta.transaction.Transactional
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Component
 
 @Component
 @Transactional(rollbackOn = [Exception::class])
 class UserUseCase(
     private val userService: UserService,
+    private val userQueryService: UserQueryService,
     private val studentService: StudentService,
     private val teacherService: TeacherService,
     private val phoneVerificationStore: PhoneVerificationStore,
@@ -48,6 +54,14 @@ class UserUseCase(
         return Response.ok(
             "내 정보를 조회했어요.",
             UserInfoResponse.fromEntity(user, roles, studentService.getOrNull(user), teacherService.getOrNull(user))
+        )
+    }
+
+    fun searchUsers(keyword: String?, roles: List<RoleType>?, generationOnly: Boolean?, pageable: Pageable): Response<InfinityScrollPageResponse<UserSearchResponse>> {
+        val page = userQueryService.search(keyword, roles, generationOnly, pageable)
+        return Response.ok(
+            "유저를 검색했어요.",
+            InfinityScrollPageResponse(content = page.content.map { it.toResponse() }, hasNext = page.hasNext),
         )
     }
 

@@ -1,5 +1,6 @@
 package com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response
 
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import java.time.LocalDate
 import java.util.UUID
 
@@ -12,4 +13,5 @@ data class PersonalNightStudyResponse(
     val needPhone: Boolean,
     val needPhoneReason: String?,
     val rejectionReason: String?,
+    val status: NightStudyStatusType
 )

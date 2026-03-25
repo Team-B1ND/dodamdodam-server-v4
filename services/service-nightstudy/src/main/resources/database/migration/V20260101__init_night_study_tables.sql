@@ -1,4 +1,3 @@
--- Night Study Tables
 CREATE TABLE night_studies (
     id BIGINT AUTO_INCREMENT NOT NULL PRIMARY KEY,
     created_at DATETIME NOT NULL,
@@ -32,7 +31,6 @@ CREATE TABLE night_study_banned (
     end_at DATE NOT NULL
 );
 
--- Foreign Key Constraints
 ALTER TABLE night_study_members
     ADD CONSTRAINT FK_NIGHT_STUDY_MEMBERS_ON_FK_NIGHT_STUDY
     FOREIGN KEY (fk_night_study_id) REFERENCES night_studies (id);

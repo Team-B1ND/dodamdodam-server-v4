@@ -13,11 +13,13 @@ import com.b1nd.dodamdodam.user.application.user.data.request.TeacherRegisterReq
 import com.b1nd.dodamdodam.user.application.user.data.request.UpdateStudentInfoRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.UpdateTeacherInfoRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.UpdateUserInfoRequest
+import org.springframework.data.domain.Pageable
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -28,6 +30,15 @@ class UserController(
     @GetMapping("/me")
     fun getMe() =
         userUseCase.getMyInfo()
+
+    @UserAccess(hasAnyRoleOnly = true)
+    @GetMapping("/search")
+    fun searchUsers(
+        @RequestParam(required = false) keyword: String?,
+        @RequestParam(required = false) roles: List<RoleType>?,
+        @RequestParam(required = false) generationOnly: Boolean? = false,
+        pageable: Pageable,
+    ) = userUseCase.searchUsers(keyword, roles, generationOnly, pageable)
 
     @UserAccess(enabledOnly = false)
     @PostMapping("/register-student")
