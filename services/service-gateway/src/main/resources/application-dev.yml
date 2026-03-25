@@ -33,6 +33,18 @@ spring:
             - Path=/wakeup-song/**
           filters:
             - StripPrefix=1
+        - id: nightstudy-service
+          uri: http://service-nightstudy:8080
+          predicates:
+            - Path=/nightstudy/**
+          filters:
+            - StripPrefix=1
+        - id: out-sleeping-service
+          uri: http://service-out-sleeping:8080
+          predicates:
+            - Path=/out-sleeping/**
+          filters:
+            - StripPrefix=1
         - id: inapp-service
           uri: http://service-inapp:8080
           predicates:
