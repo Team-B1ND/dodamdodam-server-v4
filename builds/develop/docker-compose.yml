@@ -232,6 +232,28 @@ services:
       kafka:
         condition: service_healthy
 
+  service-notification:
+    image: ${DOCKERHUB_USERNAME}/dodam-notification:dev
+    container_name: dodam-notification
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      PORT: 8080
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: dodam_notification
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:5001
+      KAFKA_CONSUMER_GROUP_ID: service-notification
+      GRPC_INAPP_ADDRESS: service-inapp:9090
+      FIREBASE_SERVICE_ACCOUNT: ${FIREBASE_SERVICE_ACCOUNT}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
 volumes:
   mysql-data:
   redis-data:

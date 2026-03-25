@@ -45,3 +45,5 @@ app:
         write: wakeupsong:write
       - path: /user/
         read: profile:read
+      - path: /notification/
+        write: notification:write

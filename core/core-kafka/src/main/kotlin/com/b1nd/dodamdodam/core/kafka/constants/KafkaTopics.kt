@@ -6,4 +6,6 @@ object KafkaTopics {
     const val APP_SERVER_ROUTE_CHANGED = "app.server.route.changed"
     const val APP_API_KEY_CREATED = "app.api-key.created"
     const val APP_RELEASE_ACTIVATED = "app.release.activated"
+    const val NOTIFICATION_SEND = "notification.send"
+    const val NOTIFICATION_FAILED = "notification.failed"
 }

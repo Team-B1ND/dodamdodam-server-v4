@@ -160,6 +160,24 @@ jobs:
           tags: ${{ env.IMAGE_PREFIX }}-nightstudy:dev
           build-args: JAR_FILE=service-nightstudy.jar
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build service-notification
+        working-directory: services/service-notification
+        run: npm ci && npm run build
+
+      - name: Build & Push service-notification
+        uses: docker/build-push-action@v6
+        with:
+          context: services/service-notification
+          file: services/service-notification/Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: ${{ env.IMAGE_PREFIX }}-notification:dev
+
       - name: Deploy to Dev Server
         uses: appleboy/ssh-action@v1
         with:

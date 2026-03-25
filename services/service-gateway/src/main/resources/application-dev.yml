@@ -69,6 +69,12 @@ spring:
             - Path=/neis/**
           filters:
             - StripPrefix=1
+        - id: notification-service
+          uri: http://service-notification:8080
+          predicates:
+            - Path=/notification/**
+          filters:
+            - StripPrefix=1
 
 app:
   auth:
