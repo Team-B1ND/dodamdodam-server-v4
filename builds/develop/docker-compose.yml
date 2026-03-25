@@ -241,7 +241,7 @@ services:
       PORT: 8080
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_NAME: dodam_notification
+      DB_NAME: ${DB_NAME}
       DB_USER: ${MYSQL_USER}
       DB_PASSWORD: ${MYSQL_PASSWORD}
       KAFKA_BOOTSTRAP_SERVERS: kafka:5001
