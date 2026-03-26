@@ -3,15 +3,6 @@ spring:
     redis:
       host: ${SPRING_DATA_REDIS_HOST}
       port: ${SPRING_DATA_REDIS_PORT}
-  r2dbc:
-    url: r2dbc:${MYSQL_HOST}
-    username: ${MYSQL_USER}
-    password: ${MYSQL_PASSWORD}
-  flyway:
-    url: jdbc:${MYSQL_HOST}
-    user: ${MYSQL_USER}
-    password: ${MYSQL_PASSWORD}
-
   cloud:
     gateway:
       routes:
@@ -79,9 +70,5 @@ spring:
 app:
   auth:
     url: http://service-auth:8080
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
-    consumer-group-id: service-gateway
-
 server:
   port: 8080

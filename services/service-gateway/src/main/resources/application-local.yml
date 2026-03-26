@@ -3,15 +3,6 @@ spring:
     redis:
       port: 6379
       host: localhost
-  r2dbc:
-    url: r2dbc:${MYSQL_HOST}
-    username: ${MYSQL_USER}
-    password: ${MYSQL_PASSWORD}
-  flyway:
-    url: jdbc:${MYSQL_HOST}
-    user: ${MYSQL_USER}
-    password: ${MYSQL_PASSWORD}
-
   cloud:
     gateway:
       routes:
@@ -79,14 +70,6 @@ spring:
 app:
   auth:
     url: http://localhost:8082
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
-    consumer-group-id: service-gateway
 server:
   port: 8080
 
-logging:
-  level:
-    org.springframework.r2dbc.core: DEBUG
-    org.springframework.data.r2dbc: DEBUG
-    io.r2dbc.mysql: DEBUG

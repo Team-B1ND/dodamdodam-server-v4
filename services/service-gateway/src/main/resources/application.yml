@@ -11,9 +11,6 @@ spring:
         connect-timeout: 3000
         response-timeout: 60s
 
-  flyway:
-    locations: classpath:database/migration
-
   profiles:
     active: local
 

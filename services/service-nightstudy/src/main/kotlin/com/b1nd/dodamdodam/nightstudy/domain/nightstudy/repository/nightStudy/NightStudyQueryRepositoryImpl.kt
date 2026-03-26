@@ -3,7 +3,6 @@ package com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyEntity.nightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyMemberEntity.nightStudyMemberEntity
-import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.data.domain.Page
@@ -24,17 +23,11 @@ class NightStudyQueryRepositoryImpl(
             .fetchOne()
     }
 
-    override fun findAllByUserIdAndStatusAndType(
-        userId: UUID,
-        status: NightStudyStatusType,
-        type: NightStudyType,
-        pageable: Pageable
-    ): Page<NightStudyEntity> {
+    override fun findAllByUserIdAndType(userId: UUID, type: NightStudyType, pageable: Pageable): Page<NightStudyEntity> {
         val content = queryFactory.select(nightStudyMemberEntity.nightStudy)
             .from(nightStudyMemberEntity)
             .where(
                 nightStudyMemberEntity.userId.eq(userId),
-                nightStudyMemberEntity.nightStudy.status.eq(status),
                 nightStudyMemberEntity.nightStudy.type.eq(type)
             )
             .orderBy(nightStudyMemberEntity.nightStudy.id.asc())
@@ -47,7 +40,6 @@ class NightStudyQueryRepositoryImpl(
             .from(nightStudyMemberEntity)
             .where(
                 nightStudyMemberEntity.userId.eq(userId),
-                nightStudyMemberEntity.nightStudy.status.eq(status),
                 nightStudyMemberEntity.nightStudy.type.eq(type)
             )
 

@@ -33,13 +33,13 @@ class NightStudyController(
 
     @UserAccess(roles = [RoleType.STUDENT])
     @GetMapping("/my/personal")
-    fun getMyPersonalNightStudy(@RequestParam status: NightStudyStatusType, pageable: Pageable): Response<InfinityScrollPageResponse<PersonalNightStudyResponse>> =
-        nightStudyUseCase.getMyPersonalNightStudy(status, pageable)
+    fun getMyPersonalNightStudy(pageable: Pageable): Response<InfinityScrollPageResponse<PersonalNightStudyResponse>> =
+        nightStudyUseCase.getMyPersonalNightStudy(pageable)
 
     @UserAccess(roles = [RoleType.STUDENT])
     @GetMapping("/my/project")
-    fun getMyProjectNightStudy(@RequestParam status: NightStudyStatusType, pageable: Pageable): Response<InfinityScrollPageResponse<ProjectNightStudyResponse>> =
-        nightStudyUseCase.getMyProjectNightStudy(status, pageable)
+    fun getMyProjectNightStudy(pageable: Pageable): Response<InfinityScrollPageResponse<ProjectNightStudyResponse>> =
+        nightStudyUseCase.getMyProjectNightStudy(pageable)
 
     @UserAccess(roles = [RoleType.STUDENT])
     @DeleteMapping("/{id}")
