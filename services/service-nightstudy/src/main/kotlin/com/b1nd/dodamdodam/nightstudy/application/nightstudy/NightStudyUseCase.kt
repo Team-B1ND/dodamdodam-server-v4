@@ -19,7 +19,7 @@ import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.toProjectNight
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service.NightStudyService
-import com.b1nd.dodamdodam.nightstudy.domain.room.service.RoomService
+import com.b1nd.dodamdodam.nightstudy.domain.room.service.ProjectRoomService
 import com.b1nd.dodamdodam.nightstudy.infrastructure.user.client.UserQueryClient
 import com.b1nd.dodamdodam.core.common.data.InfinityScrollPageResponse
 import kotlinx.coroutines.runBlocking
@@ -32,7 +32,7 @@ import java.util.UUID
 @Transactional(rollbackFor = [Exception::class])
 class NightStudyUseCase (
     private val nightStudyService: NightStudyService,
-    private val roomService: RoomService,
+    private val projectRoomService: ProjectRoomService,
     private val userQueryClient: UserQueryClient,
 ) {
 
@@ -111,8 +111,8 @@ class NightStudyUseCase (
         return Response.ok("심자 신청을 대기 상태로 변경했어요.")
     }
 
-    fun assignRoom(id: UUID, roomId: UUID): Response<Any> {
-        val room = roomService.getByPublicId(roomId)
+    fun assignRoom(id: UUID, roomId: Long): Response<Any> {
+        val room = projectRoomService.getById(roomId)
         nightStudyService.assignRoom(id, room)
         return Response.ok("방 배정이 완료됐어요.")
     }

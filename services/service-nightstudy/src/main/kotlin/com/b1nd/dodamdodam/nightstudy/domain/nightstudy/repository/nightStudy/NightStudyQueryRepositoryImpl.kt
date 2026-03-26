@@ -5,7 +5,7 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyMemberEntity.nightStudyMemberEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
-import com.b1nd.dodamdodam.nightstudy.domain.room.entity.QRoomEntity
+import com.b1nd.dodamdodam.nightstudy.domain.room.entity.QProjectRoomEntity
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -106,24 +106,12 @@ class NightStudyQueryRepositoryImpl(
             .fetchFirst() != null
     }
 
-    /**
-     * 신청하려는 심자의 점유 교시 집합과 기존 심자의 점유 교시 집합이 겹치는지 판단하는 조건
-     *
-     * 점유 교시:
-     * - 개인 p=1  → {1}
-     * - 개인 p=2  → {1, 2}
-     * - 프로젝트 p=1 → {1}
-     * - 프로젝트 p=2 → {2}
-     */
     private fun periodConflictCondition(newType: NightStudyType, newPeriod: Int) = when {
         newType == NightStudyType.PERSONAL && newPeriod == 2 ->
-            // {1,2} — 모든 기존 심자와 겹침 → 제한 없음
             null
         newType == NightStudyType.PROJECT && newPeriod == 2 ->
-            // {2} — 기존 심자 중 2교시를 점유하는 것만 충돌 (개인 p=2, 프로젝트 p=2)
             nightStudyEntity.period.eq(2)
         else ->
-            // PERSONAL p=1 또는 PROJECT p=1: {1} — 프로젝트 2교시만 허용
             nightStudyEntity.type.ne(NightStudyType.PROJECT)
                 .or(nightStudyEntity.period.ne(2))
     }
@@ -135,7 +123,7 @@ class NightStudyQueryRepositoryImpl(
         endAt: LocalDate,
         excludeNightStudyId: Long
     ): Boolean {
-        val room = QRoomEntity("assignedRoom")
+        val room = QProjectRoomEntity("assignedRoom")
         return queryFactory.selectOne()
             .from(nightStudyEntity)
             .join(nightStudyEntity.room, room)

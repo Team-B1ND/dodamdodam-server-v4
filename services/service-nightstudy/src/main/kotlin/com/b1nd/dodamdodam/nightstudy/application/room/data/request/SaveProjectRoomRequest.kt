@@ -2,7 +2,7 @@ package com.b1nd.dodamdodam.nightstudy.application.room.data.request
 
 import jakarta.validation.constraints.NotBlank
 
-data class SaveRoomRequest(
+data class SaveProjectRoomRequest(
     @NotBlank
     val name: String,
 )

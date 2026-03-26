@@ -1,0 +1,11 @@
+ALTER TABLE night_studies DROP FOREIGN KEY FK_NIGHT_STUDIES_ON_FK_ROOM;
+
+ALTER TABLE rooms DROP COLUMN public_id;
+ALTER TABLE rooms DROP COLUMN created_at;
+ALTER TABLE rooms DROP COLUMN modified_at;
+
+RENAME TABLE rooms TO project_rooms;
+
+ALTER TABLE night_studies
+    ADD CONSTRAINT FK_NIGHT_STUDIES_ON_FK_PROJECT_ROOM
+    FOREIGN KEY (fk_room_id) REFERENCES project_rooms (id);

@@ -22,7 +22,7 @@ data class NightStudyApplicationResponse(
     val room: RoomInfo?,
 ) {
     data class RoomInfo(
-        val id: UUID,
+        val id: Long,
         val name: String,
     )
 }

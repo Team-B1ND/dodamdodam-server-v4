@@ -10,7 +10,7 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NotMyNightStud
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NotProjectNightStudyException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.PeriodOverlappedException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.RoomAlreadyAssignedException
-import com.b1nd.dodamdodam.nightstudy.domain.room.entity.RoomEntity
+import com.b1nd.dodamdodam.nightstudy.domain.room.entity.ProjectRoomEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyBannedRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudyMember.NightStudyMemberQueryRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand
@@ -112,7 +112,7 @@ class NightStudyService(
         getByPublicId(publicId).pending()
     }
 
-    fun assignRoom(publicId: UUID, room: RoomEntity) {
+    fun assignRoom(publicId: UUID, room: ProjectRoomEntity) {
         val nightStudy = getByPublicId(publicId)
         if (nightStudy.type != NightStudyType.PROJECT) throw NotProjectNightStudyException()
         if (nightStudyQueryRepository.existsByRoomAndPeriodOverlap(

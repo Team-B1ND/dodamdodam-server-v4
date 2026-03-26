@@ -3,7 +3,7 @@ package com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity
 import com.b1nd.dodamdodam.core.jpa.entity.BaseTimeEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
-import com.b1nd.dodamdodam.nightstudy.domain.room.entity.RoomEntity
+import com.b1nd.dodamdodam.nightstudy.domain.room.entity.ProjectRoomEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -51,7 +51,7 @@ class NightStudyEntity (
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_room_id")
-    var room: RoomEntity? = null
+    var room: ProjectRoomEntity? = null
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null
@@ -79,7 +79,7 @@ class NightStudyEntity (
         this.rejectionReason = null
     }
 
-    fun assignRoom(room: RoomEntity) {
+    fun assignRoom(room: ProjectRoomEntity) {
         this.room = room
     }
 
