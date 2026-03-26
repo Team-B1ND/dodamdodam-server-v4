@@ -56,6 +56,7 @@ fun NightStudyEntity.toProjectNightStudyResponse(isLeader: Boolean) = ProjectNig
     rejectionReason = rejectionReason,
     isLeader = isLeader,
     status = status,
+    room = room?.let { ProjectNightStudyResponse.RoomInfo(id = it.id!!, name = it.name) },
 )
 
 fun UserResponse.toOpenApiUserInfoResponse() = NightStudyApplicantResponse(
@@ -97,6 +98,7 @@ fun NightStudyEntity.toOpenApiNightStudyResponse(
     members = members,
     rejectionReason = rejectionReason,
     type = type,
+    room = room?.let { NightStudyApplicationResponse.RoomInfo(id = it.id!!, name = it.name) },
 )
 
 fun List<NightStudyWithMembersCommand>.toNightStudyApplicationResponses(

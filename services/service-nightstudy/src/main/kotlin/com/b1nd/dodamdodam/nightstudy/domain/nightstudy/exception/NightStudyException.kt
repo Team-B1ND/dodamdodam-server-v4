@@ -11,3 +11,11 @@ class NotMyNightStudyException: BasicException(NightStudyExceptionCode.NOT_MY_NI
 class NotLeaderException: BasicException(NightStudyExceptionCode.NOT_LEADER)
 
 class PeriodOverlappedException: BasicException(NightStudyExceptionCode.PERIOD_OVERLAPPED)
+
+class BanNotFoundException: BasicException(NightStudyExceptionCode.BAN_NOT_FOUND)
+
+class AlreadyBannedException: BasicException(NightStudyExceptionCode.ALREADY_BANNED)
+
+class NotProjectNightStudyException: BasicException(NightStudyExceptionCode.NOT_PROJECT_NIGHT_STUDY)
+
+class RoomAlreadyAssignedException: BasicException(NightStudyExceptionCode.ROOM_ALREADY_ASSIGNED)

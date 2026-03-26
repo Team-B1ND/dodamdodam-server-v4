@@ -10,7 +10,9 @@ import java.util.UUID
 interface NightStudyQueryRepository {
     fun findByPublicId(publicId: UUID): NightStudyEntity?
     fun findAllByUserIdAndType(userId: UUID, type: NightStudyType, pageable: Pageable): Page<NightStudyEntity>
+    fun findAllByUserIdAndType(userId: UUID, type: NightStudyType): List<NightStudyEntity>
     fun findAllByType(type: NightStudyType, pageable: Pageable): Page<NightStudyEntity>
     fun existsByPublicIdAndUserId(publicId: UUID, userId: UUID): Boolean
-    fun existsByUserIdAndPeriodOverlap(userId: UUID, startAt: LocalDate, endAt: LocalDate): Boolean
+    fun existsByUserIdAndPeriodOverlap(userId: UUID, type: NightStudyType, period: Int, startAt: LocalDate, endAt: LocalDate): Boolean
+    fun existsByRoomAndPeriodOverlap(roomId: Long, period: Int, startAt: LocalDate, endAt: LocalDate, excludeNightStudyId: Long): Boolean
 }

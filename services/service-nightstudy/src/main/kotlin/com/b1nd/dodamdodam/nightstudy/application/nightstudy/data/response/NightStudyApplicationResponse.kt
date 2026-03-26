@@ -19,4 +19,10 @@ data class NightStudyApplicationResponse(
     val members: List<NightStudyApplicantResponse>,
     val rejectionReason: String?,
     val type: NightStudyType,
-)
+    val room: RoomInfo?,
+) {
+    data class RoomInfo(
+        val id: Long,
+        val name: String,
+    )
+}
