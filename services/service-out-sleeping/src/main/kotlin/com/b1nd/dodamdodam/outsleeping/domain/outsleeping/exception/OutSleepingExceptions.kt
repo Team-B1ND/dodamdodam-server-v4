@@ -6,3 +6,4 @@ class OutSleepingNotFoundException : BasicException(OutSleepingExceptionCode.OUT
 class OutSleepingNotOwnerException : BasicException(OutSleepingExceptionCode.OUT_SLEEPING_NOT_OWNER)
 class OutSleepingAlreadyProcessedException : BasicException(OutSleepingExceptionCode.OUT_SLEEPING_ALREADY_PROCESSED)
 class OutSleepingDeadlineExceededException : BasicException(OutSleepingExceptionCode.OUT_SLEEPING_DEADLINE_EXCEEDED)
+class OutSleepingDuplicateDateException : BasicException(OutSleepingExceptionCode.OUT_SLEEPING_DUPLICATE_DATE)
