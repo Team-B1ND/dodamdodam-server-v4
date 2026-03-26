@@ -47,7 +47,7 @@ class UserQueryRepositoryImpl(
             and(JPAExpressions.selectOne().from(userRoleEntity)
                 .where(userRoleEntity.user.eq(userEntity), userRoleEntity.role.`in`(it)).exists())
         }
-        generationOnly?.takeIf { it }?.let { and(studentEntity.isGraduated.isTrue) }
+        generationOnly?.takeIf { it }?.let { and(studentEntity.isGraduated.isFalse) }
     }
 
     private fun fetchRolesMap(tuples: List<Tuple>): Map<Long, Set<RoleType>> {
