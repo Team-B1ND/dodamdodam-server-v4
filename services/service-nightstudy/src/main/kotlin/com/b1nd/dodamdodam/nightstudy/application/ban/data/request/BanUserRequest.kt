@@ -8,9 +8,9 @@ import java.util.UUID
 
 data class BanUserRequest(
     val userId: UUID,
-    @field:NotBlank
+    @NotBlank
     val reason: String,
-    @field:Future
+    @Future
     @JsonFormat(pattern = "yyyy-MM-dd")
     val endAt: LocalDate,
 )
