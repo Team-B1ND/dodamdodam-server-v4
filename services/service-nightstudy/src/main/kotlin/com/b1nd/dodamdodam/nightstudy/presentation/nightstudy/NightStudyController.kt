@@ -4,6 +4,7 @@ import com.b1nd.dodamdodam.core.common.data.Response
 import com.b1nd.dodamdodam.core.security.annotation.authentication.UserAccess
 import com.b1nd.dodamdodam.core.security.passport.enumerations.RoleType
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.NightStudyUseCase
+import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.AssignRoomRequest
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.PersonalNightStudyApplyRequest
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.ProjectNightStudyApplyRequest
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.RejectNightStudyRequest
@@ -70,5 +71,15 @@ class NightStudyController(
     @PatchMapping("/applications/{id}/pending")
     fun pending(@PathVariable id: UUID): Response<Any> =
         nightStudyUseCase.pending(id)
+
+    @UserAccess(roles = [RoleType.DORMITORY_MANAGER])
+    @PatchMapping("/applications/{id}/room")
+    fun assignRoom(@PathVariable id: UUID, @RequestBody request: AssignRoomRequest): Response<Any> =
+        nightStudyUseCase.assignRoom(id, request.roomId)
+
+    @UserAccess(roles = [RoleType.DORMITORY_MANAGER])
+    @DeleteMapping("/applications/{id}/room")
+    fun unassignRoom(@PathVariable id: UUID): Response<Any> =
+        nightStudyUseCase.unassignRoom(id)
 }
 

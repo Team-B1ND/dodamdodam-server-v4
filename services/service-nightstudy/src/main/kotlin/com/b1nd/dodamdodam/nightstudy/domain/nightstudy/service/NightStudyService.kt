@@ -7,13 +7,17 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyBann
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyNotFoundException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NotLeaderException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NotMyNightStudyException
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NotProjectNightStudyException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.PeriodOverlappedException
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.RoomAlreadyAssignedException
+import com.b1nd.dodamdodam.nightstudy.domain.room.entity.RoomEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyBannedRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudyMember.NightStudyMemberQueryRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudyMember.NightStudyMemberRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyQueryRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyRepository
+import kotlinx.datetime.LocalDate
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -77,16 +81,6 @@ class NightStudyService(
         return nightStudyMemberQueryRepository.findAllMemberUserIdsByNightStudies(nightStudies)
     }
 
-    fun getNightStudyWithMembers(nightStudy: NightStudyEntity): NightStudyWithMembersCommand {
-        val memberIds = getMembersByNightStudy(nightStudy)
-        val leaderId = getLeaderByNightStudy(nightStudy)
-        return NightStudyWithMembersCommand(
-            nightStudy = nightStudy,
-            leaderId = leaderId,
-            memberIds = memberIds
-        )
-    }
-
     fun delete(userId: UUID, publicId: UUID) {
         val nightStudy = getByPublicId(publicId)
         val isMine = isMine(userId, nightStudy)
@@ -112,6 +106,20 @@ class NightStudyService(
 
     fun pending(publicId: UUID) {
         getByPublicId(publicId).pending()
+    }
+
+    fun assignRoom(publicId: UUID, room: RoomEntity) {
+        val nightStudy = getByPublicId(publicId)
+        if (nightStudy.type != NightStudyType.PROJECT) throw NotProjectNightStudyException()
+        if (nightStudyQueryRepository.existsByRoomAndPeriodOverlap(
+                room.id!!, nightStudy.period, nightStudy.startAt, nightStudy.endAt, nightStudy.id!!
+            )
+        ) throw RoomAlreadyAssignedException()
+        nightStudy.assignRoom(room)
+    }
+
+    fun unassignRoom(publicId: UUID) {
+        getByPublicId(publicId).unassignRoom()
     }
 
     private fun isBanned(userId: UUID): Boolean {

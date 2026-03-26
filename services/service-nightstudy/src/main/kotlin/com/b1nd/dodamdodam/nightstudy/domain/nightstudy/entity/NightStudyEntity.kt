@@ -3,13 +3,17 @@ package com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity
 import com.b1nd.dodamdodam.core.jpa.entity.BaseTimeEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
+import com.b1nd.dodamdodam.nightstudy.domain.room.entity.RoomEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.PrePersist
 import jakarta.persistence.Table
 import java.time.LocalDate
@@ -44,6 +48,10 @@ class NightStudyEntity (
     @Column(length = 10)
     var type: NightStudyType,
 ): BaseTimeEntity() {
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fk_room_id")
+    var room: RoomEntity? = null
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null
@@ -69,5 +77,13 @@ class NightStudyEntity (
     fun pending() {
         this.status = NightStudyStatusType.PENDING
         this.rejectionReason = null
+    }
+
+    fun assignRoom(room: RoomEntity) {
+        this.room = room
+    }
+
+    fun unassignRoom() {
+        this.room = null
     }
 }

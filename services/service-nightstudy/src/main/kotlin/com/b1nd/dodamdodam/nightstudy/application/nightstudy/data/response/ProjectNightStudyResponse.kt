@@ -14,4 +14,10 @@ data class ProjectNightStudyResponse(
     val rejectionReason: String?,
     val isLeader: Boolean,
     val status: NightStudyStatusType,
-)
+    val room: RoomInfo?,
+) {
+    data class RoomInfo(
+        val id: UUID,
+        val name: String,
+    )
+}

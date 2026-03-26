@@ -17,9 +17,9 @@ import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.toOpenApiUserI
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.toPersonalNightStudyListResponse
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.toProjectNightStudyResponse
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
-import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service.NightStudyService
+import com.b1nd.dodamdodam.nightstudy.domain.room.service.RoomService
 import com.b1nd.dodamdodam.nightstudy.infrastructure.user.client.UserQueryClient
 import com.b1nd.dodamdodam.core.common.data.InfinityScrollPageResponse
 import kotlinx.coroutines.runBlocking
@@ -32,8 +32,10 @@ import java.util.UUID
 @Transactional(rollbackFor = [Exception::class])
 class NightStudyUseCase (
     private val nightStudyService: NightStudyService,
+    private val roomService: RoomService,
     private val userQueryClient: UserQueryClient,
 ) {
+
     fun applyPersonalNightStudy(request: PersonalNightStudyApplyRequest): Response<Any> {
         val userId = PassportHolder.current().requireUserId()
         nightStudyService.save(request.toEntity(), userId, null)
@@ -120,6 +122,17 @@ class NightStudyUseCase (
     fun pending(id: UUID): Response<Any> {
         nightStudyService.pending(id)
         return Response.ok("심자 신청을 대기 상태로 변경했어요.")
+    }
+
+    fun assignRoom(id: UUID, roomId: UUID): Response<Any> {
+        val room = roomService.getByPublicId(roomId)
+        nightStudyService.assignRoom(id, room)
+        return Response.ok("방 배정이 완료됐어요.")
+    }
+
+    fun unassignRoom(id: UUID): Response<Any> {
+        nightStudyService.unassignRoom(id)
+        return Response.ok("방 배정을 해제했어요.")
     }
 
     private fun getNightStudiesWithMembersAndLeaders(

@@ -90,4 +90,23 @@ class NightStudyQueryRepositoryImpl(
             )
             .fetchFirst() != null
     }
+
+    override fun existsByRoomAndPeriodOverlap(
+        roomId: Long,
+        period: Int,
+        startAt: LocalDate,
+        endAt: LocalDate,
+        excludeNightStudyId: Long
+    ): Boolean {
+        return queryFactory.selectOne()
+            .from(nightStudyEntity)
+            .where(
+                nightStudyEntity.room.id.eq(roomId),
+                nightStudyEntity.period.eq(period),
+                nightStudyEntity.startAt.loe(endAt),
+                nightStudyEntity.endAt.goe(startAt),
+                nightStudyEntity.id.ne(excludeNightStudyId)
+            )
+            .fetchFirst() != null
+    }
 }
