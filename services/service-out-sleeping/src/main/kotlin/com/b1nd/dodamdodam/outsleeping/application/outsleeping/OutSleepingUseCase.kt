@@ -34,7 +34,9 @@ class OutSleepingUseCase(
 
     fun apply(request: ApplyOutSleepingRequest): Response<Any> {
         deadlineService.validateDeadline()
-        outSleepingService.create(request.toEntity(currentUserId()))
+        val userId = currentUserId()
+        outSleepingService.validateDuplicateDate(userId, request.startAt, request.endAt)
+        outSleepingService.create(request.toEntity(userId))
         return Response.created("외박 신청이 완료되었어요.")
     }
 

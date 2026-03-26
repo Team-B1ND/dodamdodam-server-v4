@@ -3,6 +3,7 @@ package com.b1nd.dodamdodam.outsleeping.domain.outsleeping.service
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.entity.OutSleepingEntity
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.enumeration.OutSleepingStatus
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingAlreadyProcessedException
+import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingDuplicateDateException
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingNotFoundException
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingNotOwnerException
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.repository.OutSleepingRepository
@@ -43,6 +44,14 @@ class OutSleepingService(
     fun validatePending(outSleeping: OutSleepingEntity) {
         if (outSleeping.status != OutSleepingStatus.PENDING) {
             throw OutSleepingAlreadyProcessedException()
+        }
+    }
+
+    fun validateDuplicateDate(userId: UUID, startAt: LocalDate, endAt: LocalDate) {
+        if (outSleepingRepository.existsByUserIdAndStatusInAndStartAtLessThanEqualAndEndAtGreaterThanEqual(
+                userId, listOf(OutSleepingStatus.PENDING, OutSleepingStatus.ALLOWED), endAt, startAt
+            )) {
+            throw OutSleepingDuplicateDateException()
         }
     }
 

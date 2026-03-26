@@ -12,11 +12,13 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.PrePersist
 import jakarta.persistence.Table
+import org.hibernate.annotations.SoftDelete
 import java.time.LocalDate
 import java.util.UUID
 
 @Entity
 @Table(name = "out_sleepings")
+@SoftDelete
 class OutSleepingEntity(
 
     @Column(name = "fk_user_id", nullable = false, columnDefinition = "BINARY(16)")
