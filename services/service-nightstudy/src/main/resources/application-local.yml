@@ -8,6 +8,7 @@ spring:
     url: jdbc:${MYSQL_HOST}
     user: ${MYSQL_USER}
     password: ${MYSQL_PASSWORD}
+    validate-on-migrate: false
 
   jpa:
     hibernate:

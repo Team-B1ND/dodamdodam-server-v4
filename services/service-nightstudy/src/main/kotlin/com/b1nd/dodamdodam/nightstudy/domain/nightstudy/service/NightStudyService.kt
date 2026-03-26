@@ -34,13 +34,13 @@ class NightStudyService(
     fun save(nightStudy: NightStudyEntity, userId: UUID, members: List<UUID>?) {
         if(isBanned(userId)) throw NightStudyBannedException()
 
-        if(hasPeriodOverlap(userId, nightStudy.startAt, nightStudy.endAt)) {
+        if(hasPeriodOverlap(userId, nightStudy.type, nightStudy.period, nightStudy.startAt, nightStudy.endAt)) {
             throw PeriodOverlappedException()
         }
 
         members?.forEach { member ->
             if (isBanned(member)) throw NightStudyBannedException()
-            if(hasPeriodOverlap(member, nightStudy.startAt, nightStudy.endAt)) {
+            if(hasPeriodOverlap(member, nightStudy.type, nightStudy.period, nightStudy.startAt, nightStudy.endAt)) {
                 throw PeriodOverlappedException()
             }
         }
@@ -55,6 +55,10 @@ class NightStudyService(
 
     fun getAllByUserIdAndType(userId: UUID, type: NightStudyType, pageable: Pageable): Page<NightStudyEntity> {
         return nightStudyQueryRepository.findAllByUserIdAndType(userId, type, pageable)
+    }
+
+    fun getAllByUserIdAndType(userId: UUID, type: NightStudyType): List<NightStudyEntity> {
+        return nightStudyQueryRepository.findAllByUserIdAndType(userId, type)
     }
 
     fun getAllByType(type: NightStudyType, pageable: Pageable): Page<NightStudyEntity> {
@@ -130,7 +134,7 @@ class NightStudyService(
         return nightStudyMemberRepository.existsByNightStudyAndUserId(nightStudy, userId)
     }
 
-    private fun hasPeriodOverlap(userId: UUID, startAt: java.time.LocalDate, endAt: java.time.LocalDate): Boolean {
-        return nightStudyQueryRepository.existsByUserIdAndPeriodOverlap(userId, startAt, endAt)
+    private fun hasPeriodOverlap(userId: UUID, type: NightStudyType, period: Int, startAt: java.time.LocalDate, endAt: java.time.LocalDate): Boolean {
+        return nightStudyQueryRepository.existsByUserIdAndPeriodOverlap(userId, type, period, startAt, endAt)
     }
 }

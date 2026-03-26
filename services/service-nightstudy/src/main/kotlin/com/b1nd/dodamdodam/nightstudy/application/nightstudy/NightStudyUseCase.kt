@@ -48,33 +48,20 @@ class NightStudyUseCase (
         return Response.created("프로젝트 심자 신청이 완료됐어요.")
     }
 
-    fun getMyPersonalNightStudy(pageable: Pageable): Response<InfinityScrollPageResponse<PersonalNightStudyResponse>> {
+    fun getMyPersonalNightStudy(): Response<List<PersonalNightStudyResponse>> {
         val userId = PassportHolder.current().requireUserId()
-        val resultPage = nightStudyService.getAllByUserIdAndType(userId, NightStudyType.PERSONAL, pageable)
-        return Response.ok(
-            "개인 심자 신청 목록을 조회했어요.",
-            InfinityScrollPageResponse(
-                content = resultPage.content.toPersonalNightStudyListResponse(),
-                hasNext = resultPage.hasNext()
-            )
-        )
+        val results = nightStudyService.getAllByUserIdAndType(userId, NightStudyType.PERSONAL)
+        return Response.ok("개인 심자 신청 목록을 조회했어요.", results.toPersonalNightStudyListResponse())
     }
 
-    fun getMyProjectNightStudy(pageable: Pageable): Response<InfinityScrollPageResponse<ProjectNightStudyResponse>> {
+    fun getMyProjectNightStudy(): Response<List<ProjectNightStudyResponse>> {
         val userId = PassportHolder.current().requireUserId()
-        val resultPage = nightStudyService.getAllByUserIdAndType(userId, NightStudyType.PROJECT, pageable)
-        val leaderMap = nightStudyService.getLeadersByNightStudies(resultPage.content)
-        val responses = resultPage.content.map { nightStudy ->
-            val leaderId = leaderMap[nightStudy.id]
-            nightStudy.toProjectNightStudyResponse(isLeader = leaderId == userId)
+        val results = nightStudyService.getAllByUserIdAndType(userId, NightStudyType.PROJECT)
+        val leaderMap = nightStudyService.getLeadersByNightStudies(results)
+        val responses = results.map { nightStudy ->
+            nightStudy.toProjectNightStudyResponse(isLeader = leaderMap[nightStudy.id] == userId)
         }
-        return Response.ok(
-            "프로젝트 심자 신청 목록을 조회했어요.",
-            InfinityScrollPageResponse(
-                content = responses,
-                hasNext = resultPage.hasNext()
-            )
-        )
+        return Response.ok("프로젝트 심자 신청 목록을 조회했어요.", responses)
     }
 
     fun cancelNightStudy(id: UUID): Response<Any> {

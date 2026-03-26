@@ -57,7 +57,7 @@ spring:
         - id: nightstudy-service
           uri: http://localhost:8087
           predicates:
-            - Path=/night-study/**
+            - Path=/nightstudy/**
           filters:
             - StripPrefix=1
         - id: notification-service

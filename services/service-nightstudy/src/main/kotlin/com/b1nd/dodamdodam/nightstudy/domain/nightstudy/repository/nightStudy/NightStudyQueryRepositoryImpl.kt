@@ -3,7 +3,9 @@ package com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyEntity.nightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyMemberEntity.nightStudyMemberEntity
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
+import com.b1nd.dodamdodam.nightstudy.domain.room.entity.QRoomEntity
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -21,6 +23,17 @@ class NightStudyQueryRepositoryImpl(
         return queryFactory.selectFrom(nightStudyEntity)
             .where(nightStudyEntity.publicId.eq(publicId))
             .fetchOne()
+    }
+
+    override fun findAllByUserIdAndType(userId: UUID, type: NightStudyType): List<NightStudyEntity> {
+        return queryFactory.select(nightStudyMemberEntity.nightStudy)
+            .from(nightStudyMemberEntity)
+            .where(
+                nightStudyMemberEntity.userId.eq(userId),
+                nightStudyMemberEntity.nightStudy.type.eq(type)
+            )
+            .orderBy(nightStudyMemberEntity.nightStudy.id.desc())
+            .fetch()
     }
 
     override fun findAllByUserIdAndType(userId: UUID, type: NightStudyType, pageable: Pageable): Page<NightStudyEntity> {
@@ -79,16 +92,40 @@ class NightStudyQueryRepositoryImpl(
             .fetchFirst() != null
     }
 
-    override fun existsByUserIdAndPeriodOverlap(userId: UUID, startAt: LocalDate, endAt: LocalDate): Boolean {
+    override fun existsByUserIdAndPeriodOverlap(userId: UUID, type: NightStudyType, period: Int, startAt: LocalDate, endAt: LocalDate): Boolean {
         return queryFactory.selectOne()
             .from(nightStudyMemberEntity)
             .join(nightStudyMemberEntity.nightStudy, nightStudyEntity)
             .where(
                 nightStudyMemberEntity.userId.eq(userId),
                 nightStudyEntity.startAt.loe(endAt),
-                nightStudyEntity.endAt.goe(startAt)
+                nightStudyEntity.endAt.goe(startAt),
+                nightStudyEntity.status.ne(NightStudyStatusType.REJECTED),
+                periodConflictCondition(type, period)
             )
             .fetchFirst() != null
+    }
+
+    /**
+     * 신청하려는 심자의 점유 교시 집합과 기존 심자의 점유 교시 집합이 겹치는지 판단하는 조건
+     *
+     * 점유 교시:
+     * - 개인 p=1  → {1}
+     * - 개인 p=2  → {1, 2}
+     * - 프로젝트 p=1 → {1}
+     * - 프로젝트 p=2 → {2}
+     */
+    private fun periodConflictCondition(newType: NightStudyType, newPeriod: Int) = when {
+        newType == NightStudyType.PERSONAL && newPeriod == 2 ->
+            // {1,2} — 모든 기존 심자와 겹침 → 제한 없음
+            null
+        newType == NightStudyType.PROJECT && newPeriod == 2 ->
+            // {2} — 기존 심자 중 2교시를 점유하는 것만 충돌 (개인 p=2, 프로젝트 p=2)
+            nightStudyEntity.period.eq(2)
+        else ->
+            // PERSONAL p=1 또는 PROJECT p=1: {1} — 프로젝트 2교시만 허용
+            nightStudyEntity.type.ne(NightStudyType.PROJECT)
+                .or(nightStudyEntity.period.ne(2))
     }
 
     override fun existsByRoomAndPeriodOverlap(
@@ -98,14 +135,17 @@ class NightStudyQueryRepositoryImpl(
         endAt: LocalDate,
         excludeNightStudyId: Long
     ): Boolean {
+        val room = QRoomEntity("assignedRoom")
         return queryFactory.selectOne()
             .from(nightStudyEntity)
+            .join(nightStudyEntity.room, room)
             .where(
-                nightStudyEntity.room.id.eq(roomId),
+                room.id.eq(roomId),
                 nightStudyEntity.period.eq(period),
                 nightStudyEntity.startAt.loe(endAt),
                 nightStudyEntity.endAt.goe(startAt),
-                nightStudyEntity.id.ne(excludeNightStudyId)
+                nightStudyEntity.id.ne(excludeNightStudyId),
+                nightStudyEntity.status.ne(NightStudyStatusType.REJECTED)
             )
             .fetchFirst() != null
     }
