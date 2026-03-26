@@ -7,6 +7,7 @@ import com.b1nd.dodamdodam.user.domain.teacher.entity.QTeacherEntity.teacherEnti
 import com.b1nd.dodamdodam.user.domain.user.command.UserSearchCommand
 import com.b1nd.dodamdodam.user.domain.user.entity.QUserEntity.userEntity
 import com.b1nd.dodamdodam.user.domain.user.entity.QUserRoleEntity.userRoleEntity
+import com.b1nd.dodamdodam.user.domain.user.enumeration.StatusType
 import com.querydsl.core.BooleanBuilder
 import com.querydsl.core.Tuple
 import com.querydsl.jpa.JPAExpressions
@@ -29,6 +30,7 @@ class UserQueryRepositoryImpl(
             .leftJoin(teacherEntity).on(teacherEntity.user.eq(userEntity))
             .leftJoin(adminEntity).on(adminEntity.user.eq(userEntity))
             .where(condition)
+            .where(userEntity.status.eq(StatusType.ACTIVE))
             .orderBy(userEntity.name.asc())
             .offset(pageable.offset)
             .limit(pageable.pageSize.toLong() + 1)
