@@ -2,7 +2,6 @@ package com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service
 
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyMemberEntity
-import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyBannedException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyNotFoundException
@@ -50,8 +49,8 @@ class NightStudyService(
         }
     }
 
-    fun getAllByUserIdAndStatusAndType(userId: UUID, status: NightStudyStatusType, type: NightStudyType, pageable: Pageable): Page<NightStudyEntity> {
-        return nightStudyQueryRepository.findAllByUserIdAndStatusAndType(userId, status, type, pageable)
+    fun getAllByUserIdAndType(userId: UUID, type: NightStudyType, pageable: Pageable): Page<NightStudyEntity> {
+        return nightStudyQueryRepository.findAllByUserIdAndType(userId, type, pageable)
     }
 
     fun getAllByType(type: NightStudyType, pageable: Pageable): Page<NightStudyEntity> {
