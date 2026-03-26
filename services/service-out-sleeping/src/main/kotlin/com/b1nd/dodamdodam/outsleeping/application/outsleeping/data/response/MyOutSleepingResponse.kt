@@ -4,10 +4,6 @@ import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.enumeration.OutSleepin
 import java.time.LocalDate
 import java.util.UUID
 
-data class MyOutSleepingListResponse(
-    val outSleeping: List<MyOutSleepingResponse>,
-)
-
 data class MyOutSleepingResponse(
     val publicId: UUID,
     val reason: String,
