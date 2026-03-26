@@ -25,6 +25,8 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
 
 grpc:
+  server:
+    port: 9092
   client:
     service-user:
       address: 'static://localhost:9091'

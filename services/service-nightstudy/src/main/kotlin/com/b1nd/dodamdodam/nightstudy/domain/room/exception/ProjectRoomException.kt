@@ -1,0 +1,6 @@
+package com.b1nd.dodamdodam.nightstudy.domain.room.exception
+
+import com.b1nd.dodamdodam.core.common.exception.BasicException
+
+class ProjectRoomNotFoundException : BasicException(ProjectRoomExceptionCode.PROJECT_ROOM_NOT_FOUND)
+class ProjectRoomAlreadyExistsException : BasicException(ProjectRoomExceptionCode.PROJECT_ROOM_ALREADY_EXISTS)

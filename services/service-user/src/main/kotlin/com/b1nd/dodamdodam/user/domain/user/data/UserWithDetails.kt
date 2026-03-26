@@ -22,6 +22,7 @@ data class StudentDetails(
     val grade: Int,
     val room: Int,
     val number: Int,
+    val isGraduated: Boolean,
 )
 
 data class TeacherDetails(

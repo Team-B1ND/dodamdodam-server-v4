@@ -10,5 +10,4 @@ data class EditAppCommand(
     val iconUrl: String?,
     val darkIconUrl: String?,
     val inquiryMail: String?,
-    val server: EditServerCommand? = null,
 )

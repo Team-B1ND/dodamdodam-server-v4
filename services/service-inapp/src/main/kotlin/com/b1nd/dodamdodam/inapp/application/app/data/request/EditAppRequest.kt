@@ -10,5 +10,4 @@ data class EditAppRequest(
     val iconUrl: String? = null,
     val darkIconUrl: String? = null,
     val inquiryMail: String? = null,
-    val server: EditAppServerInfoRequest? = null,
 )

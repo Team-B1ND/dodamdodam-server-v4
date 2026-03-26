@@ -157,6 +157,22 @@ services:
       kafka:
         condition: service_healthy
 
+  service-oauth:
+    image: ${DOCKERHUB_USERNAME}/dodam-oauth:dev
+    container_name: dodam-oauth
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      MYSQL_HOST: mysql://mysql:3306/dodam-oauth
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      OAUTH_ISSUER: ${OAUTH_ISSUER}
+      OAUTH_RSA_PRIVATE_KEY: ${OAUTH_RSA_PRIVATE_KEY}
+      OAUTH_RSA_PUBLIC_KEY: ${OAUTH_RSA_PUBLIC_KEY}
+    depends_on:
+      mysql:
+        condition: service_healthy
+
   service-neis:
     image: ${DOCKERHUB_USERNAME}/dodam-neis:dev
     container_name: dodam-neis
@@ -184,6 +200,19 @@ services:
       mysql:
         condition: service_healthy
 
+  service-nightstudy:
+    image: ${DOCKERHUB_USERNAME}/dodam-nightstudy:dev
+    container_name: dodam-nightstudy
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      MYSQL_HOST: mysql://mysql:3306/dodam-nightstudy
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    depends_on:
+      mysql:
+        condition: service_healthy
+
   service-file:
     image: ${DOCKERHUB_USERNAME}/dodam-file:dev
     container_name: dodam-file
@@ -200,6 +229,28 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:5001
       GITHUB_TOKEN: ${GITHUB_TOKEN}
     depends_on:
+      kafka:
+        condition: service_healthy
+
+  service-notification:
+    image: ${DOCKERHUB_USERNAME}/dodam-notification:dev
+    container_name: dodam-notification
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      PORT: 8080
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:5001
+      KAFKA_CONSUMER_GROUP_ID: service-notification
+      GRPC_INAPP_ADDRESS: service-inapp:9090
+      FIREBASE_SERVICE_ACCOUNT: ${FIREBASE_SERVICE_ACCOUNT}
+    depends_on:
+      mysql:
+        condition: service_healthy
       kafka:
         condition: service_healthy
 

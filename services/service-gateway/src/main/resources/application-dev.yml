@@ -3,15 +3,6 @@ spring:
     redis:
       host: ${SPRING_DATA_REDIS_HOST}
       port: ${SPRING_DATA_REDIS_PORT}
-  r2dbc:
-    url: r2dbc:${MYSQL_HOST}
-    username: ${MYSQL_USER}
-    password: ${MYSQL_PASSWORD}
-  flyway:
-    url: jdbc:${MYSQL_HOST}
-    user: ${MYSQL_USER}
-    password: ${MYSQL_PASSWORD}
-
   cloud:
     gateway:
       routes:
@@ -33,6 +24,18 @@ spring:
             - Path=/wakeup-song/**
           filters:
             - StripPrefix=1
+        - id: nightstudy-service
+          uri: http://service-nightstudy:8080
+          predicates:
+            - Path=/nightstudy/**
+          filters:
+            - StripPrefix=1
+        - id: out-sleeping-service
+          uri: http://service-out-sleeping:8080
+          predicates:
+            - Path=/out-sleeping/**
+          filters:
+            - StripPrefix=1
         - id: inapp-service
           uri: http://service-inapp:8080
           predicates:
@@ -45,25 +48,27 @@ spring:
             - Path=/file/**
           filters:
             - StripPrefix=1
+        - id: oauth-service
+          uri: http://service-oauth:8080
+          predicates:
+            - Path=/oauth/**
+          filters:
+            - StripPrefix=1
         - id: neis-service
           uri: http://service-neis:8080
           predicates:
             - Path=/neis/**
           filters:
             - StripPrefix=1
-        - id: openapi-user-service
-          uri: http://service-user:8080
+        - id: notification-service
+          uri: http://service-notification:8080
           predicates:
-            - Path=/openapi/user/**
+            - Path=/notification/**
           filters:
-            - StripPrefix=2
+            - StripPrefix=1
 
 app:
   auth:
     url: http://service-auth:8080
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
-    consumer-group-id: service-gateway
-
 server:
   port: 8080

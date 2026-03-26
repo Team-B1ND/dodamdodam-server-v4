@@ -1,0 +1,18 @@
+spring:
+  r2dbc:
+    url: r2dbc:${MYSQL_HOST}
+    username: ${MYSQL_USER}
+    password: ${MYSQL_PASSWORD}
+  flyway:
+    url: jdbc:${MYSQL_HOST}
+    user: ${MYSQL_USER}
+    password: ${MYSQL_PASSWORD}
+
+grpc:
+  client:
+    service-auth:
+      address: 'static://service-auth:9090'
+      negotiation-type: plaintext
+
+server:
+  port: 8080

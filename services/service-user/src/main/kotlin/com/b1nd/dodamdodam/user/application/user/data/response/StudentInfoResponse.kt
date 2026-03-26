@@ -5,13 +5,15 @@ import com.b1nd.dodamdodam.user.domain.student.entity.StudentEntity
 data class StudentInfoResponse(
     val grade: Int,
     val room: Int,
-    val number: Int
+    val number: Int,
+    val isGraduated: Boolean
 ) {
     companion object {
         fun fromStudentEntity(entity: StudentEntity) = StudentInfoResponse(
             entity.grade,
             entity.room,
-            entity.number
+            entity.number,
+            entity.isGraduated
         )
     }
 }
