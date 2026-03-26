@@ -48,7 +48,9 @@ class OutSleepingService(
     }
 
     fun validateDuplicateDate(userId: UUID, startAt: LocalDate, endAt: LocalDate) {
-        if (outSleepingRepository.existsByUserIdAndStartAtLessThanEqualAndEndAtGreaterThanEqual(userId, endAt, startAt)) {
+        if (outSleepingRepository.existsByUserIdAndStatusInAndStartAtLessThanEqualAndEndAtGreaterThanEqual(
+                userId, listOf(OutSleepingStatus.PENDING, OutSleepingStatus.ALLOWED), endAt, startAt
+            )) {
             throw OutSleepingDuplicateDateException()
         }
     }
