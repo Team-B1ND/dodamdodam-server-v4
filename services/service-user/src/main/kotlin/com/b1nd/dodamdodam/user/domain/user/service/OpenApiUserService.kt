@@ -23,6 +23,12 @@ class OpenApiUserService(
         private const val CACHE_NAME = "openapi:user"
     }
 
+    fun getUsersByNameKeyword(keyword: String): List<UserWithDetails> {
+        val users = userRepository.findAllByNameContainingIgnoreCase(keyword)
+        if (users.isEmpty()) return emptyList()
+        return getUsersWithDetails(users.map { it.publicId!! })
+    }
+
     fun getUsersWithDetails(publicIds: Collection<UUID>): List<UserWithDetails> {
         val cache = cacheManager.getCache(CACHE_NAME)
         val cachedResults = mutableListOf<UserWithDetails>()

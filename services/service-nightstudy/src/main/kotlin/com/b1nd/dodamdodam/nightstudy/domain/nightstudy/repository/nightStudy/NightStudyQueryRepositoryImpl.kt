@@ -59,13 +59,14 @@ class NightStudyQueryRepositoryImpl(
         return PageableExecutionUtils.getPage(content, pageable) { countQuery.fetchOne() ?: 0L }
     }
 
-    override fun findAllByType(type: NightStudyType, pageable: Pageable): Page<NightStudyEntity> {
+    override fun findAllByTypeAndStatus(type: NightStudyType, status: NightStudyStatusType?, pageable: Pageable): Page<NightStudyEntity> {
         val today = LocalDate.now()
 
         val content = queryFactory.selectFrom(nightStudyEntity)
             .where(
                 nightStudyEntity.type.eq(type),
-                nightStudyEntity.endAt.goe(today)
+                nightStudyEntity.endAt.goe(today),
+                status?.let { nightStudyEntity.status.eq(it) }
             )
             .offset(pageable.offset)
             .limit(pageable.pageSize.toLong())
@@ -76,7 +77,39 @@ class NightStudyQueryRepositoryImpl(
             .from(nightStudyEntity)
             .where(
                 nightStudyEntity.type.eq(type),
-                nightStudyEntity.endAt.goe(today)
+                nightStudyEntity.endAt.goe(today),
+                status?.let { nightStudyEntity.status.eq(it) }
+            )
+
+        return PageableExecutionUtils.getPage(content, pageable) { countQuery.fetchOne() ?: 0L }
+    }
+
+    override fun findAllByTypeAndUserIdsAndStatus(type: NightStudyType, userIds: List<UUID>, status: NightStudyStatusType?, pageable: Pageable): Page<NightStudyEntity> {
+        val today = LocalDate.now()
+
+        val content = queryFactory.select(nightStudyEntity)
+            .from(nightStudyMemberEntity)
+            .join(nightStudyMemberEntity.nightStudy, nightStudyEntity)
+            .where(
+                nightStudyEntity.type.eq(type),
+                nightStudyEntity.endAt.goe(today),
+                nightStudyMemberEntity.userId.`in`(userIds),
+                status?.let { nightStudyEntity.status.eq(it) }
+            )
+            .distinct()
+            .offset(pageable.offset)
+            .limit(pageable.pageSize.toLong())
+            .fetch()
+
+        val countQuery = queryFactory
+            .select(nightStudyEntity.countDistinct())
+            .from(nightStudyMemberEntity)
+            .join(nightStudyMemberEntity.nightStudy, nightStudyEntity)
+            .where(
+                nightStudyEntity.type.eq(type),
+                nightStudyEntity.endAt.goe(today),
+                nightStudyMemberEntity.userId.`in`(userIds),
+                status?.let { nightStudyEntity.status.eq(it) }
             )
 
         return PageableExecutionUtils.getPage(content, pageable) { countQuery.fetchOne() ?: 0L }

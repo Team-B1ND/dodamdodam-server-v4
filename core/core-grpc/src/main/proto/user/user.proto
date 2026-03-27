@@ -18,6 +18,9 @@ service UserQueryService {
 
   rpc GetUsers (GetUsersRequest)
       returns (GetUsersResponse);
+
+  rpc GetUserByNameKeyword (GetUserByNameKeywordRequest)
+      returns (GetUsersResponse);
 }
 
 message VerifyPasswordRequest {
@@ -31,6 +34,10 @@ message VerifyPasswordResponse {
 
 message GetUserRequest {
   string public_id = 1;
+}
+
+message GetUserByNameKeywordRequest {
+  string keyword = 1;
 }
 
 message GetUsersRequest {

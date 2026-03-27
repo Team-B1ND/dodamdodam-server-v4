@@ -1,6 +1,7 @@
 package com.b1nd.dodamdodam.user.presentation.user.grpc
 
 import com.b1nd.dodamdodam.core.common.coroutine.CoroutineBlockingExecutor
+import com.b1nd.dodamdodam.grpc.user.GetUserByNameKeywordRequest
 import com.b1nd.dodamdodam.grpc.user.GetUserRequest
 import com.b1nd.dodamdodam.grpc.user.GetUsersRequest
 import com.b1nd.dodamdodam.grpc.user.GetUsersResponse
@@ -30,6 +31,20 @@ class UserQueryGrpcController(
             ?: throw StatusRuntimeException(
                 Status.NOT_FOUND.withDescription("유저를 찾을 수 없어요.")
             )
+    }
+
+    override suspend fun getUserByNameKeyword(request: GetUserByNameKeywordRequest): GetUsersResponse {
+        try {
+            val users = blockingExecutor.execute {
+                openApiUserUseCase.getUsersByNameKeyword(request.keyword)
+            }
+            return users.toGetUsersGrpcResponse()
+        } catch (ex: Exception) {
+            log.error("gRPC getUserByNameKeyword failed", ex)
+            throw StatusRuntimeException(
+                Status.INTERNAL.withDescription(ex.message).withCause(ex)
+            )
+        }
     }
 
     override suspend fun getUsers(request: GetUsersRequest): GetUsersResponse {
