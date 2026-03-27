@@ -5,6 +5,7 @@ import com.b1nd.dodamdodam.neis.domain.meal.enumeration.MealType
 import com.b1nd.dodamdodam.neis.domain.meal.repository.MealRepository
 import org.springframework.stereotype.Service
 import java.time.LocalDate
+import java.time.YearMonth
 
 @Service
 class MealService(
@@ -12,6 +13,9 @@ class MealService(
 ) {
     fun getMealsByDate(date: LocalDate): List<MealEntity> =
         mealRepository.findAllByDateOrderByMealTypeAsc(date)
+
+    fun getMealsByMonth(yearMonth: YearMonth): List<MealEntity> =
+        mealRepository.findAllByDateBetweenOrderByDateAscMealTypeAsc(yearMonth.atDay(1), yearMonth.atEndOfMonth())
 
     fun saveOrUpdate(date: LocalDate, mealType: MealType, calorie: Double, menus: String) {
         val mealEntity = mealRepository.findByDateAndMealType(date, mealType)
