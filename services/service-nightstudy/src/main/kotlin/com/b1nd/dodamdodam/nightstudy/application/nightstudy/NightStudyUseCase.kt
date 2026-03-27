@@ -22,6 +22,7 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service.NightStudyServic
 import com.b1nd.dodamdodam.nightstudy.domain.room.service.ProjectRoomService
 import com.b1nd.dodamdodam.nightstudy.infrastructure.user.client.UserQueryClient
 import com.b1nd.dodamdodam.core.common.data.InfinityScrollPageResponse
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import kotlinx.coroutines.runBlocking
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Component
@@ -70,8 +71,15 @@ class NightStudyUseCase (
         return Response.ok("심자 신청을 취소했어요.")
     }
 
-    fun findAllByType(type: NightStudyType, pageable: Pageable): Response<InfinityScrollPageResponse<NightStudyApplicationResponse>> {
-        val nightStudiesPage = nightStudyService.getAllByType(type, pageable)
+    fun searchAllByType(type: NightStudyType, keyword: String?, status: NightStudyStatusType?, pageable: Pageable): Response<InfinityScrollPageResponse<NightStudyApplicationResponse>> {
+        val userIds = keyword?.takeIf { it.isNotBlank() }?.let {
+            runBlocking { userQueryClient.getUsersByNameKeyword(it) }
+                .usersList.map { user -> UUID.fromString(user.publicId) }
+                .ifEmpty { return Response.ok("전체 심야자습 신청 목록을 조회했어요.", InfinityScrollPageResponse(emptyList(), false)) }
+        }
+
+        val nightStudiesPage = nightStudyService.searchByType(type, userIds, status, pageable)
+
         val nightStudiesWithMembers = getNightStudiesWithMembersAndLeaders(nightStudiesPage.content)
         val usersMap = fetchUsersMap(nightStudiesWithMembers)
         val responses = nightStudiesWithMembers.toNightStudyApplicationResponses(usersMap)

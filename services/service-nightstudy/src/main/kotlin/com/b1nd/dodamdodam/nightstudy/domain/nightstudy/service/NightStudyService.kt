@@ -2,6 +2,7 @@ package com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service
 
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyMemberEntity
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyBannedException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyNotFoundException
@@ -13,11 +14,9 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.RoomAlreadyAss
 import com.b1nd.dodamdodam.nightstudy.domain.room.entity.ProjectRoomEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyBannedRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudyMember.NightStudyMemberQueryRepository
-import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudyMember.NightStudyMemberRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyQueryRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyRepository
-import kotlinx.datetime.LocalDate
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -61,8 +60,12 @@ class NightStudyService(
         return nightStudyQueryRepository.findAllByUserIdAndType(userId, type)
     }
 
-    fun getAllByType(type: NightStudyType, pageable: Pageable): Page<NightStudyEntity> {
-        return nightStudyQueryRepository.findAllByType(type, pageable)
+    fun searchByType(type: NightStudyType, userIds: List<UUID>?, status: NightStudyStatusType?, pageable: Pageable): Page<NightStudyEntity> {
+        return if (userIds != null) {
+            nightStudyQueryRepository.findAllByTypeAndUserIdsAndStatus(type, userIds, status, pageable)
+        } else {
+            nightStudyQueryRepository.findAllByTypeAndStatus(type, status, pageable)
+        }
     }
 
     fun getByPublicId(publicId: UUID): NightStudyEntity {
