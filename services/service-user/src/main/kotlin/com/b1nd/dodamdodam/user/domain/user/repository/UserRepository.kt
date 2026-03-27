@@ -11,4 +11,5 @@ interface UserRepository: JpaRepository<UserEntity, Long> {
     fun findByUsername(username: String): UserEntity?
     fun findByPhone(phone: String): UserEntity?
     fun existsByPhone(phone: String): Boolean
+    fun findAllByNameContainingIgnoreCase(name: String): List<UserEntity>
 }

@@ -7,5 +7,6 @@ import java.time.LocalDate
 
 interface MealRepository : JpaRepository<MealEntity, Long> {
     fun findAllByDateOrderByMealTypeAsc(date: LocalDate): List<MealEntity>
+    fun findAllByDateBetweenOrderByDateAscMealTypeAsc(startDate: LocalDate, endDate: LocalDate): List<MealEntity>
     fun findByDateAndMealType(date: LocalDate, mealType: MealType): MealEntity?
 }

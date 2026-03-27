@@ -15,6 +15,10 @@ import java.util.UUID
 class OpenApiUserUseCase(
     private val openApiUserService: OpenApiUserService,
 ) {
+    fun getUsersByNameKeyword(keyword: String): List<UserWithDetails> {
+        return openApiUserService.getUsersByNameKeyword(keyword)
+    }
+
     fun getUser(publicId: UUID): UserWithDetails? {
         return openApiUserService.getUsersWithDetails(listOf(publicId)).firstOrNull()
     }

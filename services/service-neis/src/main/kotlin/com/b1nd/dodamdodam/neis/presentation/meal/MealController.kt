@@ -22,6 +22,11 @@ class MealController(
     fun getMealsByDate(@RequestParam date: LocalDate) =
         mealUseCase.getMealsByDate(date)
 
+    @UserAccess
+    @GetMapping("/month")
+    fun getMealsByMonth(@RequestParam @DateTimeFormat(pattern = "yyyy-MM") yearMonth: YearMonth) =
+        mealUseCase.getMealsByMonth(yearMonth)
+
     @UserAccess(roles = [RoleType.ADMIN])
     @PostMapping("/sync")
     fun syncMeals(@RequestParam @DateTimeFormat(pattern = "yyyy-MM") yearMonth: YearMonth) =
