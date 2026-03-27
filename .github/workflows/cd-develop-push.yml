@@ -26,6 +26,7 @@ jobs:
     if: inputs.spring-services != '[]' && inputs.spring-services != '[""]'
     runs-on: ubuntu-latest
     strategy:
+      max-parallel: 3
       matrix:
         service: ${{ fromJSON(inputs.spring-services) }}
     steps:
