@@ -1,6 +1,6 @@
 package com.b1nd.dodamdodam.neis.infrastructure.comcigan
 
-import com.b1nd.dodamdodam.neis.infrastructure.comcigan.data.ParsedSchedule
+import com.b1nd.dodamdodam.neis.infrastructure.comcigan.data.ParsedTimeTable
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.annotation.PostConstruct
@@ -74,13 +74,13 @@ class ComciganClient(
         schoolCode = schools[0][3].asInt()
     }
 
-    fun fetchWeeklySchedules(mondayDate: LocalDate): List<ParsedSchedule> {
+    fun fetchWeeklyTimeTables(mondayDate: LocalDate): List<ParsedTimeTable> {
         val json = fetchTimetable()
         val subjects = json["자료$sbNum"]
         val teachers = json["자료$thNum"]
         val timetableData = json["자료$dayNum"]
 
-        val result = mutableListOf<ParsedSchedule>()
+        val result = mutableListOf<ParsedTimeTable>()
 
         for (gradeIdx in 1..minOf(comciganProperties.maxGrade, timetableData.size() - 1)) {
             val gradeData = timetableData[gradeIdx]
@@ -90,7 +90,7 @@ class ComciganClient(
                     val dayData = roomData[dayIdx]
                     val date = mondayDate.plusDays((dayIdx - 1).toLong())
                     parsePeriods(dayData, subjects, teachers) { period, subject, teacher ->
-                        result.add(ParsedSchedule(date, gradeIdx, roomIdx, period, subject, teacher))
+                        result.add(ParsedTimeTable(date, gradeIdx, roomIdx, period, subject, teacher))
                     }
                 }
             }
@@ -99,7 +99,7 @@ class ComciganClient(
         return result
     }
 
-    fun fetchDailySchedules(date: LocalDate): List<ParsedSchedule> {
+    fun fetchDailyTimeTables(date: LocalDate): List<ParsedTimeTable> {
         val dayOfWeek = date.dayOfWeek
         if (dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY) return emptyList()
 
@@ -109,7 +109,7 @@ class ComciganClient(
         val teachers = json["자료$thNum"]
         val timetableData = json["자료$dayNum"]
 
-        val result = mutableListOf<ParsedSchedule>()
+        val result = mutableListOf<ParsedTimeTable>()
 
         for (gradeIdx in 1..minOf(comciganProperties.maxGrade, timetableData.size() - 1)) {
             val gradeData = timetableData[gradeIdx]
@@ -118,7 +118,7 @@ class ComciganClient(
                 if (dayIdx >= roomData.size()) continue
                 val dayData = roomData[dayIdx]
                 parsePeriods(dayData, subjects, teachers) { period, subject, teacher ->
-                    result.add(ParsedSchedule(date, gradeIdx, roomIdx, period, subject, teacher))
+                    result.add(ParsedTimeTable(date, gradeIdx, roomIdx, period, subject, teacher))
                 }
             }
         }

@@ -6,40 +6,39 @@ import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.PrePersist
 import jakarta.persistence.Table
-import jakarta.persistence.UniqueConstraint
 import java.time.LocalDate
+import java.util.UUID
 
 @Entity
-@Table(
-    name = "schedules",
-    uniqueConstraints = [UniqueConstraint(columnNames = ["schedule_date", "grade", "room", "period"])]
-)
+@Table(name = "schedules")
 class ScheduleEntity(
-    @Column(name = "schedule_date", nullable = false)
-    val date: LocalDate,
-
-    @Column(nullable = false)
-    val grade: Int,
-
-    @Column(name = "room", nullable = false)
-    val room: Int,
-
-    @Column(nullable = false)
-    val period: Int,
-
     @Column(nullable = false, length = 100)
-    var subject: String,
+    var title: String,
 
-    @Column(nullable = false, length = 50)
-    var teacher: String,
+    @Column(name = "start_at", nullable = false)
+    var startAt: LocalDate,
+
+    @Column(name = "end_at", nullable = false)
+    var endAt: LocalDate,
 ) : BaseTimeEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null
 
-    fun updateSchedule(subject: String, teacher: String) {
-        this.subject = subject
-        this.teacher = teacher
+    @Column(nullable = false, unique = true)
+    var publicId: UUID? = null
+        protected set
+
+    @PrePersist
+    fun generatePublicId() {
+        publicId = UUID.randomUUID()
+    }
+
+    fun update(title: String, startAt: LocalDate, endAt: LocalDate) {
+        this.title = title
+        this.startAt = startAt
+        this.endAt = endAt
     }
 }

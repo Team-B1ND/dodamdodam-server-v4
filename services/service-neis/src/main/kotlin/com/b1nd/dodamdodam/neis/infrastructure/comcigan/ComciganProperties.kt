@@ -2,7 +2,7 @@ package com.b1nd.dodamdodam.neis.infrastructure.comcigan
 
 import org.springframework.boot.context.properties.ConfigurationProperties
 
-@ConfigurationProperties(prefix = "schedule")
+@ConfigurationProperties(prefix = "time-table")
 data class ComciganProperties(
     val schoolName: String,
     val maxGrade: Int = 3,
