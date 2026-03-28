@@ -23,12 +23,13 @@ class MealUseCase(
     }
 
     @Transactional(readOnly = true)
-    fun getMealsByMonth(yearMonth: YearMonth): Response<List<MealResponse>> {
-        val meals = mealService.getMealsByMonth(yearMonth)
+    fun getMealsByMonth(date: LocalDate): Response<List<MealResponse>> {
+        val meals = mealService.getMealsByMonth(YearMonth.from(date))
         return Response.ok("급식을 조회했어요.", meals.map { it.toResponse() })
     }
 
-    fun syncMeals(yearMonth: YearMonth): Response<Any> {
+    fun syncMeals(date: LocalDate): Response<Any> {
+        val yearMonth = YearMonth.from(date)
         val meals = neisClient.fetchMonthlyMeals(yearMonth)
         meals.forEach { meal ->
             mealService.saveOrUpdate(meal.date, meal.mealType, meal.calorie, meal.menus)
