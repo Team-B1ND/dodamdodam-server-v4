@@ -87,7 +87,7 @@ class UserController(
         userUseCase.getAllUsers()
 
     @UserAccess(roles = [RoleType.ADMIN])
-    @PostMapping("/grant-admin")
+    @PatchMapping("/grant-admin")
     fun grantAdmin(@RequestBody request: GrantAdminRequest) =
         userUseCase.grantAdmin(request)
 
