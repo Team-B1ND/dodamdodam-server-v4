@@ -98,7 +98,7 @@ class UserController(
         userUseCase.deactivateUser(request)
 
     @UserAccess(roles = [RoleType.ADMIN])
-    @PostMapping("/enable-user")
+    @PostMapping("/enable")
     fun enableUser(@RequestBody request: EnableUserRequest) =
         userUseCase.enableUser(request)
 
