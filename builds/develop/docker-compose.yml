@@ -219,6 +219,9 @@ services:
     restart: unless-stopped
     environment:
       SPRING_PROFILES_ACTIVE: dev
+      MYSQL_HOST: mysql://mysql:3306/dodam-file
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       AWS_S3_ENDPOINT: ${AWS_S3_ENDPOINT}
       AWS_S3_REGION: ${AWS_S3_REGION}
       AWS_S3_BUCKET: ${AWS_S3_BUCKET}
@@ -229,6 +232,8 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:5001
       GITHUB_TOKEN: ${GITHUB_TOKEN}
     depends_on:
+      mysql:
+        condition: service_healthy
       kafka:
         condition: service_healthy
 
