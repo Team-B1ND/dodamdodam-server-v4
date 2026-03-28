@@ -12,6 +12,7 @@ import com.b1nd.dodamdodam.user.application.user.data.request.ChangePhoneRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.ConfirmPhoneVerificationRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.EnableUserRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.GrantAdminRequest
+import com.b1nd.dodamdodam.user.application.user.data.request.DeactivateUserRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.RequestPhoneVerificationRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.ResetPasswordRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.StudentRegisterRequest
@@ -123,6 +124,16 @@ class UserUseCase(
             user.toUserUpdatedEvent(userRoles)
         )
         return Response.ok("어드민 권한이 부여되었어요.")
+    }
+
+    fun deactivateUser(request: DeactivateUserRequest): Response<Any> {
+        val user = userService.delete(request.userId)
+        val userRoles = userService.getRoles(user)
+        kafkaMessageProducer.send(
+            KafkaTopics.USER_UPDATED,
+            user.toUserUpdatedEvent(userRoles)
+        )
+        return Response.ok("유저가 정지되었어요.")
     }
 
     fun enableUser(request: EnableUserRequest): Response<Any> {
