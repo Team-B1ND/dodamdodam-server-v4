@@ -23,7 +23,7 @@ class BannerController(
 ) {
     @UserAccess(roles = [RoleType.ADMIN])
     @PostMapping
-    fun create(@RequestBody request: CreateBannerRequest): Response<BannerResponse> =
+    fun create(@RequestBody request: CreateBannerRequest): Response<Any> =
         bannerUseCase.create(request)
 
     @UserAccess

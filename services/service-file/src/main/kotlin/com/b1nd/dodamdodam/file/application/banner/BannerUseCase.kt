@@ -14,9 +14,9 @@ import org.springframework.transaction.annotation.Transactional
 class BannerUseCase(
     private val bannerService: BannerService,
 ) {
-    fun create(request: CreateBannerRequest): Response<BannerResponse> {
-        val banner = bannerService.save(BannerEntity(request.imageUrl, request.linkUrl))
-        return Response.created("배너가 등록됐어요.", banner.toResponse())
+    fun create(request: CreateBannerRequest): Response<Any> {
+        bannerService.save(BannerEntity(request.imageUrl, request.linkUrl))
+        return Response.created("배너가 등록됐어요.")
     }
 
     @Transactional(readOnly = true)
