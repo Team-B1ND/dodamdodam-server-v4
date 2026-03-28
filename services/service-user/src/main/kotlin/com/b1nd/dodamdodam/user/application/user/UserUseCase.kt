@@ -11,6 +11,7 @@ import com.b1nd.dodamdodam.user.application.user.data.request.ChangePasswordRequ
 import com.b1nd.dodamdodam.user.application.user.data.request.ChangePhoneRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.ConfirmPhoneVerificationRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.EnableUserRequest
+import com.b1nd.dodamdodam.user.application.user.data.request.GraduateStudentRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.GrantAdminRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.DeactivateUserRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.RequestPhoneVerificationRequest
@@ -213,5 +214,16 @@ class UserUseCase(
         phoneVerificationStore.ensureActive(request.phone)
         userService.updatePasswordByPhone(request.phone, request.newPassword)
         return Response.ok("비밀번호 재설정에 성공했어요.")
+    }
+
+    fun graduateStudent(request: GraduateStudentRequest): Response<Any> {
+        val user = userService.get(request.userId)
+        studentService.graduate(user)
+        val userRoles = userService.getRoles(user)
+        kafkaMessageProducer.send(
+            KafkaTopics.USER_UPDATED,
+            user.toUserUpdatedEvent(userRoles)
+        )
+        return Response.ok("졸업생으로 전환되었어요.")
     }
 }

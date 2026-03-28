@@ -6,6 +6,7 @@ import com.b1nd.dodamdodam.user.application.user.UserUseCase
 import com.b1nd.dodamdodam.user.application.user.data.request.ChangePasswordRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.ConfirmPhoneVerificationRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.EnableUserRequest
+import com.b1nd.dodamdodam.user.application.user.data.request.GraduateStudentRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.GrantAdminRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.DeactivateUserRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.RequestPhoneVerificationRequest
@@ -109,4 +110,9 @@ class UserController(
 
     @PatchMapping("/reset-password")
     fun resetPassword(@RequestBody request: ResetPasswordRequest) = userUseCase.resetPassword(request)
+
+    @UserAccess(roles = [RoleType.STUDENT, RoleType.ADMIN])
+    @PatchMapping("/graduate")
+    fun graduateStudent(@RequestBody request: GraduateStudentRequest) =
+        userUseCase.graduateStudent(request)
 }
