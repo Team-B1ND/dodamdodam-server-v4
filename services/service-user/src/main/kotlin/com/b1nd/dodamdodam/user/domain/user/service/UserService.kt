@@ -42,7 +42,7 @@ class UserService(
         val user = userRepository.findByPublicId(publicId)
             ?: throw UserNotFoundException()
 
-        user.phone?.let{checkDuplicatePhone(it)}
+        phone?.let{checkDuplicatePhone(it)}
 
         user.updateInfo(name, phone, profileImage)
         return userRepository.save(user)
