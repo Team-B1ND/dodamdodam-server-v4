@@ -1,7 +1,7 @@
-package com.b1nd.dodamdodam.file.application
+package com.b1nd.dodamdodam.file.application.file
 
 import com.b1nd.dodamdodam.core.common.data.Response
-import com.b1nd.dodamdodam.file.application.data.response.FileUploadResponse
+import com.b1nd.dodamdodam.file.application.file.data.response.FileUploadResponse
 import com.b1nd.dodamdodam.file.domain.enumeration.FileType
 import com.b1nd.dodamdodam.file.domain.service.FileValidationService
 import com.b1nd.dodamdodam.file.infrastructure.s3.S3FileStorageClient

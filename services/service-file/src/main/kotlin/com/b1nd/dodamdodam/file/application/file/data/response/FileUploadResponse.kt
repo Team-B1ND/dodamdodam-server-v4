@@ -1,4 +1,4 @@
-package com.b1nd.dodamdodam.file.application.data.response
+package com.b1nd.dodamdodam.file.application.file.data.response
 
 data class FileUploadResponse(
     val url: String,
