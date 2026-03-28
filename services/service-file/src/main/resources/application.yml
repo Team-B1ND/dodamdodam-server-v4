@@ -5,6 +5,9 @@ spring:
   profiles:
     active: local
 
+  flyway:
+    locations: classpath:database/migration
+
   servlet:
     multipart:
       max-file-size: 50MB

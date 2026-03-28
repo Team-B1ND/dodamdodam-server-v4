@@ -1,7 +1,7 @@
-package com.b1nd.dodamdodam.file.presentation
+package com.b1nd.dodamdodam.file.presentation.file
 
 import com.b1nd.dodamdodam.core.security.annotation.authentication.UserAccess
-import com.b1nd.dodamdodam.file.application.FileUseCase
+import com.b1nd.dodamdodam.file.application.file.FileUseCase
 import com.b1nd.dodamdodam.file.domain.enumeration.FileType
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.PostMapping
