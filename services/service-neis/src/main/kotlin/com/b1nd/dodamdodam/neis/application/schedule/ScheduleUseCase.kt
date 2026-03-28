@@ -35,8 +35,8 @@ class ScheduleUseCase(
     }
 
     @Transactional(readOnly = true)
-    fun getSchedulesByMonth(year: Int, month: Int): Response<List<ScheduleResponse>> {
-        val yearMonth = YearMonth.of(year, month)
+    fun getSchedulesByDate(date: LocalDate): Response<List<ScheduleResponse>> {
+        val yearMonth = YearMonth.from(date)
         val startOfMonth = yearMonth.atDay(1)
         val endOfMonth = yearMonth.atEndOfMonth()
 

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import java.time.LocalDate
 import java.util.UUID
 
 @RestController
@@ -38,8 +39,8 @@ class ScheduleController(
 
     @UserAccess
     @GetMapping
-    fun getSchedules(@RequestParam year: Int, @RequestParam month: Int) =
-        scheduleUseCase.getSchedulesByMonth(year, month)
+    fun getSchedules(@RequestParam date: LocalDate) =
+        scheduleUseCase.getSchedulesByDate(date)
 
     @UserAccess(roles = [RoleType.ADMIN])
     @PostMapping("/sync")
