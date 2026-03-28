@@ -6,6 +6,7 @@ import com.b1nd.dodamdodam.user.application.user.UserUseCase
 import com.b1nd.dodamdodam.user.application.user.data.request.ChangePasswordRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.ConfirmPhoneVerificationRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.EnableUserRequest
+import com.b1nd.dodamdodam.user.application.user.data.request.GrantAdminRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.RequestPhoneVerificationRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.ResetPasswordRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.StudentRegisterRequest
@@ -84,6 +85,11 @@ class UserController(
     @GetMapping("/all")
     fun getAllUsers() =
         userUseCase.getAllUsers()
+
+    @UserAccess(roles = [RoleType.ADMIN])
+    @PostMapping("/grant-admin")
+    fun grantAdmin(@RequestBody request: GrantAdminRequest) =
+        userUseCase.grantAdmin(request)
 
     @UserAccess(roles = [RoleType.ADMIN])
     @PostMapping("/enable-user")
