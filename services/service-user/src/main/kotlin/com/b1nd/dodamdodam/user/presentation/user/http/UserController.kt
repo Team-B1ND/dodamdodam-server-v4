@@ -93,7 +93,7 @@ class UserController(
         userUseCase.grantAdmin(request)
 
     @UserAccess(roles = [RoleType.ADMIN])
-    @PatchMapping("/deactivate-user")
+    @PatchMapping("/deactivate")
     fun deactivateUser(@RequestBody request: DeactivateUserRequest) =
         userUseCase.deactivateUser(request)
 
