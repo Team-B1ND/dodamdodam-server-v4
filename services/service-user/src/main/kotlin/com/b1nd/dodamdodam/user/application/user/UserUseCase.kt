@@ -11,6 +11,7 @@ import com.b1nd.dodamdodam.user.application.user.data.request.ChangePasswordRequ
 import com.b1nd.dodamdodam.user.application.user.data.request.ChangePhoneRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.ConfirmPhoneVerificationRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.EnableUserRequest
+import com.b1nd.dodamdodam.user.application.user.data.request.GrantAdminRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.RequestPhoneVerificationRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.ResetPasswordRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.StudentRegisterRequest
@@ -111,6 +112,17 @@ class UserUseCase(
         )
 
         return Response.created("선생님 계정이 생성되었어요.")
+    }
+
+    fun grantAdmin(request: GrantAdminRequest): Response<Any> {
+        val user = userService.get(request.userId)
+        userService.addRole(user, setOf(RoleType.ADMIN))
+        val userRoles = userService.getRoles(user)
+        kafkaMessageProducer.send(
+            KafkaTopics.USER_UPDATED,
+            user.toUserUpdatedEvent(userRoles)
+        )
+        return Response.ok("어드민 권한이 부여되었어요.")
     }
 
     fun enableUser(request: EnableUserRequest): Response<Any> {
