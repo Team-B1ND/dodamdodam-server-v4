@@ -2,7 +2,7 @@ package com.b1nd.dodamdodam.neis.infrastructure.comcigan.data
 
 import java.time.LocalDate
 
-data class ParsedSchedule(
+data class ParsedTimeTable(
     val date: LocalDate,
     val grade: Int,
     val room: Int,

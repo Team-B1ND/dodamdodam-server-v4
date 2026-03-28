@@ -1,0 +1,7 @@
+package com.b1nd.dodamdodam.neis.domain.timetable.exception
+
+import com.b1nd.dodamdodam.core.common.exception.BasicException
+
+class TimeTableNotFoundException : BasicException(TimeTableExceptionCode.TIME_TABLE_NOT_FOUND)
+class ComciganApiFetchFailedException : BasicException(TimeTableExceptionCode.COMCIGAN_API_FAILED)
+class ComciganSchoolNotFoundException : BasicException(TimeTableExceptionCode.COMCIGAN_SCHOOL_NOT_FOUND)

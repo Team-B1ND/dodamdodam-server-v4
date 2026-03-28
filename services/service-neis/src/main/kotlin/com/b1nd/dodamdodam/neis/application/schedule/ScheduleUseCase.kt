@@ -1,65 +1,67 @@
 package com.b1nd.dodamdodam.neis.application.schedule
 
 import com.b1nd.dodamdodam.core.common.data.Response
-import com.b1nd.dodamdodam.core.security.passport.holder.PassportHolder
-import com.b1nd.dodamdodam.core.security.passport.requireUserId
+import com.b1nd.dodamdodam.neis.application.schedule.data.request.CreateScheduleRequest
+import com.b1nd.dodamdodam.neis.application.schedule.data.request.UpdateScheduleRequest
 import com.b1nd.dodamdodam.neis.application.schedule.data.response.ScheduleResponse
 import com.b1nd.dodamdodam.neis.application.schedule.data.toResponse
 import com.b1nd.dodamdodam.neis.domain.schedule.service.ScheduleService
-import com.b1nd.dodamdodam.neis.infrastructure.comcigan.ComciganClient
-import com.b1nd.dodamdodam.neis.infrastructure.user.UserQueryClient
-import kotlinx.coroutines.runBlocking
+import com.b1nd.dodamdodam.neis.infrastructure.neis.NeisScheduleClient
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.YearMonth
+import java.util.UUID
 
 @Component
 @Transactional(rollbackFor = [Exception::class])
 class ScheduleUseCase(
     private val scheduleService: ScheduleService,
-    private val comciganClient: ComciganClient,
-    private val userQueryClient: UserQueryClient,
+    private val neisScheduleClient: NeisScheduleClient,
 ) {
-    @Transactional(readOnly = true)
-    fun getMyWeeklySchedules(): Response<List<ScheduleResponse>> {
-        val userId = PassportHolder.current().requireUserId()
-        val user = runBlocking { userQueryClient.getUser(userId.toString()) }
-        val student = user.student
+    fun createSchedule(request: CreateScheduleRequest): Response<ScheduleResponse> {
+        val schedule = scheduleService.create(request.title, request.startAt, request.endAt, request.targets)
+        return Response.created("학사일정이 등록되었어요.", schedule.toResponse(request.targets))
+    }
 
-        val today = LocalDate.now()
-        val monday = today.with(DayOfWeek.MONDAY)
-        val friday = today.with(DayOfWeek.FRIDAY)
+    fun updateSchedule(request: UpdateScheduleRequest): Response<ScheduleResponse> {
+        val schedule = scheduleService.update(request.publicId, request.title, request.startAt, request.endAt, request.targets)
+        return Response.ok("학사일정이 수정되었어요.", schedule.toResponse(request.targets))
+    }
 
-        val schedules = scheduleService.getWeeklySchedulesByRoom(monday, friday, student.grade, student.room)
-        return Response.ok("내 시간표를 조회했어요.", schedules.map { it.toResponse() })
+    fun deleteSchedule(publicId: UUID): Response<Any> {
+        scheduleService.delete(publicId)
+        return Response.ok("학사일정이 삭제되었어요.")
     }
 
     @Transactional(readOnly = true)
-    fun getSchedulesByDate(date: LocalDate, grade: Int, room: Int): Response<List<ScheduleResponse>> {
-        val schedules = scheduleService.getSchedulesByDateAndRoom(date, grade, room)
-        return Response.ok("시간표를 조회했어요.", schedules.map { it.toResponse() })
+    fun getSchedulesByMonth(year: Int, month: Int): Response<List<ScheduleResponse>> {
+        val yearMonth = YearMonth.of(year, month)
+        val startOfMonth = yearMonth.atDay(1)
+        val endOfMonth = yearMonth.atEndOfMonth()
+
+        val schedules = scheduleService.getSchedulesByMonth(startOfMonth, endOfMonth)
+        val targetMap = scheduleService.getTargetsBySchedules(schedules)
+        return Response.ok("학사일정을 조회했어요.", schedules.map {
+            it.toResponse(targetMap[it.id] ?: emptyList())
+        })
     }
 
-    @Transactional(readOnly = true)
-    fun getAllSchedulesByDate(date: LocalDate): Response<List<ScheduleResponse>> {
-        val schedules = scheduleService.getSchedulesByDate(date)
-        return Response.ok("시간표를 조회했어요.", schedules.map { it.toResponse() })
-    }
+    fun syncSchedules(year: Int): Response<Any> {
+        val startDate = LocalDate.of(year, 3, 1)
+        val endDate = YearMonth.of(year + 1, 2).atEndOfMonth()
 
-    fun syncWeeklySchedules(mondayDate: LocalDate): Response<Any> {
-        val schedules = comciganClient.fetchWeeklySchedules(mondayDate)
-        schedules.forEach {
-            scheduleService.saveOrUpdate(it.date, it.grade, it.room, it.period, it.subject, it.teacher)
+        scheduleService.deleteAllByStartAtBetween(startDate, endDate)
+
+        for (month in 3..12) {
+            val schedules = neisScheduleClient.fetchMonthlySchedules(YearMonth.of(year, month))
+            schedules.forEach { scheduleService.create(it.title, it.date, it.date, it.targets) }
         }
-        return Response.ok("${mondayDate} 주간 시간표 동기화가 완료되었어요.")
-    }
-
-    fun syncDailySchedules(date: LocalDate): Response<Any> {
-        val schedules = comciganClient.fetchDailySchedules(date)
-        schedules.forEach {
-            scheduleService.saveOrUpdate(it.date, it.grade, it.room, it.period, it.subject, it.teacher)
+        for (month in 1..2) {
+            val schedules = neisScheduleClient.fetchMonthlySchedules(YearMonth.of(year + 1, month))
+            schedules.forEach { scheduleService.create(it.title, it.date, it.date, it.targets) }
         }
-        return Response.ok("${date} 시간표 동기화가 완료되었어요.")
+
+        return Response.ok("${year}학년도 학사일정 동기화가 완료되었어요.")
     }
 }
