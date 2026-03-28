@@ -7,6 +7,7 @@ import com.b1nd.dodamdodam.core.security.annotation.EnableDodamSecurity
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan
 import org.springframework.boot.runApplication
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing
 
 @SpringBootApplication(scanBasePackages = ["com.b1nd.dodamdodam"])
 @EnableDodamSecurity
@@ -14,6 +15,7 @@ import org.springframework.boot.runApplication
 @EnableDodamGitHub
 @ConfigurationPropertiesScan
 @EnableDodamSwagger
+@EnableJpaAuditing
 class FileServiceApplication
 
 fun main(args: Array<String>) {
