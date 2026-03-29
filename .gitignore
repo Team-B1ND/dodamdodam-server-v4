@@ -54,3 +54,9 @@ CLAUDE.md
 ### Docker (local test) ###
 Dockerfile
 docker-compose.yml
+
+.env
+
+### Node.js ###
+node_modules/
+dist/

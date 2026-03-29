@@ -26,7 +26,9 @@ class StudentEntity(
 
     var room: Int,
 
-    var number: Int
+    var number: Int,
+
+    var isGraduated: Boolean = false
 ): BaseTimeEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

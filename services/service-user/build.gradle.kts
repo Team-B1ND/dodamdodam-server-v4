@@ -1,5 +1,6 @@
 plugins {
     id("buildsrc.convention.spring-boot-application")
+    kotlin("kapt")
 }
 
 dependencies {
@@ -15,9 +16,16 @@ dependencies {
     implementation(libs.springBootStarterData.jpa)
     implementation(libs.springdoc.openapi.webmvc.ui)
 
+    // querydsl
+    implementation(libs.querydsl.jpa) { artifact { classifier = "jakarta" } }
+    kapt(libs.querydsl.apt) { artifact { classifier = "jakarta" } }
+
     // flyway
     implementation(libs.flywayCore)
     implementation(libs.flywayMysql)
+
+    // http client
+    implementation("org.apache.httpcomponents.client5:httpclient5")
 
     // grpc
     implementation(project(":core:core-grpc"))

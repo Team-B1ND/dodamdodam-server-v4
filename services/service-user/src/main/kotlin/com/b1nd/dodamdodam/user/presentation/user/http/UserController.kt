@@ -6,26 +6,42 @@ import com.b1nd.dodamdodam.user.application.user.UserUseCase
 import com.b1nd.dodamdodam.user.application.user.data.request.ChangePasswordRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.ConfirmPhoneVerificationRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.EnableUserRequest
+import com.b1nd.dodamdodam.user.application.user.data.request.GraduateStudentRequest
+import com.b1nd.dodamdodam.user.application.user.data.request.GrantAdminRequest
+import com.b1nd.dodamdodam.user.application.user.data.request.DeactivateUserRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.RequestPhoneVerificationRequest
+import com.b1nd.dodamdodam.user.application.user.data.request.ResetPasswordRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.StudentRegisterRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.TeacherRegisterRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.UpdateStudentInfoRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.UpdateTeacherInfoRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.UpdateUserInfoRequest
+import org.springframework.data.domain.Pageable
 import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
 class UserController(
     private val userUseCase: UserUseCase
 ) {
-    @UserAccess(hasAnyRoleOnly = true)
-    @PostMapping("/me")
+    @UserAccess(enabledOnly = false, hasAnyRoleOnly = true)
+    @GetMapping("/me")
     fun getMe() =
         userUseCase.getMyInfo()
+
+    @UserAccess(hasAnyRoleOnly = true)
+    @GetMapping("/search")
+    fun searchUsers(
+        @RequestParam(required = false) keyword: String?,
+        @RequestParam(required = false) roles: List<RoleType>?,
+        @RequestParam(required = false) generationOnly: Boolean? = false,
+        pageable: Pageable,
+    ) = userUseCase.searchUsers(keyword, roles, generationOnly, pageable)
 
     @UserAccess(enabledOnly = false)
     @PostMapping("/register-student")
@@ -68,7 +84,22 @@ class UserController(
         userUseCase.changePassword(request)
 
     @UserAccess(roles = [RoleType.ADMIN])
-    @PostMapping("/enable-user")
+    @GetMapping("/all")
+    fun getAllUsers() =
+        userUseCase.getAllUsers()
+
+    @UserAccess(roles = [RoleType.ADMIN])
+    @PatchMapping("/grant-admin")
+    fun grantAdmin(@RequestBody request: GrantAdminRequest) =
+        userUseCase.grantAdmin(request)
+
+    @UserAccess(roles = [RoleType.ADMIN])
+    @PatchMapping("/deactivate")
+    fun deactivateUser(@RequestBody request: DeactivateUserRequest) =
+        userUseCase.deactivateUser(request)
+
+    @UserAccess(roles = [RoleType.ADMIN])
+    @PostMapping("/enable")
     fun enableUser(@RequestBody request: EnableUserRequest) =
         userUseCase.enableUser(request)
 
@@ -76,4 +107,12 @@ class UserController(
     @DeleteMapping
     fun quitUser() =
         userUseCase.quitUser()
+
+    @PatchMapping("/reset-password")
+    fun resetPassword(@RequestBody request: ResetPasswordRequest) = userUseCase.resetPassword(request)
+
+    @UserAccess(roles = [RoleType.STUDENT, RoleType.ADMIN])
+    @PatchMapping("/graduate")
+    fun graduateStudent(@RequestBody request: GraduateStudentRequest) =
+        userUseCase.graduateStudent(request)
 }

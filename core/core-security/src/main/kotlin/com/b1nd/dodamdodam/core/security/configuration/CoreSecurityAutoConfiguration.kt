@@ -3,17 +3,19 @@ package com.b1nd.dodamdodam.core.security.configuration
 import com.b1nd.dodamdodam.core.security.annotation.authentication.UserAccessAspect
 import com.b1nd.dodamdodam.core.security.filter.PassportFilter
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.EnableAspectJAutoProxy
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+import org.springframework.security.crypto.password.PasswordEncoder
 
 @Configuration
 @EnableAspectJAutoProxy
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 class CoreSecurityAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
-    fun passwordEncoder() = BCryptPasswordEncoder()
+    fun passwordEncoder(): PasswordEncoder = MigratingPasswordEncoder()
 
     @Bean
     fun passportFilter() = PassportFilter()

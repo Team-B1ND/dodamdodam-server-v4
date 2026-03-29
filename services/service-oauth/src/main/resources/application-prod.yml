@@ -1,0 +1,18 @@
+spring:
+  r2dbc:
+    url: r2dbc:${DATABASE_DRIVER}://${DATABASE_HOST}:${DATABASE_PORT}/dodam-oauth
+    username: ${DATABASE_USER}
+    password: ${DATABASE_PASSWORD}
+  flyway:
+    url: jdbc:${DATABASE_DRIVER}://${DATABASE_HOST}:${DATABASE_PORT}/dodam-oauth
+    user: ${DATABASE_USER}
+    password: ${DATABASE_PASSWORD}
+
+grpc:
+  client:
+    service-auth:
+      address: 'static://auth.dodam.svc.cluster.local:9090'
+      negotiation-type: plaintext
+
+server:
+  port: 8080

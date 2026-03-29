@@ -11,14 +11,36 @@ spring:
         connect-timeout: 3000
         response-timeout: 60s
 
-  flyway:
-    locations: classpath:database/migration
-
   profiles:
     active: local
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
 
 management:
   endpoints:
     web:
       exposure:
         include: gateway,health,info
+
+app:
+  auth:
+    access-token-cookie: ${COOKIE_ACCESS_TOKEN_NAME:access_token}
+  oauth:
+    scope-rules:
+      - path: /nightstudy/
+        read: nightstudy:read
+        write: nightstudy:write
+      - path: /outgoing/
+        read: outgoing:read
+      - path: /wakeup-song/
+        read: wakeupsong:read
+        write: wakeupsong:write
+      - path: /user/
+        read: profile:read
+      - path: /notification/
+        write: notification:write

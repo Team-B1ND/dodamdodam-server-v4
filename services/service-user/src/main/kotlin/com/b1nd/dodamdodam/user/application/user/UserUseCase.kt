@@ -1,5 +1,6 @@
 package com.b1nd.dodamdodam.user.application.user
 
+import com.b1nd.dodamdodam.core.common.data.InfinityScrollPageResponse
 import com.b1nd.dodamdodam.core.common.data.Response
 import com.b1nd.dodamdodam.core.kafka.constants.KafkaTopics
 import com.b1nd.dodamdodam.core.kafka.producer.KafkaMessageProducer
@@ -7,9 +8,14 @@ import com.b1nd.dodamdodam.core.security.passport.enumerations.RoleType
 import com.b1nd.dodamdodam.core.security.passport.holder.PassportHolder
 import com.b1nd.dodamdodam.core.security.passport.requireUserId
 import com.b1nd.dodamdodam.user.application.user.data.request.ChangePasswordRequest
+import com.b1nd.dodamdodam.user.application.user.data.request.ChangePhoneRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.ConfirmPhoneVerificationRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.EnableUserRequest
+import com.b1nd.dodamdodam.user.application.user.data.request.GraduateStudentRequest
+import com.b1nd.dodamdodam.user.application.user.data.request.GrantAdminRequest
+import com.b1nd.dodamdodam.user.application.user.data.request.DeactivateUserRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.RequestPhoneVerificationRequest
+import com.b1nd.dodamdodam.user.application.user.data.request.ResetPasswordRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.StudentRegisterRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.TeacherRegisterRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.UpdateStudentInfoRequest
@@ -17,6 +23,8 @@ import com.b1nd.dodamdodam.user.application.user.data.request.UpdateTeacherInfoR
 import com.b1nd.dodamdodam.user.application.user.data.request.UpdateUserInfoRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.VerifyPasswordRequest
 import com.b1nd.dodamdodam.user.application.user.data.response.UserInfoResponse
+import com.b1nd.dodamdodam.user.application.user.data.response.UserSearchResponse
+import com.b1nd.dodamdodam.user.application.user.data.toResponse
 import com.b1nd.dodamdodam.user.application.user.data.toUserCreatedEvent
 import com.b1nd.dodamdodam.user.application.user.data.toUserUpdatedEvent
 import com.b1nd.dodamdodam.user.application.user.data.toStudentEntity
@@ -25,15 +33,18 @@ import com.b1nd.dodamdodam.user.application.user.data.toUserEntity
 import com.b1nd.dodamdodam.user.domain.student.service.StudentService
 import com.b1nd.dodamdodam.user.domain.teacher.service.TeacherService
 import com.b1nd.dodamdodam.user.domain.user.entity.UserEntity
+import com.b1nd.dodamdodam.user.domain.user.service.UserQueryService
 import com.b1nd.dodamdodam.user.domain.user.service.UserService
 import com.b1nd.dodamdodam.user.infrastructure.phoneverification.service.PhoneVerificationStore
 import jakarta.transaction.Transactional
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Component
 
 @Component
 @Transactional(rollbackOn = [Exception::class])
 class UserUseCase(
     private val userService: UserService,
+    private val userQueryService: UserQueryService,
     private val studentService: StudentService,
     private val teacherService: TeacherService,
     private val phoneVerificationStore: PhoneVerificationStore,
@@ -47,6 +58,33 @@ class UserUseCase(
             "내 정보를 조회했어요.",
             UserInfoResponse.fromEntity(user, roles, studentService.getOrNull(user), teacherService.getOrNull(user))
         )
+    }
+
+    fun searchUsers(keyword: String?, roles: List<RoleType>?, generationOnly: Boolean?, pageable: Pageable): Response<InfinityScrollPageResponse<UserSearchResponse>> {
+        val page = userQueryService.search(keyword, roles, generationOnly, pageable)
+        return Response.ok(
+            "유저를 검색했어요.",
+            InfinityScrollPageResponse(content = page.content.map { it.toResponse() }, hasNext = page.hasNext),
+        )
+    }
+
+    fun getAllUsers(): Response<List<UserInfoResponse>> {
+        val users = userService.getAll()
+        if (users.isEmpty()) return Response.ok("모든 유저를 조회했어요.", emptyList())
+
+        val rolesMap = userService.getRolesGroupedByUser(users)
+        val studentsMap = studentService.getByUsers(users)
+        val teachersMap = teacherService.getByUsers(users)
+
+        val responses = users.map { user ->
+            UserInfoResponse.fromEntity(
+                user,
+                rolesMap[user.id] ?: emptySet(),
+                studentsMap[user.id],
+                teachersMap[user.id],
+            )
+        }
+        return Response.ok("모든 유저를 조회했어요.", responses)
     }
 
     fun registerStudent(request: StudentRegisterRequest): Response<Any> {
@@ -78,6 +116,27 @@ class UserUseCase(
         return Response.created("선생님 계정이 생성되었어요.")
     }
 
+    fun grantAdmin(request: GrantAdminRequest): Response<Any> {
+        val user = userService.get(request.userId)
+        userService.addRole(user, setOf(RoleType.ADMIN))
+        val userRoles = userService.getRoles(user)
+        kafkaMessageProducer.send(
+            KafkaTopics.USER_UPDATED,
+            user.toUserUpdatedEvent(userRoles)
+        )
+        return Response.ok("어드민 권한이 부여되었어요.")
+    }
+
+    fun deactivateUser(request: DeactivateUserRequest): Response<Any> {
+        val user = userService.delete(request.userId)
+        val userRoles = userService.getRoles(user)
+        kafkaMessageProducer.send(
+            KafkaTopics.USER_UPDATED,
+            user.toUserUpdatedEvent(userRoles)
+        )
+        return Response.ok("유저가 정지되었어요.")
+    }
+
     fun enableUser(request: EnableUserRequest): Response<Any> {
         val user = userService.enable(request.userId)
         val userRoles = userService.getRoles(user)
@@ -101,6 +160,7 @@ class UserUseCase(
     fun updateUser(request: UpdateUserInfoRequest): Response<Any> {
         val passport = PassportHolder.current()
         val userId = passport.requireUserId()
+        if(request.phone != null) phoneVerificationStore.ensureActive(request.phone)
         val updatedUser = userService.update(userId, request.name, request.phone, request.profileImage)
         val roles = userService.getRoles(updatedUser)
         kafkaMessageProducer.send(
@@ -148,5 +208,22 @@ class UserUseCase(
     fun confirmPhoneVerification(request: ConfirmPhoneVerificationRequest): Response<Any> {
         phoneVerificationStore.verifyCode(request.phone, request.code)
         return Response.ok("휴대폰 인증을 성공했어요.")
+    }
+
+    fun resetPassword(request: ResetPasswordRequest): Response<Any> {
+        phoneVerificationStore.ensureActive(request.phone)
+        userService.updatePasswordByPhone(request.phone, request.newPassword)
+        return Response.ok("비밀번호 재설정에 성공했어요.")
+    }
+
+    fun graduateStudent(request: GraduateStudentRequest): Response<Any> {
+        val user = userService.get(request.userId)
+        studentService.graduate(user)
+        val userRoles = userService.getRoles(user)
+        kafkaMessageProducer.send(
+            KafkaTopics.USER_UPDATED,
+            user.toUserUpdatedEvent(userRoles)
+        )
+        return Response.ok("졸업생으로 전환되었어요.")
     }
 }

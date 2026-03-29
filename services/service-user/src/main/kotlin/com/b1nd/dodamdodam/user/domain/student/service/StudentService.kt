@@ -21,8 +21,17 @@ class StudentService(
     fun getOrNull(user: UserEntity): StudentEntity? =
         repository.findByUser(user)
 
+    fun getByUsers(users: Collection<UserEntity>): Map<Long?, StudentEntity> =
+        repository.findAllByUserIn(users).associateBy { it.user.id }
+
     fun update(user: UserEntity, grade: Int?, room: Int?, number: Int?) {
         val student = repository.findByUser(user) ?: throw StudentNotFoundException()
         student.updateInfo(grade, room, number)
+    }
+
+    fun graduate(user: UserEntity): StudentEntity {
+        val student = repository.findByUser(user) ?: throw StudentNotFoundException()
+        student.isGraduated = true
+        return repository.save(student)
     }
 }

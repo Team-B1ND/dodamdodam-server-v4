@@ -1,0 +1,45 @@
+package com.b1nd.dodamdodam.oauth.presentation.authorize
+
+import com.b1nd.dodamdodam.core.common.data.Response
+import com.b1nd.dodamdodam.core.security.annotation.authentication.UserAccess
+import com.b1nd.dodamdodam.core.security.passport.PassportResolver
+import com.b1nd.dodamdodam.oauth.application.data.request.ConsentRequest
+import com.b1nd.dodamdodam.oauth.application.data.response.AuthorizeResponse
+import com.b1nd.dodamdodam.oauth.application.data.response.ConsentRedirectResponse
+import com.b1nd.dodamdodam.oauth.application.usecase.OauthAuthorizeUseCase
+import jakarta.validation.Valid
+import org.springframework.web.bind.annotation.*
+
+@RestController
+@RequestMapping("/authorize")
+class AuthorizeController(private val authorizeUseCase: OauthAuthorizeUseCase) {
+
+    @GetMapping
+    suspend fun authorize(
+        @RequestParam("response_type") responseType: String,
+        @RequestParam("client_id") clientId: String,
+        @RequestParam("redirect_uri") redirectUri: String,
+        @RequestParam scope: String,
+        @RequestParam(required = false) state: String?,
+        @RequestParam("code_challenge", required = false) codeChallenge: String?,
+        @RequestParam("code_challenge_method", required = false) codeChallengeMethod: String?,
+        @RequestHeader("X-User-Passport", required = false) passport: String?,
+    ): Response<AuthorizeResponse> {
+        val userPublicId = passport?.let {
+            try { PassportResolver.extractUserId(it) } catch (_: Exception) { null }
+        }
+        val result = authorizeUseCase.authorize(responseType, clientId, redirectUri, scope, state, codeChallenge, codeChallengeMethod, userPublicId)
+        return Response.ok("인가 요청이 검증되었어요.", result)
+    }
+
+    @UserAccess(hasAnyRoleOnly = true)
+    @PostMapping("/consent")
+    suspend fun consent(
+        @RequestHeader("X-User-Passport") passport: String,
+        @Valid @RequestBody request: ConsentRequest,
+    ): Response<ConsentRedirectResponse> {
+        val userPublicId = PassportResolver.extractUserId(passport)
+        val result = authorizeUseCase.consent(request, userPublicId)
+        return Response.ok("동의가 처리되었어요.", result)
+    }
+}
