@@ -1,7 +1,6 @@
 package com.b1nd.dodamdodam.user.domain.user.service
 
 import com.b1nd.dodamdodam.core.security.passport.enumerations.RoleType
-import com.b1nd.dodamdodam.user.application.user.data.request.UpdateUserInfoRequest
 import com.b1nd.dodamdodam.user.domain.user.entity.UserEntity
 import com.b1nd.dodamdodam.user.domain.user.entity.UserRoleEntity
 import com.b1nd.dodamdodam.user.domain.user.enumeration.StatusType
@@ -11,16 +10,15 @@ import com.b1nd.dodamdodam.user.domain.user.exception.UserNotFoundException
 import com.b1nd.dodamdodam.user.domain.user.exception.UserPasswordIncorrectException
 import com.b1nd.dodamdodam.user.domain.user.repository.UserRepository
 import com.b1nd.dodamdodam.user.domain.user.repository.UserRoleRepository
-import com.b1nd.dodamdodam.user.infrastructure.phoneverification.exception.PhoneNotVerifiedException
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
-import java.util.UUID
+import java.util.*
 
 @Service
 class UserService(
     private val userRepository: UserRepository,
     private val userRoleRepository: UserRoleRepository,
-    private val encoder: BCryptPasswordEncoder
+    private val encoder: PasswordEncoder
 ) {
     fun get(publicId: UUID): UserEntity =
         userRepository.findByPublicId(publicId)
@@ -98,6 +96,10 @@ class UserService(
             ?: throw UserPasswordIncorrectException()
         if (!encoder.matches(password, user.password))
             throw UserPasswordIncorrectException()
+        if (!user.password.startsWith("\$2a\$") && !user.password.startsWith("\$2b\$") && !user.password.startsWith("\$2y\$")) {
+            user.updatePassword(encoder.encode(password))
+            userRepository.save(user)
+        }
     }
 
     fun updatePasswordByPhone(phone: String, newPassword: String) {

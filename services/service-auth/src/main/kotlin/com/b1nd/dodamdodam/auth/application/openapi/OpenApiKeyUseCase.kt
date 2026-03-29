@@ -3,7 +3,7 @@ package com.b1nd.dodamdodam.auth.application.openapi
 import com.b1nd.dodamdodam.auth.infrastructure.openapi.client.InAppClient
 import com.b1nd.dodamdodam.auth.infrastructure.openapi.repository.OpenApiKeyCacheRepository
 import kotlinx.coroutines.runBlocking
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 import java.time.Duration
 
@@ -11,7 +11,7 @@ import java.time.Duration
 class OpenApiKeyUseCase(
     private val cacheRepository: OpenApiKeyCacheRepository,
     private val inAppClient: InAppClient,
-    private val passwordEncoder: BCryptPasswordEncoder
+    private val passwordEncoder: PasswordEncoder
 ) {
     companion object {
         private val API_KEY_CACHE_TTL = Duration.ofDays(90)

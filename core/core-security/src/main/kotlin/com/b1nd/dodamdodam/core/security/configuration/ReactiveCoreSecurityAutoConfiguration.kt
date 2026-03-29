@@ -7,7 +7,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.web.reactive.result.method.annotation.RequestMappingHandlerMapping
 
 @Configuration
@@ -16,7 +16,7 @@ class ReactiveCoreSecurityAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    fun passwordEncoder() = BCryptPasswordEncoder()
+    fun passwordEncoder(): PasswordEncoder = MigratingPasswordEncoder()
 
     @Bean
     fun reactivePassportFilter() = ReactivePassportFilter()
