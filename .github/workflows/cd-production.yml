@@ -185,7 +185,7 @@ jobs:
             PREFIX=teamb1nd/dodam
             KC="sudo k3s kubectl"
 
-            SERVICES="gateway auth user wakeup inapp file neis out-sleeping nightstudy oauth notification meal"
+            SERVICES="gateway auth user wakeup-song inapp file neis out-sleeping nightstudy oauth notification"
             for svc in $SERVICES; do
               IMAGE="${PREFIX}-${svc}:${TAG}"
               $KC set image deployment/${svc} ${svc}=${IMAGE} -n dodam
