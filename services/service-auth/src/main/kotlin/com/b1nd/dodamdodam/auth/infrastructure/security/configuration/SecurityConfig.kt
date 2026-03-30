@@ -43,7 +43,8 @@ class SecurityConfig(
                     "/open-api/verify",
                     "/v3/api-docs/**",
                     "/swagger-ui/**",
-                    "/swagger-ui.html"
+                    "/swagger-ui.html",
+                    "/actuator/**"
                 ).permitAll()
                 auth.anyRequest().authenticated()
             }
