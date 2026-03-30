@@ -39,6 +39,7 @@ class SecurityConfig(
                 auth.requestMatchers(
                     "/passport",
                     "/login",
+                    "/logout",
                     "/refresh",
                     "/open-api/verify",
                     "/v3/api-docs/**",
