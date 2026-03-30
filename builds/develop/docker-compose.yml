@@ -244,11 +244,11 @@ services:
     environment:
       NODE_ENV: development
       PORT: 8080
-      DB_HOST: mysql
-      DB_PORT: 3306
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${MYSQL_USER}
-      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DATABASE_DRIVER: mysql
+      DATABASE_HOST: mysql
+      DATABASE_PORT: 3306
+      DATABASE_USER: ${MYSQL_USER}
+      DATABASE_PASSWORD: ${MYSQL_PASSWORD}
       KAFKA_BOOTSTRAP_SERVERS: kafka:5001
       KAFKA_CONSUMER_GROUP_ID: service-notification
       GRPC_INAPP_ADDRESS: service-inapp:9090
