@@ -174,11 +174,24 @@ jobs:
         id: version
         run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
 
-      - name: Trigger k8s deploy
-        run: |
-          curl -X POST \
-            -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: token ${{ secrets.K8S_DEPLOY_TOKEN }}" \
-            https://api.github.com/repos/Team-B1ND/dodamdodam-k8s/actions/workflows/deploy.yml/dispatches \
-            -d '{"ref":"main","inputs":{"image-tag":"${{ steps.version.outputs.tag }}"}}'
-          echo "Triggered k8s deploy with tag ${{ steps.version.outputs.tag }}"
+      - name: Sequential rolling update
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.K3S_CONTROL_PLANE_HOST }}
+          username: ${{ secrets.K3S_CONTROL_PLANE_USER }}
+          key: ${{ secrets.K3S_CONTROL_PLANE_SSH_KEY }}
+          command_timeout: 30m
+          script: |
+            TAG=${{ steps.version.outputs.tag }}
+            PREFIX=teamb1nd/dodam
+            KC="sudo k3s kubectl"
+
+            SERVICES="gateway auth user inapp neis file nightstudy out-sleeping wakeup-song oauth notification"
+            for svc in $SERVICES; do
+              echo ">>> Updating $svc to ${TAG}..."
+              $KC set image deployment/${svc} ${svc}=${PREFIX}-${svc}:${TAG} -n dodam
+              $KC rollout status deployment/${svc} -n dodam --timeout=180s
+              echo ">>> $svc ready"
+            done
+
+            echo "All deployments rolled out to ${TAG}"
