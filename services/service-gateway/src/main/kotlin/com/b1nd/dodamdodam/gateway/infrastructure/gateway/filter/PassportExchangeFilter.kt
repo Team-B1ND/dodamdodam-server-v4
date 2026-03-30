@@ -84,6 +84,6 @@ class PassportExchangeFilter(
     companion object {
         private val CACHE_TTL = Duration.ofMinutes(2)
         private val SKIP_PATHS = listOf("/swagger-ui", "/v3/api-docs")
-        private val IGNORE_COOKIE_PATHS = setOf("/auth/login", "/auth/refresh")
+        private val IGNORE_COOKIE_PATHS = setOf("/auth/login", "/auth/refresh", "/auth/logout")
     }
 }

@@ -31,6 +31,13 @@ class AuthController(
         return useCase.refresh(request?.refreshToken, cookieRefreshToken)
     }
 
+    @PostMapping("/logout")
+    fun logout(httpRequest: HttpServletRequest): Response<Unit> {
+        val cookieRefreshToken = httpRequest.cookies?.firstOrNull { it.name == cookieProperties.refreshTokenName }?.value
+        useCase.logout(cookieRefreshToken)
+        return Response.ok("로그아웃에 성공했어요.")
+    }
+
     @GetMapping("/health")
     fun health(): String = "OK"
 

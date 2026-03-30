@@ -39,6 +39,13 @@ class AuthUseCase(
         return Response.ok("로그인에 성공했어요.", LoginResponse.fromJwtPair(tokens))
     }
 
+    fun logout(cookieRefreshToken: String?) {
+        cookieRefreshToken
+            ?.takeIf { it.isNotBlank() }
+            ?.let { principalService.deleteRefreshToken(it) }
+        cookieProvider.addExpiredCookies()
+    }
+
     fun refresh(bodyToken: String?, cookieToken: String?): Response<LoginResponse> {
         val refreshToken = bodyToken
             ?.takeIf { it.isNotBlank() }
