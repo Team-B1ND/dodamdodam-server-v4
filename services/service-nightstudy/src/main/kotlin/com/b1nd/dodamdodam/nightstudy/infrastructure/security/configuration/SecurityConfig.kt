@@ -22,7 +22,8 @@ class SecurityConfig(
                     "/v3/api-docs/**",
                     "/swagger-ui/**",
                     "/swagger-ui.html",
-                    "/openapi/**"
+                    "/openapi/**",
+                    "/actuator/**"
                 ).permitAll()
                 auth.anyRequest().authenticated()
             }
