@@ -182,16 +182,18 @@ jobs:
           key: ${{ secrets.K3S_CONTROL_PLANE_SSH_KEY }}
           script: |
             TAG=${{ steps.version.outputs.tag }}
-            PREFIX=teamb1nd/dodam
             KC="sudo k3s kubectl"
+            HELM="sudo KUBECONFIG=/etc/rancher/k3s/k3s.yaml helm"
 
-            SERVICES="gateway auth user wakeup-song inapp file neis out-sleeping nightstudy oauth notification"
-            for svc in $SERVICES; do
-              IMAGE="${PREFIX}-${svc}:${TAG}"
-              $KC set image deployment/${svc} ${svc}=${IMAGE} -n dodam
-            done
+            cd ~/dodamdodam-k8s
+            git pull origin main
+
+            $HELM upgrade dodam . -n dodam \
+              --set defaults.image.tag=${TAG} \
+              --timeout 5m
 
             echo "Waiting for rollout..."
+            SERVICES="gateway auth user wakeup-song inapp file neis out-sleeping nightstudy oauth notification"
             for svc in $SERVICES; do
               $KC rollout status deployment/${svc} -n dodam --timeout=180s
             done
