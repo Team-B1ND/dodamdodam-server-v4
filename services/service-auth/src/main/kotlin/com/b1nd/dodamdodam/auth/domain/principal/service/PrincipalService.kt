@@ -40,10 +40,6 @@ class PrincipalService(
         refreshTokenRepository.findByToken(token)
             ?: throw RefreshTokenNotFoundException()
 
-    fun deleteRefreshToken(token: String) {
-        refreshTokenRepository.deleteByToken(token)
-    }
-
     fun updatePrincipal(userId: UUID, status: Boolean, username: String, roles: Set<RoleType>) {
         val principal = repository.findByUserId(userId)
             ?: PrincipalEntity(
