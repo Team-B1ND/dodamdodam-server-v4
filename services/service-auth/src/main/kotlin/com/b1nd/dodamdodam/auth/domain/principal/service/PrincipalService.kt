@@ -32,6 +32,10 @@ class PrincipalService(
         refreshTokenRepository.save(PrincipalRefreshTokenEntity(principal, newToken, userAgent))
     }
 
+    fun deleteRefreshToken(token: String) {
+        refreshTokenRepository.deleteByToken(token)
+    }
+
     fun findRefreshToken(token: String): PrincipalRefreshTokenEntity =
         refreshTokenRepository.findByToken(token)
             ?: throw RefreshTokenNotFoundException()
