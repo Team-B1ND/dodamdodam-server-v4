@@ -32,13 +32,13 @@ class PrincipalService(
         refreshTokenRepository.save(PrincipalRefreshTokenEntity(principal, newToken, userAgent))
     }
 
-    fun findRefreshToken(token: String): PrincipalRefreshTokenEntity =
-        refreshTokenRepository.findByToken(token)
-            ?: throw RefreshTokenNotFoundException()
-
     fun deleteRefreshToken(token: String) {
         refreshTokenRepository.deleteByToken(token)
     }
+
+    fun findRefreshToken(token: String): PrincipalRefreshTokenEntity =
+        refreshTokenRepository.findByToken(token)
+            ?: throw RefreshTokenNotFoundException()
 
     fun updatePrincipal(userId: UUID, status: Boolean, username: String, roles: Set<RoleType>) {
         val principal = repository.findByUserId(userId)
