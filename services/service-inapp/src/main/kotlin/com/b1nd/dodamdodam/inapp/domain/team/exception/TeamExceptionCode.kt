@@ -12,4 +12,7 @@ enum class TeamExceptionCode(
     TEAM_OWNER_PERMISSION_REQUIRED(HttpStatus.FORBIDDEN, "팀 오너 권한이 필요해요."),
     TEAM_CANNOT_REMOVE_OWNER(HttpStatus.FORBIDDEN, "팀 오너는 추방할 수 없어요."),
     TEAM_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "팀 멤버를 찾을 수 없어요."),
+    TEAM_INVITE_CODE_NOT_FOUND(HttpStatus.NOT_FOUND, "유효하지 않거나 만료된 초대 코드예요."),
+    TEAM_ALREADY_MEMBER(HttpStatus.CONFLICT, "이미 팀 멤버예요."),
+    TEAM_NOT_MEMBER(HttpStatus.FORBIDDEN, "팀 멤버만 초대할 수 있어요."),
 }

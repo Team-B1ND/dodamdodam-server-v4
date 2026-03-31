@@ -40,6 +40,9 @@ class TeamService(
     fun existsOwner(userId: UUID, teamEntity: TeamEntity) =
         teamMemberRepository.existsByUserAndTeamAndIsOwnerIsTrue(userId, teamEntity)
 
+    fun isMember(userId: UUID, team: TeamEntity) =
+        teamMemberRepository.existsByUserAndTeam(userId, team)
+
     fun create(userId: UUID, teamEntity: TeamEntity): TeamEntity {
         if (repository.existsByName(teamEntity.name))
             throw TeamNameAlreadyExistException()
