@@ -105,7 +105,7 @@ class AppService(
     }
 
     fun getReleases(userId: UUID, appId: UUID, date: LocalDate?, keyword: String?, pageable: Pageable): Page<AppReleaseEntity> {
-        val app = getAppWithOwnerPermission(userId, appId)
+        val app = getAppWithMemberPermission(userId, appId)
         return appReleaseQueryRepository.findReleases(app, date, keyword, pageable)
     }
 
