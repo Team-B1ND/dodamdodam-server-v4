@@ -50,7 +50,7 @@ class TimeTableUseCase(
     fun syncWeeklyTimeTables(mondayDate: LocalDate): Response<Any> {
         val timeTables = comciganClient.fetchWeeklyTimeTables(mondayDate)
         timeTables.forEach {
-            timeTableService.saveOrUpdate(it.date, it.grade, it.room, it.period, it.subject, it.teacher)
+            timeTableService.saveOrUpdate(it.date, it.grade, it.room, it.period, it.subject, it.teacher, it.isReplaced)
         }
         return Response.ok("${mondayDate} 주간 시간표 동기화가 완료되었어요.")
     }
@@ -58,7 +58,7 @@ class TimeTableUseCase(
     fun syncDailyTimeTables(date: LocalDate): Response<Any> {
         val timeTables = comciganClient.fetchDailyTimeTables(date)
         timeTables.forEach {
-            timeTableService.saveOrUpdate(it.date, it.grade, it.room, it.period, it.subject, it.teacher)
+            timeTableService.saveOrUpdate(it.date, it.grade, it.room, it.period, it.subject, it.teacher, it.isReplaced)
         }
         return Response.ok("${date} 시간표 동기화가 완료되었어요.")
     }

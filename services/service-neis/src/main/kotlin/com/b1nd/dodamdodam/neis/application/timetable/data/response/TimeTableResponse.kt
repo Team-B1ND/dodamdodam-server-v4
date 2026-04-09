@@ -9,4 +9,5 @@ data class TimeTableResponse(
     val period: Int,
     val subject: String,
     val teacher: String,
+    val isReplaced: Boolean,
 )

@@ -25,6 +25,7 @@ class ComciganClient(
     private lateinit var baseUrl: String
     private lateinit var searchUrl: String
     private lateinit var prefix: String
+    private var orgNum: Int = 0
     private var dayNum: Int = 0
     private var thNum: Int = 0
     private var sbNum: Int = 0
@@ -47,9 +48,9 @@ class ComciganClient(
         val orgDataMatch = Regex("원자료=Q자료\\(자료\\.자료(\\d+)").find(html)
         val dayDataMatch = Regex("일일자료=Q자료\\(자료\\.자료(\\d+)").find(html)
 
-        dayNum = dayDataMatch?.groupValues?.get(1)?.toInt()
-            ?: orgDataMatch?.groupValues?.get(1)?.toInt()
-            ?: throw IllegalStateException("컴시간 dayNum 추출 실패")
+        orgNum = orgDataMatch?.groupValues?.get(1)?.toInt()
+            ?: throw IllegalStateException("컴시간 orgNum 추출 실패")
+        dayNum = dayDataMatch?.groupValues?.get(1)?.toInt() ?: orgNum
         thNum = Regex("성명=자료\\.자료(\\d+)").find(html)?.groupValues?.get(1)?.toInt()
             ?: throw IllegalStateException("컴시간 thNum 추출 실패")
         sbNum = Regex("자료\\.자료(\\d+)\\[sb]").find(html)?.groupValues?.get(1)?.toInt()
@@ -79,18 +80,22 @@ class ComciganClient(
         val subjects = json["자료$sbNum"]
         val teachers = json["자료$thNum"]
         val timetableData = json["자료$dayNum"]
+        val orgData = if (orgNum != dayNum) json["자료$orgNum"] else null
 
         val result = mutableListOf<ParsedTimeTable>()
 
         for (gradeIdx in 1..minOf(comciganProperties.maxGrade, timetableData.size() - 1)) {
             val gradeData = timetableData[gradeIdx]
+            val orgGradeData = orgData?.get(gradeIdx)
             for (roomIdx in 1..minOf(comciganProperties.maxRoom, gradeData.size() - 1)) {
                 val roomData = gradeData[roomIdx]
+                val orgRoomData = orgGradeData?.get(roomIdx)
                 for (dayIdx in 1..minOf(5, roomData.size() - 1)) {
                     val dayData = roomData[dayIdx]
+                    val orgDayData = orgRoomData?.get(dayIdx)
                     val date = mondayDate.plusDays((dayIdx - 1).toLong())
-                    parsePeriods(dayData, subjects, teachers) { period, subject, teacher ->
-                        result.add(ParsedTimeTable(date, gradeIdx, roomIdx, period, subject, teacher))
+                    parsePeriods(dayData, orgDayData, subjects, teachers) { period, subject, teacher, isReplaced ->
+                        result.add(ParsedTimeTable(date, gradeIdx, roomIdx, period, subject, teacher, isReplaced))
                     }
                 }
             }
@@ -108,17 +113,21 @@ class ComciganClient(
         val subjects = json["자료$sbNum"]
         val teachers = json["자료$thNum"]
         val timetableData = json["자료$dayNum"]
+        val orgData = if (orgNum != dayNum) json["자료$orgNum"] else null
 
         val result = mutableListOf<ParsedTimeTable>()
 
         for (gradeIdx in 1..minOf(comciganProperties.maxGrade, timetableData.size() - 1)) {
             val gradeData = timetableData[gradeIdx]
+            val orgGradeData = orgData?.get(gradeIdx)
             for (roomIdx in 1..minOf(comciganProperties.maxRoom, gradeData.size() - 1)) {
                 val roomData = gradeData[roomIdx]
+                val orgRoomData = orgGradeData?.get(roomIdx)
                 if (dayIdx >= roomData.size()) continue
                 val dayData = roomData[dayIdx]
-                parsePeriods(dayData, subjects, teachers) { period, subject, teacher ->
-                    result.add(ParsedTimeTable(date, gradeIdx, roomIdx, period, subject, teacher))
+                val orgDayData = orgRoomData?.get(dayIdx)
+                parsePeriods(dayData, orgDayData, subjects, teachers) { period, subject, teacher, isReplaced ->
+                    result.add(ParsedTimeTable(date, gradeIdx, roomIdx, period, subject, teacher, isReplaced))
                 }
             }
         }
@@ -128,9 +137,10 @@ class ComciganClient(
 
     private inline fun parsePeriods(
         dayData: JsonNode,
+        orgDayData: JsonNode?,
         subjects: JsonNode,
         teachers: JsonNode,
-        onPeriod: (period: Int, subject: String, teacher: String) -> Unit,
+        onPeriod: (period: Int, subject: String, teacher: String, isReplaced: Boolean) -> Unit,
     ) {
         for (periodIdx in 1 until dayData.size()) {
             val value = dayData[periodIdx].asInt()
@@ -144,7 +154,10 @@ class ComciganClient(
             val teacher = getTextSafe(teachers, teacherIdx)
             if (subject.isBlank()) continue
 
-            onPeriod(periodIdx, subject, teacher)
+            val orgValue = orgDayData?.get(periodIdx)?.asInt() ?: value
+            val isReplaced = value != orgValue
+
+            onPeriod(periodIdx, subject, teacher, isReplaced)
         }
     }
 
