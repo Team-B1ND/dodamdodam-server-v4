@@ -20,8 +20,8 @@ class UserQueryRepositoryImpl(
     private val queryFactory: JPAQueryFactory
 ) : UserQueryRepository {
 
-    override fun searchUsers(keyword: String?, roles: List<RoleType>?, generationOnly: Boolean?, pageable: Pageable): List<UserSearchCommand> {
-        val condition = buildCondition(keyword, roles, generationOnly)
+    override fun searchUsers(keyword: String?, roles: List<RoleType>?, generationOnly: Boolean?, status: List<StatusType>?, pageable: Pageable): List<UserSearchCommand> {
+        val condition = buildCondition(keyword, roles, generationOnly, status)
 
         val tuples = queryFactory
             .select(userEntity, studentEntity, teacherEntity, adminEntity)
@@ -43,13 +43,14 @@ class UserQueryRepositoryImpl(
         return tuples.map { it.toCommand(rolesMap) }
     }
 
-    private fun buildCondition(keyword: String?, roles: List<RoleType>?, generationOnly: Boolean?) = BooleanBuilder().apply {
+    private fun buildCondition(keyword: String?, roles: List<RoleType>?, generationOnly: Boolean?, status: List<StatusType>?) = BooleanBuilder().apply {
         keyword?.takeIf { it.isNotBlank() }?.let { and(userEntity.name.containsIgnoreCase(it)) }
         roles?.takeIf { it.isNotEmpty() }?.let {
             and(JPAExpressions.selectOne().from(userRoleEntity)
                 .where(userRoleEntity.user.eq(userEntity), userRoleEntity.role.`in`(it)).exists())
         }
         generationOnly?.takeIf { it }?.let { and(studentEntity.isGraduated.isFalse) }
+        status?.takeIf { it.isNotEmpty() }?.let { and(userEntity.status.`in`(it)) }
     }
 
     private fun fetchRolesMap(tuples: List<Tuple>): Map<Long, Set<RoleType>> {
