@@ -1,117 +1,117 @@
-name: "CD Develop: Push & Deploy"
-
-on:
-  workflow_call:
-    inputs:
-      spring-services:
-        type: string
-        required: true
-      node-services:
-        type: string
-        required: true
-  workflow_dispatch:
-    inputs:
-      spring-services:
-        description: "JSON array of spring services"
-        required: true
-      node-services:
-        description: "JSON array of node services"
-        required: true
-
-env:
-  IMAGE_PREFIX: ${{ secrets.DOCKERHUB_USERNAME }}/dodam
-
-jobs:
-  push-spring:
-    if: inputs.spring-services != '[]' && inputs.spring-services != '[""]'
-    runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 3
-      matrix:
-        service: ${{ fromJSON(inputs.spring-services) }}
-    steps:
-      - name: Checkout (for Dockerfile)
-        uses: actions/checkout@v4
-        with:
-          sparse-checkout: builds/develop
-
-      - name: Download JARs
-        uses: actions/download-artifact@v4
-        with:
-          name: spring-jars
-          path: services/
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: linux/arm64
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Resolve Dockerfile
-        id: dockerfile
-        run: |
-          if [ -f "builds/develop/Dockerfile.${{ matrix.service }}" ]; then
-            echo "file=builds/develop/Dockerfile.${{ matrix.service }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "file=builds/develop/Dockerfile" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Build & Push
-        uses: docker/build-push-action@v6
-        with:
-          context: services/service-${{ matrix.service }}/build/libs
-          file: ${{ steps.dockerfile.outputs.file }}
-          platforms: linux/arm64
-          push: true
-          tags: ${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:dev
-          build-args: JAR_FILE=service-${{ matrix.service }}.jar
-
-  push-node:
-    if: inputs.node-services != '[]' && inputs.node-services != '[""]'
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: ${{ fromJSON(inputs.node-services) }}
-    steps:
-      - name: Download build
-        uses: actions/download-artifact@v4
-        with:
-          name: node-builds
-          path: services/service-${{ matrix.service }}/
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: linux/arm64
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build & Push
-        uses: docker/build-push-action@v6
-        with:
-          context: services/service-${{ matrix.service }}
-          file: services/service-${{ matrix.service }}/Dockerfile
-          platforms: linux/arm64
-          push: true
-          tags: ${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:dev
-
-  deploy:
-    needs: [push-spring, push-node]
-    if: always() && (needs.push-spring.result == 'success' || needs.push-spring.result == 'skipped') && (needs.push-node.result == 'success' || needs.push-node.result == 'skipped')
-    uses: ./.github/workflows/cd-develop-deploy.yml
-    secrets: inherit
+#name: "CD Develop: Push & Deploy"
+#
+#on:
+#  workflow_call:
+#    inputs:
+#      spring-services:
+#        type: string
+#        required: true
+#      node-services:
+#        type: string
+#        required: true
+#  workflow_dispatch:
+#    inputs:
+#      spring-services:
+#        description: "JSON array of spring services"
+#        required: true
+#      node-services:
+#        description: "JSON array of node services"
+#        required: true
+#
+#env:
+#  IMAGE_PREFIX: ${{ secrets.DOCKERHUB_USERNAME }}/dodam
+#
+#jobs:
+#  push-spring:
+#    if: inputs.spring-services != '[]' && inputs.spring-services != '[""]'
+#    runs-on: ubuntu-latest
+#    strategy:
+#      max-parallel: 3
+#      matrix:
+#        service: ${{ fromJSON(inputs.spring-services) }}
+#    steps:
+#      - name: Checkout (for Dockerfile)
+#        uses: actions/checkout@v4
+#        with:
+#          sparse-checkout: builds/develop
+#
+#      - name: Download JARs
+#        uses: actions/download-artifact@v4
+#        with:
+#          name: spring-jars
+#          path: services/
+#
+#      - name: Set up Docker Buildx
+#        uses: docker/setup-buildx-action@v3
+#
+#      - name: Set up QEMU
+#        uses: docker/setup-qemu-action@v3
+#        with:
+#          platforms: linux/arm64
+#
+#      - name: Login to Docker Hub
+#        uses: docker/login-action@v3
+#        with:
+#          username: ${{ secrets.DOCKERHUB_USERNAME }}
+#          password: ${{ secrets.DOCKERHUB_TOKEN }}
+#
+#      - name: Resolve Dockerfile
+#        id: dockerfile
+#        run: |
+#          if [ -f "builds/develop/Dockerfile.${{ matrix.service }}" ]; then
+#            echo "file=builds/develop/Dockerfile.${{ matrix.service }}" >> "$GITHUB_OUTPUT"
+#          else
+#            echo "file=builds/develop/Dockerfile" >> "$GITHUB_OUTPUT"
+#          fi
+#
+#      - name: Build & Push
+#        uses: docker/build-push-action@v6
+#        with:
+#          context: services/service-${{ matrix.service }}/build/libs
+#          file: ${{ steps.dockerfile.outputs.file }}
+#          platforms: linux/arm64
+#          push: true
+#          tags: ${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:dev
+#          build-args: JAR_FILE=service-${{ matrix.service }}.jar
+#
+#  push-node:
+#    if: inputs.node-services != '[]' && inputs.node-services != '[""]'
+#    runs-on: ubuntu-latest
+#    strategy:
+#      matrix:
+#        service: ${{ fromJSON(inputs.node-services) }}
+#    steps:
+#      - name: Download build
+#        uses: actions/download-artifact@v4
+#        with:
+#          name: node-builds
+#          path: services/service-${{ matrix.service }}/
+#
+#      - name: Set up Docker Buildx
+#        uses: docker/setup-buildx-action@v3
+#
+#      - name: Set up QEMU
+#        uses: docker/setup-qemu-action@v3
+#        with:
+#          platforms: linux/arm64
+#
+#      - name: Login to Docker Hub
+#        uses: docker/login-action@v3
+#        with:
+#          username: ${{ secrets.DOCKERHUB_USERNAME }}
+#          password: ${{ secrets.DOCKERHUB_TOKEN }}
+#
+#      - name: Build & Push
+#        uses: docker/build-push-action@v6
+#        with:
+#          context: services/service-${{ matrix.service }}
+#          file: services/service-${{ matrix.service }}/Dockerfile
+#          platforms: linux/arm64
+#          push: true
+#          tags: ${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:dev
+#
+#  deploy:
+#    needs: [push-spring, push-node]
+#    if: always() && (needs.push-spring.result == 'success' || needs.push-spring.result == 'skipped') && (needs.push-node.result == 'success' || needs.push-node.result == 'skipped')
+#    uses: ./.github/workflows/cd-develop-deploy.yml
+#    secrets: inherit
