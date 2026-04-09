@@ -33,6 +33,7 @@ import com.b1nd.dodamdodam.user.application.user.data.toUserEntity
 import com.b1nd.dodamdodam.user.domain.student.service.StudentService
 import com.b1nd.dodamdodam.user.domain.teacher.service.TeacherService
 import com.b1nd.dodamdodam.user.domain.user.entity.UserEntity
+import com.b1nd.dodamdodam.user.domain.user.enumeration.StatusType
 import com.b1nd.dodamdodam.user.domain.user.service.UserQueryService
 import com.b1nd.dodamdodam.user.domain.user.service.UserService
 import com.b1nd.dodamdodam.user.infrastructure.phoneverification.service.PhoneVerificationStore
@@ -60,8 +61,8 @@ class UserUseCase(
         )
     }
 
-    fun searchUsers(keyword: String?, roles: List<RoleType>?, generationOnly: Boolean?, pageable: Pageable): Response<InfinityScrollPageResponse<UserSearchResponse>> {
-        val page = userQueryService.search(keyword, roles, generationOnly, pageable)
+    fun searchUsers(keyword: String?, roles: List<RoleType>?, generationOnly: Boolean?, status: List<StatusType>?, pageable: Pageable): Response<InfinityScrollPageResponse<UserSearchResponse>> {
+        val page = userQueryService.search(keyword, roles, generationOnly, status, pageable)
         return Response.ok(
             "유저를 검색했어요.",
             InfinityScrollPageResponse(content = page.content.map { it.toResponse() }, hasNext = page.hasNext),

@@ -16,6 +16,7 @@ import com.b1nd.dodamdodam.user.application.user.data.request.TeacherRegisterReq
 import com.b1nd.dodamdodam.user.application.user.data.request.UpdateStudentInfoRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.UpdateTeacherInfoRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.UpdateUserInfoRequest
+import com.b1nd.dodamdodam.user.domain.user.enumeration.StatusType
 import org.springframework.data.domain.Pageable
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -40,8 +41,9 @@ class UserController(
         @RequestParam(required = false) keyword: String?,
         @RequestParam(required = false) roles: List<RoleType>?,
         @RequestParam(required = false) generationOnly: Boolean? = false,
+        @RequestParam(required = false) status: List<StatusType>?,
         pageable: Pageable,
-    ) = userUseCase.searchUsers(keyword, roles, generationOnly, pageable)
+    ) = userUseCase.searchUsers(keyword, roles, generationOnly, status, pageable)
 
     @UserAccess(enabledOnly = false)
     @PostMapping("/register-student")

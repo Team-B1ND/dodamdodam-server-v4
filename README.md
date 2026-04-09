@@ -1,23 +1,52 @@
-# dodamdodam-server
 
-This project uses [Gradle](https://gradle.org/).
-To build and run the application, use the *Gradle* tool window by clicking the Gradle icon in the right-hand toolbar,
-or run it directly from the terminal:
+<img width="7680" height="4320" alt="DodamDodamServer" src="https://github.com/user-attachments/assets/dc56558f-868e-49fc-b0b2-5bcc8c955a5a" />
 
-* Run `./gradlew run` to build and run the application.
-* Run `./gradlew build` to only build the application.
-* Run `./gradlew check` to run all checks, including tests.
-* Run `./gradlew clean` to clean all build outputs.
+<h4 align="center">학생들을 위해 학생들이 만든 스마트 스쿨 플랫폼</h4>
 
-Note the usage of the Gradle Wrapper (`./gradlew`).
-This is the suggested way to use Gradle in production projects.
+# [도담도담](https://dodam.b1nd.com/) 이란?
 
-[Learn more about the Gradle Wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html).
+도담도담은 DGSW 학생 및 선생님에게 편리함을 제공하는 스마트스쿨 플랫폼으로, **전교생 200명**과 **다수의 선생님**들이 사용하고 있어요.
 
-[Learn more about Gradle tasks](https://docs.gradle.org/current/userguide/command_line_interface.html#common_tasks).
+> 아쉽지만 해당 서비스는 DGSW 학생만 이용할 수 있어요 🥲
 
-This project follows the suggested multi-module setup and consists of the `app` and `utils` subprojects.
-The shared build logic was extracted to a convention plugin located in `buildSrc`.
+- 도담도담은 2018년 제작된 *T-Messenge*를 계승하여 운영중인 **DGSW 스마트 스쿨 플랫폼**이에요.
+- 지속적인 요구사항 반영을 통해 꾸준히 실사용 서비스로서 운영 중이에요.
+- Web, iOS, Android 환경에서 모두 동일한 기능으로 사용 가능해요.
 
-This project uses a version catalog (see `gradle/libs.versions.toml`) to declare and version dependencies
-and both a build cache and a configuration cache (see `gradle.properties`).# dodamdodam-server
+
+# 기능 소개
+
+- 급식
+  - 오늘의 급식을 확인할 수 있어요.
+  - *다이어터를 위해 칼로리도 알려준답니다.*
+- 일정
+  - 월별 일정을 학년별로 확인 가능해요.
+- 시간표
+  - 반별 시간표를 확인 가능해요.
+  - 혹시나 시간표가 선생님의 출장 등으로 변경되더라도, 즉시 반영되어 확인 가능해요.
+  - **더 편리한 사용을 위해, iOS 위젯을 제공하고 있어요.**
+- 인앱도담
+  - 도담도담 내에 여러분들의 웹을 추가할 수 있어요.
+    - 여러분들의 아이디어만 있다면 ios, android **앱을 만들 필요없이** 도담도담 내에 넣을 수 있어요.
+- 외박 신청
+  - 외박 사유와 함께 외박을 신청할 수 있어요.
+- 외박 관리 ( 선생님 )
+  - 선생님은 외박 신청자 목록을 확인하고 승인 및 거절 가능해요.
+- 심야자습 신청
+  - 수기로 진행되던 심자 신청을 도담도담에서 진행해요.
+  - 프로젝트 및 일반 심자 신청을 모두 진행할 수 있어요.
+- 심야자습 관리 ( 자치위원회 )
+  - 자치위원회에서 심야자습 관리를 진행할 수 있어요.
+  - 심야자습 정지 및 프로젝트 심야자습 실 배정 등이 가능해요.
+
+
+# 기여
+
+> 도담도담은 오픈소스로, 마음껏 기여 가능해요.
+
+바인드팀에서 제작한 이슈 템플릿을 사용해, 건의할 점, 원하는 기능을 제안해주세요! <br/>
+
+
+# 사용된 기술 스택
+
+`Kotlin`, `SpringBoot`, `Spring Security`, `Kafka`, `GRpc`, `Redis`, `Spring Cloud Gateway`, `Spring Authorization Server`, `Nest.js`, `TypeScript`
