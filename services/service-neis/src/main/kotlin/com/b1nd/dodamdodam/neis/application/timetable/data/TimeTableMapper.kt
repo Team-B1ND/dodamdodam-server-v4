@@ -10,4 +10,5 @@ fun TimeTableEntity.toResponse() = TimeTableResponse(
     period = period,
     subject = subject,
     teacher = teacher,
+    isReplaced = isReplaced,
 )

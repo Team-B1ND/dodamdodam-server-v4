@@ -33,7 +33,7 @@ class TimeTableScheduler(
         try {
             val timeTables = comciganClient.fetchWeeklyTimeTables(mondayDate)
             timeTables.forEach {
-                timeTableService.saveOrUpdate(it.date, it.grade, it.room, it.period, it.subject, it.teacher)
+                timeTableService.saveOrUpdate(it.date, it.grade, it.room, it.period, it.subject, it.teacher, it.isReplaced)
             }
         } catch (e: Exception) {
             log.error("다음 주 시간표 동기화 실패: {}", mondayDate, e)
@@ -44,7 +44,7 @@ class TimeTableScheduler(
         try {
             val timeTables = comciganClient.fetchDailyTimeTables(date)
             timeTables.forEach {
-                timeTableService.saveOrUpdate(it.date, it.grade, it.room, it.period, it.subject, it.teacher)
+                timeTableService.saveOrUpdate(it.date, it.grade, it.room, it.period, it.subject, it.teacher, it.isReplaced)
             }
         } catch (e: Exception) {
             log.error("당일 시간표 동기화 실패: {}", date, e)

@@ -9,4 +9,5 @@ data class ParsedTimeTable(
     val period: Int,
     val subject: String,
     val teacher: String,
+    val isReplaced: Boolean = false,
 )
