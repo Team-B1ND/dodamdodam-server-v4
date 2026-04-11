@@ -182,6 +182,7 @@ jobs:
           key: ${{ secrets.K3S_CONTROL_PLANE_SSH_KEY }}
           command_timeout: 30m
           script: |
+            set -e
             TAG=${{ steps.version.outputs.tag }}
             PREFIX=teamb1nd/dodam
             KC="sudo k3s kubectl"
@@ -190,7 +191,7 @@ jobs:
             for svc in $SERVICES; do
               echo ">>> Updating $svc to ${TAG}..."
               $KC set image deployment/${svc} ${svc}=${PREFIX}-${svc}:${TAG} -n dodam
-              $KC rollout status deployment/${svc} -n dodam --timeout=180s
+              $KC rollout status deployment/${svc} -n dodam --timeout=300s || { echo ">>> $svc rollout FAILED"; exit 1; }
               echo ">>> $svc ready"
             done
 
