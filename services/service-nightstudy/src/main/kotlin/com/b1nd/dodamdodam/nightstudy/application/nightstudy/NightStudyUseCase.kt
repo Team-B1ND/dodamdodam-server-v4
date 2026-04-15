@@ -177,10 +177,10 @@ class NightStudyUseCase (
     }
 
     val appliedAt: LocalDateTime
-        get() = LocalDate.now().atTime(3, 23)
+        get() = LocalDate.now().atTime(20, 30, 0)
 
     private fun isActiveNow(): Unit {
-        if (appliedAt.isAfter(LocalDateTime.now())) {
+        if (LocalDateTime.now().isAfter(appliedAt)) {
             throw BasicException(NightStudyExceptionCode.NOT_APPLICATION_TIME)
         }
     }
