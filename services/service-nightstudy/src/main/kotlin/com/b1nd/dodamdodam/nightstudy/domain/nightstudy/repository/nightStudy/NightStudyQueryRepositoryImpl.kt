@@ -125,28 +125,23 @@ class NightStudyQueryRepositoryImpl(
             .fetchFirst() != null
     }
 
-    override fun existsByUserIdAndPeriodOverlap(userId: UUID, type: NightStudyType, period: Int, startAt: LocalDate, endAt: LocalDate): Boolean {
+    override fun existsByUserIdAndPeriodOverlap(
+        userId: UUID,
+        period: Int,
+        startAt: LocalDate,
+        endAt: LocalDate
+    ): Boolean {
         return queryFactory.selectOne()
             .from(nightStudyMemberEntity)
             .join(nightStudyMemberEntity.nightStudy, nightStudyEntity)
             .where(
                 nightStudyMemberEntity.userId.eq(userId),
+                nightStudyEntity.period.eq(period),
                 nightStudyEntity.startAt.loe(endAt),
                 nightStudyEntity.endAt.goe(startAt),
-                nightStudyEntity.status.ne(NightStudyStatusType.REJECTED),
-                periodConflictCondition(type, period)
+                nightStudyEntity.status.ne(NightStudyStatusType.REJECTED)
             )
             .fetchFirst() != null
-    }
-
-    private fun periodConflictCondition(newType: NightStudyType, newPeriod: Int) = when {
-        newType == NightStudyType.PERSONAL && newPeriod == 2 ->
-            null
-        newType == NightStudyType.PROJECT && newPeriod == 2 ->
-            nightStudyEntity.period.eq(2)
-        else ->
-            nightStudyEntity.type.ne(NightStudyType.PROJECT)
-                .or(nightStudyEntity.period.ne(2))
     }
 
     override fun existsByRoomAndPeriodOverlap(
