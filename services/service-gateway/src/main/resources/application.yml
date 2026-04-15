@@ -30,6 +30,8 @@ management:
 app:
   auth:
     access-token-cookie: ${COOKIE_ACCESS_TOKEN_NAME:access_token}
+  openapi:
+    oauth-service-url: ${OAUTH_SERVICE_URL:http://localhost:8088}
   oauth:
     scope-rules:
       - path: /nightstudy/
