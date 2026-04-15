@@ -180,7 +180,7 @@ class NightStudyUseCase (
         get() = LocalDate.now().atTime(3, 23)
 
     private fun isActiveNow(): Unit {
-        if (appliedAt.isBefore(LocalDateTime.now())) {
+        if (appliedAt.isAfter(LocalDateTime.now())) {
             throw BasicException(NightStudyExceptionCode.NOT_APPLICATION_TIME)
         }
     }
