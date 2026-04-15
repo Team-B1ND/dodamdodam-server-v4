@@ -30,7 +30,8 @@ class NightStudyQueryRepositoryImpl(
             .from(nightStudyMemberEntity)
             .where(
                 nightStudyMemberEntity.userId.eq(userId),
-                nightStudyMemberEntity.nightStudy.type.eq(type)
+                nightStudyMemberEntity.nightStudy.type.eq(type),
+                nightStudyMemberEntity.nightStudy.endAt.goe(LocalDate.now())
             )
             .orderBy(nightStudyMemberEntity.nightStudy.id.desc())
             .fetch()
