@@ -182,16 +182,31 @@ jobs:
           key: ${{ secrets.K3S_CONTROL_PLANE_SSH_KEY }}
           command_timeout: 30m
           script: |
+            set -e
             TAG=${{ steps.version.outputs.tag }}
             PREFIX=teamb1nd/dodam
             KC="sudo k3s kubectl"
 
-            SERVICES="gateway auth user inapp neis file nightstudy out-sleeping wakeup-song oauth notification"
+            SERVICES="auth user neis nightstudy out-sleeping wakeup-song inapp notification file oauth gateway"
             for svc in $SERVICES; do
-              echo ">>> Updating $svc to ${TAG}..."
+              # replicas=0 인 서비스는 이미지만 업데이트하고 rollout 건너뜀
+              REPLICAS=$($KC get deployment/${svc} -n dodam -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "0")
+              if [ "${REPLICAS}" = "0" ]; then
+                echo "⏭️  [$svc] replicas=0, updating image only"
+                $KC set image deployment/${svc} ${svc}=${PREFIX}-${svc}:${TAG} -n dodam 2>/dev/null || true
+                continue
+              fi
+
+              echo "▶️  [$svc] updating to ${TAG}..."
               $KC set image deployment/${svc} ${svc}=${PREFIX}-${svc}:${TAG} -n dodam
-              $KC rollout status deployment/${svc} -n dodam --timeout=180s
-              echo ">>> $svc ready"
+              if $KC rollout status deployment/${svc} -n dodam --timeout=300s; then
+                echo "✅ [$svc] ready"
+              else
+                echo "❌ [$svc] rollout FAILED"
+                $KC get pods -n dodam -l app=${svc}
+                $KC logs -n dodam -l app=${svc} --tail=50 2>/dev/null || true
+                exit 1
+              fi
             done
 
-            echo "All deployments rolled out to ${TAG}"
+            echo "🎉 All services rolled out to ${TAG}"
