@@ -8,7 +8,12 @@ spring:
     user: ${MYSQL_USER}
     password: ${MYSQL_PASSWORD}
 
+server:
+  port: 8088
+
 grpc:
+  server:
+    port: 9095
   client:
     service-auth:
       address: 'static://localhost:9092'
