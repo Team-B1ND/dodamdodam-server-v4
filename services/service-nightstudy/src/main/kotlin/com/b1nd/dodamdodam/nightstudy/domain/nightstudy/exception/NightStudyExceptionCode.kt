@@ -16,6 +16,6 @@ enum class NightStudyExceptionCode(
     ALREADY_BANNED(HttpStatus.CONFLICT, "이미 정지된 인원이에요."),
     NOT_PROJECT_NIGHT_STUDY(HttpStatus.BAD_REQUEST, "프로젝트 심야 자습에만 방을 배정할 수 있어요."),
     ROOM_ALREADY_ASSIGNED(HttpStatus.CONFLICT, "해당 기간에 이미 배정된 방이에요."),
-    NOT_APPLICATION_TIME(HttpStatus.BAD_REQUEST, "지금은 심자 신청 시간이 아닙니다."),
+    NOT_APPLICATION_TIME(HttpStatus.BAD_REQUEST, "지금은 심자 신청 시간이 아니에요."),
     ;
 }
