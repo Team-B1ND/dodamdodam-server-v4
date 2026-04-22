@@ -178,9 +178,8 @@ class NightStudyUseCase (
 
     private fun validateApplicationTime() {
         val deadline = LocalDate.now().atTime(20,30)
-        if (LocalDateTime.now().isAfter(deadline)) {
+        if (LocalDateTime.now().isAfter(deadline))
             throw BasicException(NightStudyExceptionCode.NOT_APPLICATION_TIME)
-        }
     }
 }
 
