@@ -11,3 +11,9 @@ class TeamOwnerPermissionRequiredException: BasicException(TeamExceptionCode.TEA
 class TeamCannotRemoveOwnerException: BasicException(TeamExceptionCode.TEAM_CANNOT_REMOVE_OWNER);
 
 class TeamMemberNotFoundException: BasicException(TeamExceptionCode.TEAM_MEMBER_NOT_FOUND);
+
+class TeamInviteCodeNotFoundException: BasicException(TeamExceptionCode.TEAM_INVITE_CODE_NOT_FOUND);
+
+class TeamAlreadyMemberException: BasicException(TeamExceptionCode.TEAM_ALREADY_MEMBER);
+
+class TeamNotMemberException: BasicException(TeamExceptionCode.TEAM_NOT_MEMBER);

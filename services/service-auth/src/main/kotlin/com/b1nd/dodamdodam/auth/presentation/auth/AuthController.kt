@@ -22,6 +22,15 @@ class AuthController(
     fun login(@RequestBody request: LoginRequest): Response<LoginResponse> =
         useCase.login(request)
 
+    @PostMapping("/logout")
+    fun logout(
+        @RequestBody(required = false) request: RefreshRequest?,
+        httpRequest: HttpServletRequest,
+    ): Response<Unit> {
+        val cookieRefreshToken = httpRequest.cookies?.firstOrNull { it.name == cookieProperties.refreshTokenName }?.value
+        return useCase.logout(request?.refreshToken, cookieRefreshToken)
+    }
+
     @PostMapping("/refresh")
     fun refresh(
         @RequestBody(required = false) request: RefreshRequest?,

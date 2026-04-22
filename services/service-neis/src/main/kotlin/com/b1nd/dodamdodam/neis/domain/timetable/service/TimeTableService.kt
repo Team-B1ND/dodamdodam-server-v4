@@ -18,10 +18,10 @@ class TimeTableService(
     fun getWeeklyTimeTablesByRoom(startDate: LocalDate, endDate: LocalDate, grade: Int, room: Int): List<TimeTableEntity> =
         timeTableRepository.findAllByDateBetweenAndGradeAndRoomOrderByDateAscPeriodAsc(startDate, endDate, grade, room)
 
-    fun saveOrUpdate(date: LocalDate, grade: Int, room: Int, period: Int, subject: String, teacher: String) {
+    fun saveOrUpdate(date: LocalDate, grade: Int, room: Int, period: Int, subject: String, teacher: String, isReplaced: Boolean) {
         val entity = timeTableRepository.findByDateAndGradeAndRoomAndPeriod(date, grade, room, period)
-            ?.apply { updateTimeTable(subject, teacher) }
-            ?: TimeTableEntity(date, grade, room, period, subject, teacher)
+            ?.apply { updateTimeTable(subject, teacher, isReplaced) }
+            ?: TimeTableEntity(date, grade, room, period, subject, teacher, isReplaced)
 
         timeTableRepository.save(entity)
     }

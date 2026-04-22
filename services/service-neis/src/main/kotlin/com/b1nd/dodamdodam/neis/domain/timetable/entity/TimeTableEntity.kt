@@ -33,13 +33,17 @@ class TimeTableEntity(
 
     @Column(nullable = false, length = 50)
     var teacher: String,
+
+    @Column(nullable = false)
+    var isReplaced: Boolean = false,
 ) : BaseTimeEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null
 
-    fun updateTimeTable(subject: String, teacher: String) {
+    fun updateTimeTable(subject: String, teacher: String, isReplaced: Boolean) {
         this.subject = subject
         this.teacher = teacher
+        this.isReplaced = isReplaced
     }
 }

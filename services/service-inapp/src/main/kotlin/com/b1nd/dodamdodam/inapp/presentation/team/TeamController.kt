@@ -2,7 +2,9 @@ package com.b1nd.dodamdodam.inapp.presentation.team
 
 import com.b1nd.dodamdodam.core.security.annotation.authentication.UserAccess
 import com.b1nd.dodamdodam.inapp.application.team.TeamUseCase
+import com.b1nd.dodamdodam.inapp.application.team.data.request.AcceptTeamInviteRequest
 import com.b1nd.dodamdodam.inapp.application.team.data.request.AddTeamMemberRequest
+import com.b1nd.dodamdodam.inapp.application.team.data.request.CreateTeamInviteRequest
 import com.b1nd.dodamdodam.inapp.application.team.data.request.CreateTeamRequest
 import com.b1nd.dodamdodam.inapp.application.team.data.request.EditTeamInfoRequest
 import com.b1nd.dodamdodam.inapp.application.team.data.request.TransferOwnerRequest
@@ -51,6 +53,16 @@ class TeamController(
     @PatchMapping("/owner")
     fun transferOwner(@RequestBody request: TransferOwnerRequest) =
         teamUseCase.transferOwnership(request)
+
+    @UserAccess
+    @PostMapping("/invite")
+    fun createInviteCode(@RequestBody request: CreateTeamInviteRequest) =
+        teamUseCase.createInviteCode(request)
+
+    @UserAccess
+    @PostMapping("/invite/accept")
+    fun acceptInvite(@RequestBody request: AcceptTeamInviteRequest) =
+        teamUseCase.acceptInvite(request)
 
     @UserAccess
     @PostMapping("/member")

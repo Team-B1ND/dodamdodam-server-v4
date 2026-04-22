@@ -70,5 +70,7 @@ spring:
 app:
   auth:
     url: http://service-auth:8080
+  openapi:
+    oauth-service-url: http://service-oauth:8080
 server:
   port: 8080

@@ -31,6 +31,9 @@ grpc:
       negotiation-type: plaintext
 
 app:
+  redis:
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT}
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
     consumer-group-id: service-inapp
