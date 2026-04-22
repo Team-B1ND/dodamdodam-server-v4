@@ -23,7 +23,7 @@ server:
 
 grpc:
   server:
-    port: 9095
+    port: 9096
   client:
     service-user:
       address: 'static://localhost:9091'
