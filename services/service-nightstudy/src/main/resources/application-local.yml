@@ -19,7 +19,7 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
 
 server:
-  port: 8087
+  port: 8088
 
 grpc:
   server:
