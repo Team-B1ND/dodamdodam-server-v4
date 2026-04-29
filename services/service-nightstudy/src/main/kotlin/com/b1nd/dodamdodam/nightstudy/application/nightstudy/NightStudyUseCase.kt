@@ -43,14 +43,14 @@ class NightStudyUseCase (
 
     fun applyPersonalNightStudy(request: PersonalNightStudyApplyRequest): Response<Any> {
         val userId = PassportHolder.current().requireUserId()
-        validateApplicationTime()
+        validateApplicationAvailability(request.startAt)
         nightStudyService.save(request.toEntity(), userId, null)
         return Response.created("개인 심자 신청이 완료됐어요.")
     }
 
     fun applyProjectNightStudy(request: ProjectNightStudyApplyRequest): Response<Any> {
         val userId = PassportHolder.current().requireUserId()
-        validateApplicationTime()
+        validateApplicationAvailability(request.startAt)
         nightStudyService.save(request.toEntity(), userId, request.members)
         return Response.created("프로젝트 심자 신청이 완료됐어요.")
     }
@@ -176,10 +176,13 @@ class NightStudyUseCase (
             .associate { it.publicId to it.toOpenApiUserInfoResponse() }
     }
 
-    private fun validateApplicationTime() {
+    private fun validateApplicationAvailability(stratAt: LocalDate) {
+        val now = LocalDateTime.now()
         val deadline = LocalDate.now().atTime(20,30)
-        if (LocalDateTime.now().isAfter(deadline))
+        if (now.isAfter(deadline))
             throw BasicException(NightStudyExceptionCode.NOT_APPLICATION_TIME)
+        if (stratAt.isBefore(now.toLocalDate()))
+            throw BasicException(NightStudyExceptionCode.INVALID_START_AT)
     }
 }
 
