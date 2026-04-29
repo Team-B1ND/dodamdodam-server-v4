@@ -9,7 +9,12 @@ spring:
     password: ${MYSQL_PASSWORD}
     validate-on-migrate: false
 
+server:
+  port: 8088
+
 grpc:
+  server:
+    port: 9095
   client:
     service-auth:
       address: 'static://localhost:9092'
