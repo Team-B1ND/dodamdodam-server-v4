@@ -22,11 +22,15 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service.NightStudyServic
 import com.b1nd.dodamdodam.nightstudy.domain.room.service.ProjectRoomService
 import com.b1nd.dodamdodam.nightstudy.infrastructure.user.client.UserQueryClient
 import com.b1nd.dodamdodam.core.common.data.InfinityScrollPageResponse
+import com.b1nd.dodamdodam.core.common.exception.BasicException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyExceptionCode
 import kotlinx.coroutines.runBlocking
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.UUID
 
 @Component
@@ -39,12 +43,14 @@ class NightStudyUseCase (
 
     fun applyPersonalNightStudy(request: PersonalNightStudyApplyRequest): Response<Any> {
         val userId = PassportHolder.current().requireUserId()
+        validateApplicationAvailability(request.startAt)
         nightStudyService.save(request.toEntity(), userId, null)
         return Response.created("개인 심자 신청이 완료됐어요.")
     }
 
     fun applyProjectNightStudy(request: ProjectNightStudyApplyRequest): Response<Any> {
         val userId = PassportHolder.current().requireUserId()
+        validateApplicationAvailability(request.startAt)
         nightStudyService.save(request.toEntity(), userId, request.members)
         return Response.created("프로젝트 심자 신청이 완료됐어요.")
     }
@@ -168,6 +174,15 @@ class NightStudyUseCase (
         val userIds = (listOfNotNull(leaderId) + memberIds).map { it.toString() }
         return runBlocking { userQueryClient.getUsers(userIds) }.usersList
             .associate { it.publicId to it.toOpenApiUserInfoResponse() }
+    }
+
+    private fun validateApplicationAvailability(stratAt: LocalDate) {
+        val now = LocalDateTime.now()
+        val deadline = LocalDate.now().atTime(20,30)
+        if (now.isAfter(deadline))
+            throw BasicException(NightStudyExceptionCode.NOT_APPLICATION_TIME)
+        if (stratAt.isBefore(now.toLocalDate()))
+            throw BasicException(NightStudyExceptionCode.INVALID_START_AT)
     }
 }
 

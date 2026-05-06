@@ -30,7 +30,6 @@ class UserQueryRepositoryImpl(
             .leftJoin(teacherEntity).on(teacherEntity.user.eq(userEntity))
             .leftJoin(adminEntity).on(adminEntity.user.eq(userEntity))
             .where(condition)
-            .where(userEntity.status.eq(StatusType.ACTIVE))
             .orderBy(userEntity.name.asc())
             .offset(pageable.offset)
             .limit(pageable.pageSize.toLong() + 1)

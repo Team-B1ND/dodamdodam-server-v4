@@ -20,6 +20,7 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.Ni
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
+import java.time.LocalDate
 import java.util.UUID
 
 @Service
@@ -31,15 +32,15 @@ class NightStudyService(
     private val bannedRepository: NightStudyBannedRepository
 ) {
     fun save(nightStudy: NightStudyEntity, userId: UUID, members: List<UUID>?) {
-        if(isBanned(userId)) throw NightStudyBannedException()
+        if (isBanned(userId)) throw NightStudyBannedException()
 
-        if(hasPeriodOverlap(userId, nightStudy.type, nightStudy.period, nightStudy.startAt, nightStudy.endAt)) {
+        if (hasPeriodOverlap(userId, nightStudy.period, nightStudy.startAt, nightStudy.endAt)) {
             throw PeriodOverlappedException()
         }
 
         members?.forEach { member ->
             if (isBanned(member)) throw NightStudyBannedException()
-            if(hasPeriodOverlap(member, nightStudy.type, nightStudy.period, nightStudy.startAt, nightStudy.endAt)) {
+            if (hasPeriodOverlap(member, nightStudy.period, nightStudy.startAt, nightStudy.endAt)) {
                 throw PeriodOverlappedException()
             }
         }
@@ -118,8 +119,13 @@ class NightStudyService(
     fun assignRoom(publicId: UUID, room: ProjectRoomEntity) {
         val nightStudy = getByPublicId(publicId)
         if (nightStudy.type != NightStudyType.PROJECT) throw NotProjectNightStudyException()
-        if (nightStudyQueryRepository.existsByRoomAndPeriodOverlap(
-                room.id!!, nightStudy.period, nightStudy.startAt, nightStudy.endAt, nightStudy.id!!
+        if (
+            nightStudyQueryRepository.existsByRoomAndPeriodOverlap(
+                room.id!!,
+                nightStudy.period,
+                nightStudy.startAt,
+                nightStudy.endAt,
+                nightStudy.id!!
             )
         ) throw RoomAlreadyAssignedException()
         nightStudy.assignRoom(room)
@@ -137,7 +143,12 @@ class NightStudyService(
         return nightStudyMemberRepository.existsByNightStudyAndUserId(nightStudy, userId)
     }
 
-    private fun hasPeriodOverlap(userId: UUID, type: NightStudyType, period: Int, startAt: java.time.LocalDate, endAt: java.time.LocalDate): Boolean {
-        return nightStudyQueryRepository.existsByUserIdAndPeriodOverlap(userId, type, period, startAt, endAt)
+    private fun hasPeriodOverlap(
+        userId: UUID,
+        period: Int,
+        startAt: LocalDate,
+        endAt: LocalDate
+    ): Boolean {
+        return nightStudyQueryRepository.existsByUserIdAndPeriodOverlap(userId, period, startAt, endAt)
     }
 }
