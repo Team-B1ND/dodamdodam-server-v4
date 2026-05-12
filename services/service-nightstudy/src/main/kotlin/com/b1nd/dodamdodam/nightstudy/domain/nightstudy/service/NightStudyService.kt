@@ -34,13 +34,13 @@ class NightStudyService(
     fun save(nightStudy: NightStudyEntity, userId: UUID, members: List<UUID>?) {
         if (isBanned(userId)) throw NightStudyBannedException()
 
-        if (hasPeriodOverlap(userId, nightStudy.period, nightStudy.startAt, nightStudy.endAt)) {
+        if (hasPeriodOverlap(userId, nightStudy.period, nightStudy.type, nightStudy.startAt, nightStudy.endAt)) {
             throw PeriodOverlappedException()
         }
 
         members?.forEach { member ->
             if (isBanned(member)) throw NightStudyBannedException()
-            if (hasPeriodOverlap(member, nightStudy.period, nightStudy.startAt, nightStudy.endAt)) {
+            if (hasPeriodOverlap(member, nightStudy.period, nightStudy.type, nightStudy.startAt, nightStudy.endAt)) {
                 throw PeriodOverlappedException()
             }
         }
@@ -146,9 +146,10 @@ class NightStudyService(
     private fun hasPeriodOverlap(
         userId: UUID,
         period: Int,
+        type: NightStudyType,
         startAt: LocalDate,
         endAt: LocalDate
     ): Boolean {
-        return nightStudyQueryRepository.existsByUserIdAndPeriodOverlap(userId, period, startAt, endAt)
+        return nightStudyQueryRepository.existsByUserIdAndPeriodOverlap(userId, period, type, startAt, endAt)
     }
 }

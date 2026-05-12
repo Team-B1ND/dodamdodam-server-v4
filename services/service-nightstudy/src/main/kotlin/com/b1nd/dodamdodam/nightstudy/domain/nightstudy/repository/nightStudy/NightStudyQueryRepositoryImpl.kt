@@ -129,6 +129,7 @@ class NightStudyQueryRepositoryImpl(
     override fun existsByUserIdAndPeriodOverlap(
         userId: UUID,
         period: Int,
+        type: NightStudyType,
         startAt: LocalDate,
         endAt: LocalDate
     ): Boolean {
@@ -138,6 +139,7 @@ class NightStudyQueryRepositoryImpl(
             .where(
                 nightStudyMemberEntity.userId.eq(userId),
                 nightStudyEntity.period.eq(period),
+                nightStudyEntity.type.eq(type),
                 nightStudyEntity.startAt.loe(endAt),
                 nightStudyEntity.endAt.goe(startAt),
                 nightStudyEntity.status.ne(NightStudyStatusType.REJECTED)
