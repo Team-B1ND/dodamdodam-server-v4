@@ -105,7 +105,17 @@ class NightStudyService(
     }
 
     fun allow(publicId: UUID) {
-        getByPublicId(publicId).allow()
+        val ns = getByPublicId(publicId)
+        val wasAlreadyAllowed = ns.status == NightStudyStatusType.ALLOWED
+        ns.allow()
+        if (ns.type == NightStudyType.PROJECT && !wasAlreadyAllowed) {
+            val memberIds = nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(ns)
+            if (memberIds.isEmpty()) return
+            val targets = nightStudyQueryRepository.findActivePersonalsByUserIdsAndPeriodOverlap(
+                memberIds, ns.period, ns.startAt, ns.endAt
+            )
+            targets.forEach { it.reject("프로젝트 심자로 대체됨") }
+        }
     }
 
     fun reject(publicId: UUID, rejectionReason: String) {

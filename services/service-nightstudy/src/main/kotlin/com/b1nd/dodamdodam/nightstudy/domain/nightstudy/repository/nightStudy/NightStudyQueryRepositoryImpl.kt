@@ -177,6 +177,29 @@ class NightStudyQueryRepositoryImpl(
             .fetchFirst() != null
     }
 
+    override fun findActivePersonalsByUserIdsAndPeriodOverlap(
+        userIds: List<UUID>,
+        period: Int,
+        startAt: LocalDate,
+        endAt: LocalDate
+    ): List<NightStudyEntity> {
+        if (userIds.isEmpty()) return emptyList()
+
+        return queryFactory.select(nightStudyEntity)
+            .from(nightStudyMemberEntity)
+            .join(nightStudyMemberEntity.nightStudy, nightStudyEntity)
+            .where(
+                nightStudyEntity.type.eq(NightStudyType.PERSONAL),
+                nightStudyEntity.status.`in`(NightStudyStatusType.PENDING, NightStudyStatusType.ALLOWED),
+                nightStudyEntity.period.eq(period),
+                nightStudyEntity.startAt.loe(endAt),
+                nightStudyEntity.endAt.goe(startAt),
+                nightStudyMemberEntity.userId.`in`(userIds)
+            )
+            .distinct()
+            .fetch()
+    }
+
     private fun hideByActiveProjectCondition(type: NightStudyType): BooleanExpression? {
         if (type != NightStudyType.PERSONAL) return null
 
