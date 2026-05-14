@@ -9,6 +9,7 @@ import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.Person
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.ProjectNightStudyApplyRequest
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.RejectNightStudyRequest
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyApplicationResponse
+import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyApprovedCountResponse
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.PersonalNightStudyResponse
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.ProjectNightStudyResponse
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
@@ -51,6 +52,11 @@ class NightStudyController(
     @GetMapping("/applications")
     fun findAllByType(@RequestParam type: NightStudyType, @RequestParam(required = false) keyword: String?, @RequestParam(required = false) status: NightStudyStatusType?, pageable: Pageable): Response<InfinityScrollPageResponse<NightStudyApplicationResponse>> =
         nightStudyUseCase.searchAllByType(type, keyword, status, pageable)
+
+    @UserAccess(roles = [RoleType.DORMITORY_MANAGER])
+    @GetMapping("/applications/count")
+    fun countApproved(): Response<NightStudyApprovedCountResponse> =
+        nightStudyUseCase.countApproved()
 
     @UserAccess(roles = [RoleType.DORMITORY_MANAGER])
     @GetMapping("/applications/{id}")

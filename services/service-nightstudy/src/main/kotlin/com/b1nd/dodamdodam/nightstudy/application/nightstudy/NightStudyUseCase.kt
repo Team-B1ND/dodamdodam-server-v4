@@ -6,6 +6,7 @@ import com.b1nd.dodamdodam.core.security.passport.requireUserId
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.PersonalNightStudyApplyRequest
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.ProjectNightStudyApplyRequest
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyApplicationResponse
+import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyApprovedCountResponse
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyApplicantResponse
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.PersonalNightStudyResponse
@@ -96,6 +97,27 @@ class NightStudyUseCase (
                 content = responses,
                 hasNext = nightStudiesPage.hasNext()
             )
+        )
+    }
+
+    fun countApproved(): Response<NightStudyApprovedCountResponse> {
+        val counts = nightStudyService.countAllowedMembersGroupByTypeAndPeriod()
+        val byType = NightStudyType.entries.associateWith { type ->
+            NightStudyApprovedCountResponse.PeriodCount(
+                period1 = counts[type to 1] ?: 0,
+                period2 = counts[type to 2] ?: 0,
+            )
+        }
+        return Response.ok(
+            "심자 승인 인원수를 조회했어요.",
+            NightStudyApprovedCountResponse(
+                personal = byType.getValue(NightStudyType.PERSONAL),
+                project = byType.getValue(NightStudyType.PROJECT),
+                total = NightStudyApprovedCountResponse.PeriodCount(
+                    period1 = byType.values.sumOf { it.period1 },
+                    period2 = byType.values.sumOf { it.period2 },
+                ),
+            ),
         )
     }
 

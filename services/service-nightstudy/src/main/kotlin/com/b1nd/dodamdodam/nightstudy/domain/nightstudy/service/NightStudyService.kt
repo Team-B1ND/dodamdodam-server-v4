@@ -61,6 +61,10 @@ class NightStudyService(
         return nightStudyQueryRepository.findAllByUserIdAndType(userId, type)
     }
 
+    fun countAllowedMembersGroupByTypeAndPeriod(): Map<Pair<NightStudyType, Int>, Int> {
+        return nightStudyQueryRepository.countAllowedMembersGroupByTypeAndPeriod()
+    }
+
     fun searchByType(type: NightStudyType, userIds: List<UUID>?, status: NightStudyStatusType?, pageable: Pageable): Page<NightStudyEntity> {
         return if (userIds != null) {
             nightStudyQueryRepository.findAllByTypeAndUserIdsAndStatus(type, userIds, status, pageable)
