@@ -104,8 +104,8 @@ class NightStudyUseCase (
         val counts = nightStudyService.countAllowedMembersGroupByTypeAndPeriod()
 
         fun countFor(type: NightStudyType) = NightStudyApprovedCountResponse.PeriodCount(
-            period1 = counts[type to 1] ?: 0L,
-            period2 = counts[type to 2] ?: 0L,
+            period1 = counts[type to 1] ?: 0,
+            period2 = counts[type to 2] ?: 0,
         )
 
         val personal = countFor(NightStudyType.PERSONAL)

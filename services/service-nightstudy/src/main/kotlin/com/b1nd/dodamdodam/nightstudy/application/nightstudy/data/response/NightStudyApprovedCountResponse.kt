@@ -6,7 +6,7 @@ data class NightStudyApprovedCountResponse(
     val total: PeriodCount,
 ) {
     data class PeriodCount(
-        val period1: Long,
-        val period2: Long,
+        val period1: Int,
+        val period2: Int,
     )
 }

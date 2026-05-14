@@ -61,7 +61,7 @@ class NightStudyService(
         return nightStudyQueryRepository.findAllByUserIdAndType(userId, type)
     }
 
-    fun countAllowedMembersGroupByTypeAndPeriod(): Map<Pair<NightStudyType, Int>, Long> {
+    fun countAllowedMembersGroupByTypeAndPeriod(): Map<Pair<NightStudyType, Int>, Int> {
         return nightStudyQueryRepository.countAllowedMembersGroupByTypeAndPeriod()
     }
 
