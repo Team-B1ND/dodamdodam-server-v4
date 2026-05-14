@@ -34,13 +34,13 @@ class NightStudyService(
     fun save(nightStudy: NightStudyEntity, userId: UUID, members: List<UUID>?) {
         if (isBanned(userId)) throw NightStudyBannedException()
 
-        if (hasPeriodOverlap(userId, nightStudy.period, nightStudy.startAt, nightStudy.endAt)) {
+        if (hasPeriodOverlap(userId, nightStudy.period, nightStudy.type, nightStudy.startAt, nightStudy.endAt)) {
             throw PeriodOverlappedException()
         }
 
         members?.forEach { member ->
             if (isBanned(member)) throw NightStudyBannedException()
-            if (hasPeriodOverlap(member, nightStudy.period, nightStudy.startAt, nightStudy.endAt)) {
+            if (hasPeriodOverlap(member, nightStudy.period, nightStudy.type, nightStudy.startAt, nightStudy.endAt)) {
                 throw PeriodOverlappedException()
             }
         }
@@ -105,7 +105,17 @@ class NightStudyService(
     }
 
     fun allow(publicId: UUID) {
-        getByPublicId(publicId).allow()
+        val ns = getByPublicId(publicId)
+        val wasAlreadyAllowed = ns.status == NightStudyStatusType.ALLOWED
+        ns.allow()
+        if (ns.type == NightStudyType.PROJECT && !wasAlreadyAllowed) {
+            val memberIds = nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(ns)
+            if (memberIds.isEmpty()) return
+            val targets = nightStudyQueryRepository.findActivePersonalsByUserIdsAndPeriodOverlap(
+                memberIds, ns.period, ns.startAt, ns.endAt
+            )
+            targets.forEach { it.reject("프로젝트 심자로 대체됨") }
+        }
     }
 
     fun reject(publicId: UUID, rejectionReason: String) {
@@ -146,9 +156,10 @@ class NightStudyService(
     private fun hasPeriodOverlap(
         userId: UUID,
         period: Int,
+        type: NightStudyType,
         startAt: LocalDate,
         endAt: LocalDate
     ): Boolean {
-        return nightStudyQueryRepository.existsByUserIdAndPeriodOverlap(userId, period, startAt, endAt)
+        return nightStudyQueryRepository.existsByUserIdAndPeriodOverlap(userId, period, type, startAt, endAt)
     }
 }
