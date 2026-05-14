@@ -6,6 +6,7 @@ import com.b1nd.dodamdodam.core.security.passport.requireUserId
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.PersonalNightStudyApplyRequest
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.ProjectNightStudyApplyRequest
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyApplicationResponse
+import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyApprovedCountResponse
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyApplicantResponse
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.PersonalNightStudyResponse
@@ -97,6 +98,27 @@ class NightStudyUseCase (
                 hasNext = nightStudiesPage.hasNext()
             )
         )
+    }
+
+    fun countApproved(): Response<NightStudyApprovedCountResponse> {
+        val counts = nightStudyService.countAllowedMembersGroupByTypeAndPeriod()
+
+        fun countFor(type: NightStudyType) = NightStudyApprovedCountResponse.PeriodCount(
+            period1 = counts[type to 1] ?: 0L,
+            period2 = counts[type to 2] ?: 0L,
+        )
+
+        val personal = countFor(NightStudyType.PERSONAL)
+        val project = countFor(NightStudyType.PROJECT)
+        val response = NightStudyApprovedCountResponse(
+            personal = personal,
+            project = project,
+            total = NightStudyApprovedCountResponse.PeriodCount(
+                period1 = personal.period1 + project.period1,
+                period2 = personal.period2 + project.period2,
+            ),
+        )
+        return Response.ok("심자 승인 인원수를 조회했어요.", response)
     }
 
     fun findById(id: UUID): Response<NightStudyApplicationResponse> {

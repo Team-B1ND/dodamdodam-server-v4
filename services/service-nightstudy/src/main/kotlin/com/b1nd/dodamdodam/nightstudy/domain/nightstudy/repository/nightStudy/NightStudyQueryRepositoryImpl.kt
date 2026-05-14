@@ -124,6 +124,27 @@ class NightStudyQueryRepositoryImpl(
         return PageableExecutionUtils.getPage(content, pageable) { countQuery.fetchOne() ?: 0L }
     }
 
+    override fun countAllowedMembersGroupByTypeAndPeriod(): Map<Pair<NightStudyType, Int>, Long> {
+        val today = LocalDate.now()
+        val distinctUser = nightStudyMemberEntity.userId.countDistinct()
+
+        return queryFactory
+            .select(nightStudyEntity.type, nightStudyEntity.period, distinctUser)
+            .from(nightStudyMemberEntity)
+            .join(nightStudyMemberEntity.nightStudy, nightStudyEntity)
+            .where(
+                nightStudyEntity.status.eq(NightStudyStatusType.ALLOWED),
+                nightStudyEntity.endAt.goe(today),
+            )
+            .groupBy(nightStudyEntity.type, nightStudyEntity.period)
+            .fetch()
+            .associate { tuple ->
+                val type = tuple.get(nightStudyEntity.type)!!
+                val period = tuple.get(nightStudyEntity.period) ?: 0
+                (type to period) to (tuple.get(distinctUser) ?: 0L)
+            }
+    }
+
     override fun existsByPublicIdAndUserId(publicId: UUID, userId: UUID): Boolean {
         return queryFactory.selectOne()
             .from(nightStudyMemberEntity)
