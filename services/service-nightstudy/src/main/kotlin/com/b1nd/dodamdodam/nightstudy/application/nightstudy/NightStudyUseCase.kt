@@ -102,23 +102,23 @@ class NightStudyUseCase (
 
     fun countApproved(): Response<NightStudyApprovedCountResponse> {
         val counts = nightStudyService.countAllowedMembersGroupByTypeAndPeriod()
-
-        fun countFor(type: NightStudyType) = NightStudyApprovedCountResponse.PeriodCount(
-            period1 = counts[type to 1] ?: 0,
-            period2 = counts[type to 2] ?: 0,
-        )
-
-        val personal = countFor(NightStudyType.PERSONAL)
-        val project = countFor(NightStudyType.PROJECT)
-        val response = NightStudyApprovedCountResponse(
-            personal = personal,
-            project = project,
-            total = NightStudyApprovedCountResponse.PeriodCount(
-                period1 = personal.period1 + project.period1,
-                period2 = personal.period2 + project.period2,
+        val byType = NightStudyType.entries.associateWith { type ->
+            NightStudyApprovedCountResponse.PeriodCount(
+                period1 = counts[type to 1] ?: 0,
+                period2 = counts[type to 2] ?: 0,
+            )
+        }
+        return Response.ok(
+            "심자 승인 인원수를 조회했어요.",
+            NightStudyApprovedCountResponse(
+                personal = byType.getValue(NightStudyType.PERSONAL),
+                project = byType.getValue(NightStudyType.PROJECT),
+                total = NightStudyApprovedCountResponse.PeriodCount(
+                    period1 = byType.values.sumOf { it.period1 },
+                    period2 = byType.values.sumOf { it.period2 },
+                ),
             ),
         )
-        return Response.ok("심자 승인 인원수를 조회했어요.", response)
     }
 
     fun findById(id: UUID): Response<NightStudyApplicationResponse> {
