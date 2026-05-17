@@ -6,6 +6,7 @@ import com.b1nd.dodamdodam.core.security.passport.enumerations.RoleType
 import com.b1nd.dodamdodam.nightstudy.application.ban.BanUseCase
 import com.b1nd.dodamdodam.nightstudy.application.ban.data.request.BanUserRequest
 import com.b1nd.dodamdodam.nightstudy.application.ban.data.response.BannedUserResponse
+import com.b1nd.dodamdodam.nightstudy.application.ban.data.response.DormitoryManagerBannedUserResponse
 import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.*
 import java.util.UUID
@@ -23,12 +24,12 @@ class BanController(
 
     @UserAccess(roles = [RoleType.DORMITORY_MANAGER])
     @GetMapping
-    fun getAll(): Response<List<BannedUserResponse>> =
+    fun getAll(): Response<List<DormitoryManagerBannedUserResponse>> =
         banUseCase.getAll()
 
     @UserAccess(roles = [RoleType.STUDENT])
     @GetMapping("/my")
-    fun getMyBan(): Response<BannedUserResponse?> =
+    fun getMyBan(): Response<BannedUserResponse> =
         banUseCase.getMyBan()
 
     @UserAccess(roles = [RoleType.DORMITORY_MANAGER])
