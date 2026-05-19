@@ -14,6 +14,7 @@ import com.b1nd.dodamdodam.user.application.user.data.request.EnableUserRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.GraduateStudentRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.GrantAdminRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.DeactivateUserRequest
+import com.b1nd.dodamdodam.user.application.user.data.request.GrantDormitoryManagerRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.RequestPhoneVerificationRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.ResetPasswordRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.StudentRegisterRequest
@@ -126,6 +127,17 @@ class UserUseCase(
             user.toUserUpdatedEvent(userRoles)
         )
         return Response.ok("어드민 권한이 부여되었어요.")
+    }
+
+    fun grantDormitoryManager(request: GrantDormitoryManagerRequest): Response<Any> {
+        val user = userService.get(request.userId)
+        userService.addRole(user, setOf(RoleType.DORMITORY_MANAGER))
+        val userRoles = userService.getRoles(user)
+        kafkaMessageProducer.send(
+            KafkaTopics.USER_UPDATED,
+            user.toUserUpdatedEvent(userRoles)
+        )
+        return Response.ok("자치위원 권한이 부여되었어요.")
     }
 
     fun deactivateUser(request: DeactivateUserRequest): Response<Any> {
