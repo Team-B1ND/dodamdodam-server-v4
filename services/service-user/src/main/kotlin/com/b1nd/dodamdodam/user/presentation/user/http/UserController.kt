@@ -9,6 +9,7 @@ import com.b1nd.dodamdodam.user.application.user.data.request.EnableUserRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.GraduateStudentRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.GrantAdminRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.DeactivateUserRequest
+import com.b1nd.dodamdodam.user.application.user.data.request.GrantDormitoryManagerRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.RequestPhoneVerificationRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.ResetPasswordRequest
 import com.b1nd.dodamdodam.user.application.user.data.request.StudentRegisterRequest
@@ -94,6 +95,11 @@ class UserController(
     @PatchMapping("/grant-admin")
     fun grantAdmin(@RequestBody request: GrantAdminRequest) =
         userUseCase.grantAdmin(request)
+
+    @UserAccess(roles = [RoleType.ADMIN])
+    @PatchMapping("/grant-dormitory-manager")
+    fun grantDormitory(@RequestBody request: GrantDormitoryManagerRequest) =
+        userUseCase.grantDormitoryManager(request)
 
     @UserAccess(roles = [RoleType.ADMIN])
     @PatchMapping("/deactivate")
