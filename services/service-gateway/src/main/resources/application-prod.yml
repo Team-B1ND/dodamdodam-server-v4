@@ -70,5 +70,7 @@ spring:
 app:
   auth:
     url: http://auth.dodam.svc.cluster.local:8080
+  openapi:
+    oauth-service-url: http://oauth.dodam.svc.cluster.local:8080
 server:
   port: 8080
