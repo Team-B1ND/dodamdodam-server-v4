@@ -12,8 +12,8 @@ interface NightStudyQueryRepository {
     fun findByPublicId(publicId: UUID): NightStudyEntity?
     fun findAllByUserIdAndType(userId: UUID, type: NightStudyType, pageable: Pageable): Page<NightStudyEntity>
     fun findAllByUserIdAndType(userId: UUID, type: NightStudyType): List<NightStudyEntity>
-    fun findAllByTypeAndStatus(type: NightStudyType, status: NightStudyStatusType?, pageable: Pageable): Page<NightStudyEntity>
-    fun findAllByTypeAndUserIdsAndStatus(type: NightStudyType, userIds: List<UUID>, status: NightStudyStatusType?, pageable: Pageable): Page<NightStudyEntity>
+    fun findAllByTypeAndStatus(type: NightStudyType, status: NightStudyStatusType?): List<NightStudyEntity>
+    fun findAllByTypeAndUserIdsAndStatus(type: NightStudyType, userIds: List<UUID>, status: NightStudyStatusType?): List<NightStudyEntity>
     fun countAllowedMembersGroupByTypeAndPeriod(): Map<Pair<NightStudyType, Int>, Int>
     fun existsByPublicIdAndUserId(publicId: UUID, userId: UUID): Boolean
     fun existsByUserIdAndPeriodOverlap(userId: UUID, period: Int, type: NightStudyType, startAt: LocalDate, endAt: LocalDate): Boolean
