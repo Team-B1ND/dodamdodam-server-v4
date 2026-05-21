@@ -65,11 +65,11 @@ class NightStudyService(
         return nightStudyQueryRepository.countAllowedMembersGroupByTypeAndPeriod()
     }
 
-    fun searchByType(type: NightStudyType, userIds: List<UUID>?, status: NightStudyStatusType?, pageable: Pageable): Page<NightStudyEntity> {
+    fun searchByType(type: NightStudyType, userIds: List<UUID>?, status: NightStudyStatusType?): List<NightStudyEntity> {
         return if (userIds != null) {
-            nightStudyQueryRepository.findAllByTypeAndUserIdsAndStatus(type, userIds, status, pageable)
+            nightStudyQueryRepository.findAllByTypeAndUserIdsAndStatus(type, userIds, status)
         } else {
-            nightStudyQueryRepository.findAllByTypeAndStatus(type, status, pageable)
+            nightStudyQueryRepository.findAllByTypeAndStatus(type, status)
         }
     }
 
