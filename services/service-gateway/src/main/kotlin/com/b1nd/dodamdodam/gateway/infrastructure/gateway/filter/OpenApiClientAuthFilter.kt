@@ -26,7 +26,7 @@ class OpenApiClientAuthFilter(
 
     override fun filter(exchange: ServerWebExchange, chain: GatewayFilterChain): Mono<Void> {
         val path = exchange.request.uri.path
-        if (!path.startsWith(OPENAPI_PATH_PREFIX)) return chain.filter(exchange)
+        if (!path.contains("/openapi/")) return chain.filter(exchange)
 
         val basicCredentials = exchange.extractBasicCredentials()
             ?: return exchange.unauthorized()
@@ -74,7 +74,6 @@ class OpenApiClientAuthFilter(
     data class CachedVerification(val result: ClientVerifyResponse, val expiry: Long)
 
     companion object {
-        private const val OPENAPI_PATH_PREFIX = "/user/openapi/"
         private const val CACHE_TTL_MS = 5 * 60 * 1000L
     }
 }
