@@ -16,6 +16,8 @@ interface OutSleepingRepository : JpaRepository<OutSleepingEntity, Long> {
 
     fun findAllByStartAtLessThanEqualAndEndAtGreaterThanEqual(startAt: LocalDate, endAt: LocalDate, pageable: Pageable): Page<OutSleepingEntity>
 
+    fun findAllByStatusAndStartAtLessThanEqualAndEndAtGreaterThanEqual(status: OutSleepingStatus, startAt: LocalDate, endAt: LocalDate): List<OutSleepingEntity>
+
     fun findAllByStatusAndStartAtLessThanEqualAndEndAtGreaterThanEqual(status: OutSleepingStatus, startAt: LocalDate, endAt: LocalDate, pageable: Pageable): Page<OutSleepingEntity>
 
     fun existsByUserIdAndStatusInAndStartAtLessThanEqualAndEndAtGreaterThanEqual(userId: UUID, statuses: List<OutSleepingStatus>, startAt: LocalDate, endAt: LocalDate): Boolean
