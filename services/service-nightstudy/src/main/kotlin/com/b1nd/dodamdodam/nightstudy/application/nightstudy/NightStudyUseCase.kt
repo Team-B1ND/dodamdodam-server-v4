@@ -36,7 +36,7 @@ import java.util.UUID
 
 @Component
 @Transactional(rollbackFor = [Exception::class])
-class NightStudyUseCase (
+class NightStudyUseCase(
     private val nightStudyService: NightStudyService,
     private val projectRoomService: ProjectRoomService,
     private val userQueryClient: UserQueryClient,
@@ -85,18 +85,26 @@ class NightStudyUseCase (
                 .ifEmpty { return Response.ok("전체 심야자습 신청 목록을 조회했어요.", InfinityScrollPageResponse(emptyList(), false)) }
         }
 
-        val nightStudiesPage = nightStudyService.searchByType(type, userIds, status, pageable)
-
-        val nightStudiesWithMembers = getNightStudiesWithMembersAndLeaders(nightStudiesPage.content)
+        val allNightStudies = nightStudyService.searchByType(type, userIds, status)
+        val nightStudiesWithMembers = getNightStudiesWithMembersAndLeaders(allNightStudies)
         val usersMap = fetchUsersMap(nightStudiesWithMembers)
-        val responses = nightStudiesWithMembers.toNightStudyApplicationResponses(usersMap)
+
+        val sorted = nightStudiesWithMembers.sortedWith(compareBy(
+            { usersMap[it.leaderId?.toString()]?.student?.grade ?: Int.MAX_VALUE },
+            { usersMap[it.leaderId?.toString()]?.student?.room ?: Int.MAX_VALUE },
+            { usersMap[it.leaderId?.toString()]?.student?.number ?: Int.MAX_VALUE }
+        ))
+
+        val offset = pageable.offset.toInt()
+        val pageSize = pageable.pageSize
+        val sliced = sorted.drop(offset).take(pageSize)
+        val hasNext = offset + pageSize < sorted.size
+
+        val responses = sliced.toNightStudyApplicationResponses(usersMap)
 
         return Response.ok(
             "전체 심야자습 신청 목록을 조회했어요.",
-            InfinityScrollPageResponse(
-                content = responses,
-                hasNext = nightStudiesPage.hasNext()
-            )
+            InfinityScrollPageResponse(content = responses, hasNext = hasNext)
         )
     }
 
@@ -200,11 +208,10 @@ class NightStudyUseCase (
 
     private fun validateApplicationAvailability(stratAt: LocalDate) {
         val now = LocalDateTime.now()
-        val deadline = LocalDate.now().atTime(20,30)
+        val deadline = LocalDate.now().atTime(20, 30)
         if (now.isAfter(deadline))
             throw BasicException(NightStudyExceptionCode.NOT_APPLICATION_TIME)
         if (stratAt.isBefore(now.toLocalDate()))
             throw BasicException(NightStudyExceptionCode.INVALID_START_AT)
     }
 }
-
