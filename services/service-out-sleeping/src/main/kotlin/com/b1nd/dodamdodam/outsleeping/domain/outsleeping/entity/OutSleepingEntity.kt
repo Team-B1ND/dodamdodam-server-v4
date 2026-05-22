@@ -1,5 +1,6 @@
 package com.b1nd.dodamdodam.outsleeping.domain.outsleeping.entity
 
+import com.b1nd.dodamdodam.core.common.uuid.UuidV7
 import com.b1nd.dodamdodam.core.jpa.entity.BaseTimeEntity
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.enumeration.OutSleepingStatus
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingAlreadyProcessedException
@@ -51,7 +52,7 @@ class OutSleepingEntity(
 
     @PrePersist
     fun generatePublicId() {
-        publicId = UUID.randomUUID()
+        publicId = UuidV7.generate()
     }
 
     fun allow() {

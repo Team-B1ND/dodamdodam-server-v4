@@ -1,5 +1,6 @@
 package com.b1nd.dodamdodam.neis.domain.schedule.entity
 
+import com.b1nd.dodamdodam.core.common.uuid.UuidV7
 import com.b1nd.dodamdodam.core.jpa.entity.BaseTimeEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -33,7 +34,7 @@ class ScheduleEntity(
 
     @PrePersist
     fun generatePublicId() {
-        publicId = UUID.randomUUID()
+        publicId = UuidV7.generate()
     }
 
     fun update(title: String, startAt: LocalDate, endAt: LocalDate) {

@@ -1,5 +1,6 @@
 package com.b1nd.dodamdodam.inapp.domain.app.entity
 
+import com.b1nd.dodamdodam.core.common.uuid.UuidV7
 import com.b1nd.dodamdodam.inapp.domain.app.enumeration.AppStatusType
 import com.b1nd.dodamdodam.inapp.domain.team.entity.TeamEntity
 import jakarta.persistence.Column
@@ -46,7 +47,7 @@ class AppEntity(
 
     @PrePersist
     fun generatePublicId() {
-        publicId = UUID.randomUUID()
+        publicId = UuidV7.generate()
     }
 
     fun update(

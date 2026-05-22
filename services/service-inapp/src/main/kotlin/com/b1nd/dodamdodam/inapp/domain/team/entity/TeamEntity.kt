@@ -1,5 +1,6 @@
 package com.b1nd.dodamdodam.inapp.domain.team.entity
 
+import com.b1nd.dodamdodam.core.common.uuid.UuidV7
 import com.b1nd.dodamdodam.core.jpa.entity.BaseTimeEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -29,7 +30,7 @@ class TeamEntity(
 
     @PrePersist
     fun generatePublicId() {
-        publicId = UUID.randomUUID()
+        publicId = UuidV7.generate()
     }
 
     fun update(name: String?, description: String?, iconUrl: String?, githubUrl: String?) {
