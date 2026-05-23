@@ -1,5 +1,6 @@
 package com.b1nd.dodamdodam.user.domain.user.entity
 
+import com.b1nd.dodamdodam.core.common.uuid.UuidV7
 import com.b1nd.dodamdodam.core.jpa.entity.BaseTimeEntity
 import com.b1nd.dodamdodam.user.domain.user.enumeration.StatusType
 import jakarta.persistence.Column
@@ -43,7 +44,7 @@ class UserEntity (
 
     @PrePersist
     fun generatePublicId() {
-        publicId = UUID.randomUUID()
+        publicId = UuidV7.generate()
     }
 
     fun updatePassword(newPassword: String) {

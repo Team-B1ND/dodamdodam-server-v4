@@ -1,5 +1,6 @@
 package com.b1nd.dodamdodam.inapp.domain.app.entity
 
+import com.b1nd.dodamdodam.core.common.uuid.UuidV7
 import com.b1nd.dodamdodam.core.jpa.entity.BaseTimeEntity
 import com.b1nd.dodamdodam.inapp.domain.app.enumeration.AppStatusType
 import jakarta.persistence.Column
@@ -45,7 +46,7 @@ class AppReleaseEntity(
 
     @PrePersist
     fun generatePublicId() {
-        publicId = UUID.randomUUID()
+        publicId = UuidV7.generate()
     }
 
     fun updateStatus(status: AppStatusType, denyResult: String?, updatedUser: UUID) {

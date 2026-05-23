@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController
 class OpenApiOutSleepingController(
     private val openApiOutSleepingUseCase: OpenApiOutSleepingUseCase
 ) {
-    @GetMapping("/serach")
+    @GetMapping("/search")
     fun getValid() =
         openApiOutSleepingUseCase.getValid()
 }
