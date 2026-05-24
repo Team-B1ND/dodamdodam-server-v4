@@ -119,7 +119,7 @@ class UserController(
     @PatchMapping("/reset-password")
     fun resetPassword(@RequestBody request: ResetPasswordRequest) = userUseCase.resetPassword(request)
 
-    @UserAccess(roles = [RoleType.STUDENT, RoleType.ADMIN])
+    @UserAccess(roles = [RoleType.ADMIN])
     @PatchMapping("/graduate")
     fun graduateStudent(@RequestBody request: GraduateStudentRequest) =
         userUseCase.graduateStudent(request)
