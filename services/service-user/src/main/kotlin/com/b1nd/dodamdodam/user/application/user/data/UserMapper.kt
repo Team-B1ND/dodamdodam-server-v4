@@ -77,7 +77,6 @@ fun UserSearchCommand.toResponse() = UserSearchResponse(
     publicId = user.publicId!!,
     username = user.username,
     name = user.name,
-    phone = user.phone,
     profileImage = user.profileImage,
     status = user.status,
     roles = roles,
