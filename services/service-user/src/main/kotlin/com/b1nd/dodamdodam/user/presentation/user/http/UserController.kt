@@ -36,7 +36,7 @@ class UserController(
     fun getMe() =
         userUseCase.getMyInfo()
 
-    @UserAccess(hasAnyRoleOnly = true)
+    @UserAccess(roles = [RoleType.ADMIN, RoleType.DORMITORY_MANAGER])
     @GetMapping("/search")
     fun searchUsers(
         @RequestParam(required = false) keyword: String?,
