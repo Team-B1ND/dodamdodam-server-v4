@@ -9,6 +9,7 @@ data class UserSearchResponse(
     val publicId: UUID,
     val username: String,
     val name: String,
+    val phone: String?,
     val profileImage: String?,
     val status: StatusType,
     val roles: Set<RoleType>,
