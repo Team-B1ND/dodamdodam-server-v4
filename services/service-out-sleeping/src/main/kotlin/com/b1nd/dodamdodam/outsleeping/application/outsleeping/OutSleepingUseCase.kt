@@ -35,6 +35,7 @@ class OutSleepingUseCase(
     fun apply(request: ApplyOutSleepingRequest): Response<Any> {
         deadlineService.validateDeadline()
         val userId = currentUserId()
+        outSleepingService.validateDate(request.startAt, request.endAt)
         outSleepingService.validateDuplicateDate(userId, request.startAt, request.endAt)
         outSleepingService.create(request.toEntity(userId))
         return Response.created("외박 신청이 완료되었어요.")
@@ -45,6 +46,7 @@ class OutSleepingUseCase(
         val userId = currentUserId()
         val outSleeping = outSleepingService.getByPublicId(publicId)
         outSleepingService.validateOwner(outSleeping, userId)
+        outSleepingService.validateDate(request.startAt, request.endAt)
         outSleeping.update(request.reason, request.startAt, request.endAt)
         return Response.ok("외박 신청이 수정되었어요.")
     }
