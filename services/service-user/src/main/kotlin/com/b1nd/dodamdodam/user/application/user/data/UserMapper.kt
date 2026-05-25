@@ -73,10 +73,11 @@ fun UserEntity.toUserUpdatedEvent(roles: Collection<RoleType>): UserUpdatedEvent
         profileImage = profileImage
     )
 
-fun UserSearchCommand.toResponse() = UserSearchResponse(
+fun UserSearchCommand.toResponse(includePhone: Boolean) = UserSearchResponse(
     publicId = user.publicId!!,
     username = user.username,
     name = user.name,
+    phone = if (includePhone) user.phone else null,
     profileImage = user.profileImage,
     status = user.status,
     roles = roles,
