@@ -10,5 +10,5 @@ class OpenApiOutSleepingService(
     private val outSleepingRepository: OutSleepingRepository
 ) {
     fun getByDate(date: LocalDate) =
-        outSleepingRepository.findAllByStatusAndStartAtLessThanEqualAndEndAtGreaterThanEqual(OutSleepingStatus.ALLOWED,date, date)
+        outSleepingRepository.findAllByStatusAndStartAtLessThanEqualAndEndAtGreaterThanEqual(OutSleepingStatus.ALLOWED, date, date)
 }
