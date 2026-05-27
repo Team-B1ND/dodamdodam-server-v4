@@ -51,7 +51,7 @@ class ComciganClient(
         orgNum = orgDataMatch?.groupValues?.get(1)?.toInt()
             ?: throw IllegalStateException("컴시간 orgNum 추출 실패")
         dayNum = dayDataMatch?.groupValues?.get(1)?.toInt() ?: orgNum
-        thNum = Regex("성명=자료\\.자료(\\d+)").find(html)?.groupValues?.get(1)?.toInt()
+        thNum = Regex("자료\\.자료(\\d+)\\[th]").find(html)?.groupValues?.get(1)?.toInt()
             ?: throw IllegalStateException("컴시간 thNum 추출 실패")
         sbNum = Regex("자료\\.자료(\\d+)\\[sb]").find(html)?.groupValues?.get(1)?.toInt()
             ?: throw IllegalStateException("컴시간 sbNum 추출 실패")
