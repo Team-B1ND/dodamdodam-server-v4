@@ -63,10 +63,11 @@ class UserUseCase(
     }
 
     fun searchUsers(keyword: String?, roles: List<RoleType>?, generationOnly: Boolean?, status: List<StatusType>?, pageable: Pageable): Response<InfinityScrollPageResponse<UserSearchResponse>> {
+        val isAdmin = PassportHolder.current().role?.contains(RoleType.ADMIN) == true
         val page = userQueryService.search(keyword, roles, generationOnly, status, pageable)
         return Response.ok(
             "유저를 검색했어요.",
-            InfinityScrollPageResponse(content = page.content.map { it.toResponse() }, hasNext = page.hasNext),
+            InfinityScrollPageResponse(content = page.content.map { it.toResponse(includePhone = isAdmin) }, hasNext = page.hasNext),
         )
     }
 

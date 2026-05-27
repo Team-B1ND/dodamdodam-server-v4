@@ -18,8 +18,8 @@ class OpenApiOutSleepingUseCase(
     private val userQueryClient: UserQueryClient,
 ) {
 
-    fun getValid(): Response<List<OutSleepingResponse>> {
-        val outSleepings = openApiOutSleepingService.getByDate(LocalDate.now())
+    fun getValid(date: LocalDate): Response<List<OutSleepingResponse>> {
+        val outSleepings = openApiOutSleepingService.getByDate(date)
         val userInfoMap = getUserInfoMap(outSleepings.map { it.userId })
 
         return Response.ok(
