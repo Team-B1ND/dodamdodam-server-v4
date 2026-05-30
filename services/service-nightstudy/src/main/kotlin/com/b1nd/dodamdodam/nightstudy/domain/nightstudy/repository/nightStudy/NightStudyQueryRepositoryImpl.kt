@@ -8,8 +8,6 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyMember
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
 import com.b1nd.dodamdodam.nightstudy.domain.room.entity.QProjectRoomEntity
-import com.querydsl.core.types.dsl.BooleanExpression
-import com.querydsl.jpa.JPAExpressions
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -71,7 +69,6 @@ class NightStudyQueryRepositoryImpl(
                 nightStudyEntity.type.eq(type),
                 nightStudyEntity.endAt.goe(today),
                 status?.let { nightStudyEntity.status.eq(it) },
-                hideByActiveProjectCondition(type)
             )
             .fetch()
     }
@@ -87,7 +84,6 @@ class NightStudyQueryRepositoryImpl(
                 nightStudyEntity.endAt.goe(today),
                 nightStudyMemberEntity.userId.`in`(userIds),
                 status?.let { nightStudyEntity.status.eq(it) },
-                hideByActiveProjectCondition(type)
             )
             .distinct()
             .fetch()
@@ -190,19 +186,23 @@ class NightStudyQueryRepositoryImpl(
             .fetch()
     }
 
-    private fun hideByActiveProjectCondition(type: NightStudyType): BooleanExpression? {
-        if (type != NightStudyType.PERSONAL) return null
+    override fun findProjectMemberNightStudyIds(nightStudies: List<NightStudyEntity>): Set<Long> {
+        val nightStudyIds = nightStudies.mapNotNull { it.id }
+        if (nightStudyIds.isEmpty()) return emptySet()
 
         val project = QNightStudyEntity("project")
         val projectMember = QNightStudyMemberEntity("projectMember")
         val personalMember = QNightStudyMemberEntity("personalMember")
 
-        return JPAExpressions
-            .selectOne()
-            .from(project)
-            .join(projectMember).on(projectMember.nightStudy.eq(project))
+        return queryFactory
+            .select(nightStudyEntity.id)
+            .from(nightStudyEntity)
             .join(personalMember).on(personalMember.nightStudy.eq(nightStudyEntity))
+            .join(projectMember).on(projectMember.userId.eq(personalMember.userId))
+            .join(projectMember.nightStudy, project)
             .where(
+                nightStudyEntity.id.`in`(nightStudyIds),
+                nightStudyEntity.type.eq(NightStudyType.PERSONAL),
                 project.type.eq(NightStudyType.PROJECT),
                 project.status.`in`(NightStudyStatusType.PENDING, NightStudyStatusType.ALLOWED),
                 project.period.eq(nightStudyEntity.period),
@@ -210,6 +210,9 @@ class NightStudyQueryRepositoryImpl(
                 project.endAt.goe(nightStudyEntity.startAt),
                 projectMember.userId.eq(personalMember.userId)
             )
-            .notExists()
+            .distinct()
+            .fetch()
+            .filterNotNull()
+            .toSet()
     }
 }
