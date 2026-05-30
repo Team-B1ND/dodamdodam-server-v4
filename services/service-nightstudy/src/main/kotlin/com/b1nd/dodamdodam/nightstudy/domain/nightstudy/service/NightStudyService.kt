@@ -73,6 +73,10 @@ class NightStudyService(
         }
     }
 
+    fun getProjectMemberNightStudyIds(nightStudies: List<NightStudyEntity>): Set<Long> {
+        return nightStudyQueryRepository.findProjectMemberNightStudyIds(nightStudies)
+    }
+
     fun getByPublicId(publicId: UUID): NightStudyEntity {
         return nightStudyQueryRepository.findByPublicId(publicId) ?: throw NightStudyNotFoundException()
     }

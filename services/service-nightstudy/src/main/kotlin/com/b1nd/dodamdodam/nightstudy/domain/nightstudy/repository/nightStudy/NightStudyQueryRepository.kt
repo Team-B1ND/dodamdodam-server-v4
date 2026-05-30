@@ -19,4 +19,5 @@ interface NightStudyQueryRepository {
     fun existsByUserIdAndPeriodOverlap(userId: UUID, period: Int, type: NightStudyType, startAt: LocalDate, endAt: LocalDate): Boolean
     fun existsByRoomAndPeriodOverlap(roomId: Long, period: Int, startAt: LocalDate, endAt: LocalDate, excludeNightStudyId: Long): Boolean
     fun findActivePersonalsByUserIdsAndPeriodOverlap(userIds: List<UUID>, period: Int, startAt: LocalDate, endAt: LocalDate): List<NightStudyEntity>
+    fun findProjectMemberNightStudyIds(nightStudies: List<NightStudyEntity>): Set<Long>
 }

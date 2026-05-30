@@ -88,6 +88,7 @@ class NightStudyUseCase(
         val allNightStudies = nightStudyService.searchByType(type, userIds, status)
         val nightStudiesWithMembers = getNightStudiesWithMembersAndLeaders(allNightStudies)
         val usersMap = fetchUsersMap(nightStudiesWithMembers)
+        val projectMemberNightStudyIds = nightStudyService.getProjectMemberNightStudyIds(allNightStudies)
 
         val sorted = nightStudiesWithMembers.sortedWith(compareBy(
             { usersMap[it.leaderId?.toString()]?.student?.grade ?: Int.MAX_VALUE },
@@ -100,7 +101,7 @@ class NightStudyUseCase(
         val sliced = sorted.drop(offset).take(pageSize)
         val hasNext = offset + pageSize < sorted.size
 
-        val responses = sliced.toNightStudyApplicationResponses(usersMap)
+        val responses = sliced.toNightStudyApplicationResponses(usersMap, projectMemberNightStudyIds)
 
         return Response.ok(
             "전체 심야자습 신청 목록을 조회했어요.",

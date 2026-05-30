@@ -20,6 +20,7 @@ data class NightStudyApplicationResponse(
     val rejectionReason: String?,
     val type: NightStudyType,
     val room: RoomInfo?,
+    val isProjectNightStudyMember: Boolean,
 ) {
     data class RoomInfo(
         val id: Long,
