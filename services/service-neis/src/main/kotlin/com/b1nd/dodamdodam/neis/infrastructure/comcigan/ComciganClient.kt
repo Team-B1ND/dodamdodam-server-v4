@@ -12,6 +12,7 @@ import java.net.http.HttpResponse
 import java.nio.charset.Charset
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 @Component
@@ -76,7 +77,9 @@ class ComciganClient(
     }
 
     fun fetchWeeklyTimeTables(mondayDate: LocalDate): List<ParsedTimeTable> {
-        val json = fetchTimetable()
+        val base = fetchTimetable()
+        val r = resoloveWeek(base, mondayDate)
+        val json = if (r==0) base else fetchTimetable(r)
         val subjects = json["자료$sbNum"]
         val teachers = json["자료$thNum"]
         val timetableData = json["자료$dayNum"]
@@ -109,7 +112,9 @@ class ComciganClient(
         if (dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY) return emptyList()
 
         val dayIdx = dayOfWeek.value
-        val json = fetchTimetable()
+        val base = fetchTimetable()
+        val r = resoloveWeek(base, date)
+        val json = if (r == 0) base else fetchTimetable(r)
         val subjects = json["자료$sbNum"]
         val teachers = json["자료$thNum"]
         val timetableData = json["자료$dayNum"]
@@ -143,8 +148,8 @@ class ComciganClient(
         onPeriod: (period: Int, subject: String, teacher: String, isReplaced: Boolean) -> Unit,
     ) {
         for (periodIdx in 1 until dayData.size()) {
-            val value = dayData[periodIdx].asInt()
-            val str = value.toString()
+            val rawText = dayData[periodIdx].asText()
+            val str = rawText.removePrefix(">")
             if (str.length < 3) continue
 
             val subjectIdx = if (str.length >= 5) str.substring(0, 2).toInt() else str.substring(0, 1).toInt()
@@ -154,6 +159,7 @@ class ComciganClient(
             val teacher = getTextSafe(teachers, teacherIdx)
             if (subject.isBlank()) continue
 
+            val value = str.toInt()
             val orgValue = orgDayData?.get(periodIdx)?.asInt() ?: value
             val isReplaced = value != orgValue
 
@@ -161,8 +167,8 @@ class ComciganClient(
         }
     }
 
-    private fun fetchTimetable(): JsonNode {
-        val param = "$prefix${schoolCode}_0_1"
+    private fun fetchTimetable(r: Int = 0): JsonNode {
+        val param = "$prefix${schoolCode}_${r}_1"
         val encoded = Base64.getEncoder().encodeToString(param.toByteArray(Charsets.UTF_8))
         val body = fetchAsUtf8("$baseUrl?$encoded")
         return objectMapper.readTree(body.replace("\u0000", ""))
@@ -188,5 +194,17 @@ class ComciganClient(
     private fun getTextSafe(node: JsonNode?, index: Int): String {
         if (node == null || index < 0 || index >= node.size()) return ""
         return node[index].asText("")
+    }
+
+    private fun resoloveWeek(json: JsonNode, mondayDate: LocalDate): Int {
+        val weeks = json["일자자료"]
+        for (w in weeks) {
+            val label = w[1].asText()
+            val start = LocalDate.parse("20" + label.substringBefore(" ~ ").trim(), DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+            val end = LocalDate.parse("20" + label.substringAfter("~ ").trim(), DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+
+            if (!mondayDate.isBefore(start) && !mondayDate.isAfter(end)) return w[0].asInt() -1
+        }
+        return json["오늘r"].asInt()
     }
 }
