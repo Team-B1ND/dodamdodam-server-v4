@@ -186,6 +186,21 @@ class NightStudyQueryRepositoryImpl(
             .fetch()
     }
 
+    override fun findAllByTypeAndStartAtLessThanEqualAndEndAtGreaterThanEqual(
+        type: NightStudyType,
+        startAt: LocalDate,
+        endAt: LocalDate
+    ): List<NightStudyEntity> {
+        return queryFactory.selectFrom(nightStudyEntity)
+            .where(
+                nightStudyEntity.type.eq(type),
+                nightStudyEntity.startAt.loe(endAt),
+                nightStudyEntity.endAt.goe(startAt),
+                nightStudyEntity.status.eq(NightStudyStatusType.ALLOWED)
+            )
+            .fetch()
+    }
+
     override fun findProjectMemberNightStudyIds(nightStudies: List<NightStudyEntity>): Set<Long> {
         val nightStudyIds = nightStudies.mapNotNull { it.id }
         if (nightStudyIds.isEmpty()) return emptySet()
