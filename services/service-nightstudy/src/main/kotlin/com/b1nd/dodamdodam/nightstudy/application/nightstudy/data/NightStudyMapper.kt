@@ -83,7 +83,8 @@ fun UserResponse.toOpenApiUserInfoResponse() = NightStudyApplicantResponse(
 
 fun NightStudyEntity.toOpenApiNightStudyResponse(
     leader: NightStudyApplicantResponse,
-    members: List<NightStudyApplicantResponse>
+    members: List<NightStudyApplicantResponse>,
+    isProjectNightStudyMember: Boolean = false,
 ) = NightStudyApplicationResponse(
     id = publicId!!,
     name = name,
@@ -99,17 +100,20 @@ fun NightStudyEntity.toOpenApiNightStudyResponse(
     rejectionReason = rejectionReason,
     type = type,
     room = room?.let { NightStudyApplicationResponse.RoomInfo(id = it.id!!, name = it.name) },
+    isProjectNightStudyMember = isProjectNightStudyMember,
 )
 
 fun List<NightStudyWithMembersCommand>.toNightStudyApplicationResponses(
-    usersMap: Map<String, NightStudyApplicantResponse>
+    usersMap: Map<String, NightStudyApplicantResponse>,
+    projectMemberNightStudyIds: Set<Long> = emptySet(),
 ): List<NightStudyApplicationResponse> {
     return mapNotNull { command ->
         command.leaderId?.let { leaderId ->
             usersMap[leaderId.toString()]?.let { leader ->
                 command.nightStudy.toOpenApiNightStudyResponse(
                     leader = leader,
-                    members = command.memberIds.mapNotNull { memberId -> usersMap[memberId.toString()] }
+                    members = command.memberIds.mapNotNull { memberId -> usersMap[memberId.toString()] },
+                    isProjectNightStudyMember = command.nightStudy.id in projectMemberNightStudyIds,
                 )
             }
         }
