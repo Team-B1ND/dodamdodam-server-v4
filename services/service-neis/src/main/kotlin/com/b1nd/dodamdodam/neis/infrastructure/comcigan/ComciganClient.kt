@@ -77,9 +77,7 @@ class ComciganClient(
     }
 
     fun fetchWeeklyTimeTables(mondayDate: LocalDate): List<ParsedTimeTable> {
-        val base = fetchTimetable()
-        val r = resoloveWeek(base, mondayDate)
-        val json = if (r==0) base else fetchTimetable(r)
+        val json = fetchTimetable()
         val subjects = json["자료$sbNum"]
         val teachers = json["자료$thNum"]
         val timetableData = json["자료$dayNum"]
@@ -112,9 +110,7 @@ class ComciganClient(
         if (dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY) return emptyList()
 
         val dayIdx = dayOfWeek.value
-        val base = fetchTimetable()
-        val r = resoloveWeek(base, date)
-        val json = if (r == 0) base else fetchTimetable(r)
+        val json = fetchTimetable()
         val subjects = json["자료$sbNum"]
         val teachers = json["자료$thNum"]
         val timetableData = json["자료$dayNum"]
@@ -167,8 +163,8 @@ class ComciganClient(
         }
     }
 
-    private fun fetchTimetable(r: Int = 0): JsonNode {
-        val param = "$prefix${schoolCode}_${r}_1"
+    private fun fetchTimetable(): JsonNode {
+        val param = "$prefix${schoolCode}_0_1"
         val encoded = Base64.getEncoder().encodeToString(param.toByteArray(Charsets.UTF_8))
         val body = fetchAsUtf8("$baseUrl?$encoded")
         return objectMapper.readTree(body.replace("\u0000", ""))
