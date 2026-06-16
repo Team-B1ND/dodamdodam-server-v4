@@ -19,3 +19,5 @@ class AlreadyBannedException: BasicException(NightStudyExceptionCode.ALREADY_BAN
 class NotProjectNightStudyException: BasicException(NightStudyExceptionCode.NOT_PROJECT_NIGHT_STUDY)
 
 class RoomAlreadyAssignedException: BasicException(NightStudyExceptionCode.ROOM_ALREADY_ASSIGNED)
+
+class AlreadyApprovedException: BasicException(NightStudyExceptionCode.ALREADY_APPROVED)
