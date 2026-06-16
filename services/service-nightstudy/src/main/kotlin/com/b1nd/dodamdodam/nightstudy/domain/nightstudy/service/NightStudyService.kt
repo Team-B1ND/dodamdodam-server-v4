@@ -4,6 +4,7 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyMemberEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.AlreadyApprovedException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyBannedException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyNotFoundException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NotLeaderException
@@ -107,6 +108,8 @@ class NightStudyService(
             val leaderId = getLeaderByNightStudy(nightStudy)
             if (leaderId != userId) throw NotLeaderException()
         }
+        if (nightStudy.status == NightStudyStatusType.ALLOWED)
+            throw AlreadyApprovedException()
 
         nightStudyMemberRepository.deleteAllByNightStudy(nightStudy)
         nightStudyRepository.delete(nightStudy)
