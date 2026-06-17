@@ -2,6 +2,7 @@ package com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy
 
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyEntity
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyAttendanceEntity.nightStudyAttendanceEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyEntity.nightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyMemberEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyMemberEntity.nightStudyMemberEntity
@@ -139,6 +140,48 @@ class NightStudyQueryRepositoryImpl(
                 nightStudyEntity.status.ne(NightStudyStatusType.REJECTED)
             )
             .fetchFirst() != null
+    }
+
+    override fun existsAllowedMemberByUserIdAndDateAndPeriod(userId: UUID, date: LocalDate, period: Int): Boolean {
+        return queryFactory.selectOne()
+            .from(nightStudyMemberEntity)
+            .join(nightStudyMemberEntity.nightStudy, nightStudyEntity)
+            .where(
+                nightStudyMemberEntity.userId.eq(userId),
+                nightStudyEntity.status.eq(NightStudyStatusType.ALLOWED),
+                nightStudyEntity.period.eq(period),
+                nightStudyEntity.startAt.loe(date),
+                nightStudyEntity.endAt.goe(date),
+            )
+            .fetchFirst() != null
+    }
+
+    override fun findAllowedUserIdsByDateAndPeriod(date: LocalDate, period: Int): List<UUID> {
+        return queryFactory.select(nightStudyMemberEntity.userId)
+            .from(nightStudyMemberEntity)
+            .join(nightStudyMemberEntity.nightStudy, nightStudyEntity)
+            .where(
+                nightStudyEntity.status.eq(NightStudyStatusType.ALLOWED),
+                nightStudyEntity.period.eq(period),
+                nightStudyEntity.startAt.loe(date),
+                nightStudyEntity.endAt.goe(date),
+            )
+            .distinct()
+            .fetch()
+    }
+
+    override fun countAttendedUserIdsByDateAndPeriod(date: LocalDate, period: Int, userIds: List<UUID>): Long {
+        if (userIds.isEmpty()) return 0
+
+        return queryFactory.select(nightStudyAttendanceEntity.userId.countDistinct())
+            .from(nightStudyAttendanceEntity)
+            .where(
+                nightStudyAttendanceEntity.date.eq(date),
+                nightStudyAttendanceEntity.period.eq(period),
+                nightStudyAttendanceEntity.attended.eq(true),
+                nightStudyAttendanceEntity.userId.`in`(userIds),
+            )
+            .fetchOne() ?: 0
     }
 
     override fun existsByRoomAndPeriodOverlap(

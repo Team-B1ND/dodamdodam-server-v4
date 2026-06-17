@@ -88,4 +88,3 @@ class NightStudyController(
     fun unassignRoom(@PathVariable id: UUID): Response<Any> =
         nightStudyUseCase.unassignRoom(id)
 }
-
