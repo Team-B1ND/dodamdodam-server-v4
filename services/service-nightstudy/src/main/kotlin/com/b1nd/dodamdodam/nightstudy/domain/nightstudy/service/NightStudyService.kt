@@ -156,6 +156,10 @@ class NightStudyService(
         getByPublicId(publicId).unassignRoom()
     }
 
+    fun getAllAllowed(): List<NightStudyEntity> {
+        return nightStudyRepository.findAllByStatus(NightStudyStatusType.ALLOWED) as List<NightStudyEntity>
+    }
+
     private fun isBanned(userId: UUID): Boolean {
         return bannedRepository.existsByUserId(userId)
     }

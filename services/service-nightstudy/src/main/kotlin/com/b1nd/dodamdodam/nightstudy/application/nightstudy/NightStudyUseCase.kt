@@ -26,8 +26,10 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service.NightStudyAttend
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service.NightStudyService
 import com.b1nd.dodamdodam.nightstudy.domain.room.service.ProjectRoomService
 import com.b1nd.dodamdodam.nightstudy.infrastructure.user.client.UserQueryClient
+import com.b1nd.dodamdodam.grpc.user.UserResponse
 import com.b1nd.dodamdodam.core.common.data.InfinityScrollPageResponse
 import com.b1nd.dodamdodam.core.common.exception.BasicException
+import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyTotalCountResponse
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyExceptionCode
 import kotlinx.coroutines.runBlocking
@@ -166,6 +168,42 @@ class NightStudyUseCase(
         nightStudyService.assignRoom(id, room)
         return Response.ok("방 배정이 완료됐어요.")
     }
+
+    fun countTotalMembers(): Response<NightStudyTotalCountResponse> {
+        val nightStudys = nightStudyService.getAllAllowed()
+
+        val membersByNightStudy = nightStudyService.getMembersByNightStudies(nightStudys)
+        val userIds = membersByNightStudy.values.flatten()
+            .map { it.toString() }
+            .distinct()
+
+        val userById = runBlocking { userQueryClient.getUsers(userIds) }.usersList
+            .associateBy { it.publicId }
+
+        val counts = nightStudys.flatMap { nightStudy ->
+            val memberIds = membersByNightStudy[nightStudy.id] ?: emptyList()
+
+            memberIds.map { memberId ->
+                val user = userById[memberId.toString()]
+                Triple(
+                    resolveFloor(nightStudy, user),
+                    nightStudy.type,
+                    nightStudy.period,
+                )
+            }
+        }.groupingBy { it }.eachCount()
+
+        return Response.ok("심자 층별 인원수를 조회했어요.", NightStudyTotalCountResponse.of(counts))
+    }
+
+    private fun resolveFloor(nightStudy: NightStudyEntity, user: UserResponse?): Int =
+        if (nightStudy.type == NightStudyType.PROJECT) {
+            if (nightStudy.room?.name == "LAB13") 3 else 2
+        } else {
+            val grade = user?.student?.grade
+            val classNo = user?.student?.room
+            if (grade == 2 || (grade == 1 && classNo == 4)) 3 else 2
+        }
 
     fun unassignRoom(id: UUID): Response<Any> {
         nightStudyService.unassignRoom(id)

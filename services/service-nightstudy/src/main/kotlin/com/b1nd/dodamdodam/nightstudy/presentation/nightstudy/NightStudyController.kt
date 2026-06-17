@@ -15,6 +15,7 @@ import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.Proje
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
 import com.b1nd.dodamdodam.core.common.data.InfinityScrollPageResponse
+import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyTotalCountResponse
 import org.springframework.data.domain.Pageable
 import org.springframework.web.bind.annotation.*
 import java.util.UUID
@@ -87,4 +88,9 @@ class NightStudyController(
     @DeleteMapping("/applications/{id}/room")
     fun unassignRoom(@PathVariable id: UUID): Response<Any> =
         nightStudyUseCase.unassignRoom(id)
+
+    @UserAccess(roles = [RoleType.DORMITORY_MANAGER])
+    @GetMapping("/applications/total")
+    fun countTotalMembers(): Response<NightStudyTotalCountResponse> =
+        nightStudyUseCase.countTotalMembers()
 }
