@@ -5,8 +5,11 @@ import com.b1nd.dodamdodam.core.security.passport.holder.PassportHolder
 import com.b1nd.dodamdodam.core.security.passport.requireUserId
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.PersonalNightStudyApplyRequest
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.ProjectNightStudyApplyRequest
+import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.UpdateNightStudyAttendanceRequest
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyApplicationResponse
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyApprovedCountResponse
+import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyAttendanceCountResponse
+import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyAttendanceResponse
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyApplicantResponse
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.PersonalNightStudyResponse
@@ -19,6 +22,7 @@ import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.toPersonalNigh
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.toProjectNightStudyResponse
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service.NightStudyAttendanceService
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service.NightStudyService
 import com.b1nd.dodamdodam.nightstudy.domain.room.service.ProjectRoomService
 import com.b1nd.dodamdodam.nightstudy.infrastructure.user.client.UserQueryClient
@@ -38,6 +42,7 @@ import java.util.UUID
 @Transactional(rollbackFor = [Exception::class])
 class NightStudyUseCase(
     private val nightStudyService: NightStudyService,
+    private val nightStudyAttendanceService: NightStudyAttendanceService,
     private val projectRoomService: ProjectRoomService,
     private val userQueryClient: UserQueryClient,
 ) {
@@ -165,6 +170,32 @@ class NightStudyUseCase(
     fun unassignRoom(id: UUID): Response<Any> {
         nightStudyService.unassignRoom(id)
         return Response.ok("방 배정을 해제했어요.")
+    }
+
+    fun updateAttendance(
+        userId: UUID,
+        date: LocalDate,
+        period: Int,
+        request: UpdateNightStudyAttendanceRequest
+    ): Response<NightStudyAttendanceResponse> {
+        val attendance = nightStudyAttendanceService.update(userId, date, period, request.attended)
+        return Response.ok("심야자습 출석 상태를 변경했어요.", NightStudyAttendanceResponse.from(attendance))
+    }
+
+    fun getAttendance(userId: UUID, date: LocalDate, period: Int): Response<NightStudyAttendanceResponse> {
+        val attendance = nightStudyAttendanceService.get(userId, date, period)
+        return Response.ok("심야자습 출석 상태를 조회했어요.", NightStudyAttendanceResponse.from(attendance))
+    }
+
+    fun countAttendance(date: LocalDate, period: Int): Response<NightStudyAttendanceCountResponse> {
+        val (attendedCount, absentCount) = nightStudyAttendanceService.count(date, period)
+        return Response.ok(
+            "심야자습 출석 인원수를 조회했어요.",
+            NightStudyAttendanceCountResponse(
+                attendedCount = attendedCount,
+                absentCount = absentCount,
+            )
+        )
     }
 
     private fun getNightStudiesWithMembersAndLeaders(
