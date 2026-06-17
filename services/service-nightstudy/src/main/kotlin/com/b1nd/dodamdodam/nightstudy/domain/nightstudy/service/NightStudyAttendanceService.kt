@@ -4,7 +4,7 @@ import com.b1nd.dodamdodam.core.common.exception.BasicException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyAttendanceEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyExceptionCode
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyQueryRepository
-import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudyAttendance.NightStudyAttendanceRepository
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyAttendanceRepository
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 import java.util.UUID
@@ -45,14 +45,8 @@ class NightStudyAttendanceService(
 
     fun count(date: LocalDate, period: Int): Pair<Int, Int> {
         val allowedUserIds = nightStudyQueryRepository.findAllowedUserIdsByDateAndPeriod(date, period)
-        val attendedCount = if (allowedUserIds.isEmpty()) {
-            0
-        } else {
-            attendanceRepository.findAllByDateAndPeriodAndAttendedTrueAndUserIdIn(date, period, allowedUserIds)
-                .map { it.userId }
-                .distinct()
-                .count()
-        }
+        val attendedCount = nightStudyQueryRepository.countAttendedUserIdsByDateAndPeriod(date, period, allowedUserIds)
+            .toInt()
 
         return attendedCount to (allowedUserIds.size - attendedCount)
     }

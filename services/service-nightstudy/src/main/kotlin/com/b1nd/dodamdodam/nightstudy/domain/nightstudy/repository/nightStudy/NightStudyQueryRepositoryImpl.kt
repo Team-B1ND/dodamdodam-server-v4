@@ -2,6 +2,7 @@ package com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy
 
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyEntity
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyAttendanceEntity.nightStudyAttendanceEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyEntity.nightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyMemberEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyMemberEntity.nightStudyMemberEntity
@@ -167,6 +168,20 @@ class NightStudyQueryRepositoryImpl(
             )
             .distinct()
             .fetch()
+    }
+
+    override fun countAttendedUserIdsByDateAndPeriod(date: LocalDate, period: Int, userIds: List<UUID>): Long {
+        if (userIds.isEmpty()) return 0
+
+        return queryFactory.select(nightStudyAttendanceEntity.userId.countDistinct())
+            .from(nightStudyAttendanceEntity)
+            .where(
+                nightStudyAttendanceEntity.date.eq(date),
+                nightStudyAttendanceEntity.period.eq(period),
+                nightStudyAttendanceEntity.attended.eq(true),
+                nightStudyAttendanceEntity.userId.`in`(userIds),
+            )
+            .fetchOne() ?: 0
     }
 
     override fun existsByRoomAndPeriodOverlap(
