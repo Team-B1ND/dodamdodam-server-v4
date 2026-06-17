@@ -1,0 +1,10 @@
+CREATE TABLE night_study_attendances (
+	id BIGINT AUTO_INCREMENT NOT NULL PRIMARY KEY,
+	created_at DATETIME NOT NULL,
+	modified_at DATETIME NOT NULL,
+	fk_user_id BINARY(16) NOT NULL,
+	date DATE NOT NULL,
+	period INT NOT NULL,
+	attended BIT(1) NOT NULL,
+	CONSTRAINT UK_NIGHT_STUDY_ATTENDANCES_ON_USER_DATE_PERIOD UNIQUE (fk_user_id, date, period)
+);

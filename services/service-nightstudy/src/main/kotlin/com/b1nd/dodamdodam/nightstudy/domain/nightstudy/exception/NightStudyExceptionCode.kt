@@ -18,5 +18,7 @@ enum class NightStudyExceptionCode(
     ROOM_ALREADY_ASSIGNED(HttpStatus.CONFLICT, "해당 기간에 이미 배정된 방이에요."),
     NOT_APPLICATION_TIME(HttpStatus.BAD_REQUEST, "지금은 심자 신청 시간이 아니에요."),
     INVALID_START_AT(HttpStatus.BAD_REQUEST, "현재 시간보다 시작일이 과거에요."),
+    ALREADY_APPROVED(HttpStatus.CONFLICT, "이미 승인된 심야 자습이에요."),
+    NOT_NIGHT_STUDY_MEMBER(HttpStatus.BAD_REQUEST, "해당 날짜와 교시에 승인된 심야 자습 인원이 아니에요."),
     ;
 }
