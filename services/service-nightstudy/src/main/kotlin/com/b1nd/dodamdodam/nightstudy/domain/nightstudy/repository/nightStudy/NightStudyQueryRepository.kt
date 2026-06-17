@@ -17,6 +17,8 @@ interface NightStudyQueryRepository {
     fun countAllowedMembersGroupByTypeAndPeriod(): Map<Pair<NightStudyType, Int>, Int>
     fun existsByPublicIdAndUserId(publicId: UUID, userId: UUID): Boolean
     fun existsByUserIdAndPeriodOverlap(userId: UUID, period: Int, type: NightStudyType, startAt: LocalDate, endAt: LocalDate): Boolean
+    fun existsAllowedMemberByUserIdAndDateAndPeriod(userId: UUID, date: LocalDate, period: Int): Boolean
+    fun findAllowedUserIdsByDateAndPeriod(date: LocalDate, period: Int): List<UUID>
     fun existsByRoomAndPeriodOverlap(roomId: Long, period: Int, startAt: LocalDate, endAt: LocalDate, excludeNightStudyId: Long): Boolean
     fun findActivePersonalsByUserIdsAndPeriodOverlap(userIds: List<UUID>, period: Int, startAt: LocalDate, endAt: LocalDate): List<NightStudyEntity>
     fun findProjectMemberNightStudyIds(nightStudies: List<NightStudyEntity>): Set<Long>
