@@ -1,8 +1,8 @@
 package com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy
 
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
-import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyAttendanceEntity.nightStudyAttendanceEntity
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyEntity.nightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyMemberEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyMemberEntity.nightStudyMemberEntity
@@ -240,6 +240,20 @@ class NightStudyQueryRepositoryImpl(
                 nightStudyEntity.startAt.loe(endAt),
                 nightStudyEntity.endAt.goe(startAt),
                 nightStudyEntity.status.eq(NightStudyStatusType.ALLOWED)
+            )
+            .fetch()
+    }
+
+    override fun findAllByStatusAndStartAtLessThanEqualAndEndAtGreaterThanEqual(
+        status: NightStudyStatusType,
+        startAt: LocalDate,
+        endAt: LocalDate
+    ): List<NightStudyEntity> {
+        return queryFactory.selectFrom(nightStudyEntity)
+            .where(
+                nightStudyEntity.status.eq(status),
+                nightStudyEntity.startAt.loe(startAt),
+                nightStudyEntity.endAt.goe(endAt),
             )
             .fetch()
     }

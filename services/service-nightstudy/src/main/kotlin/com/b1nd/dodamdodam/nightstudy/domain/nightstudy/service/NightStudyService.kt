@@ -157,7 +157,9 @@ class NightStudyService(
     }
 
     fun getAllAllowed(): List<NightStudyEntity> {
-        return nightStudyRepository.findAllByStatus(NightStudyStatusType.ALLOWED) as List<NightStudyEntity>
+        return nightStudyQueryRepository.findAllByStatusAndStartAtLessThanEqualAndEndAtGreaterThanEqual(
+            NightStudyStatusType.ALLOWED, LocalDate.now(), LocalDate.now()
+        )
     }
 
     private fun isBanned(userId: UUID): Boolean {
