@@ -5,13 +5,14 @@ import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.Night
 import com.b1nd.dodamdodam.nightstudy.application.openapi.data.response.OpenApiNightStudyResponse
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand
 
-fun UserResponse.toStudent(): OpenApiNightStudyResponse.Student? {
+fun UserResponse.toStudent(attended: Boolean): OpenApiNightStudyResponse.Student? {
     val student = student ?: return null
     return OpenApiNightStudyResponse.Student(
         name = name,
         grade = student.grade,
         room = student.room,
-        number = student.number
+        number = student.number,
+        attended = attended
     )
 }
 
@@ -20,11 +21,12 @@ fun List<NightStudyWithMembersCommand>.toOpenApiNightStudyResponse(
 ): List<OpenApiNightStudyResponse> {
     return mapNotNull { command ->
         val leader = command.leaderId
-            ?.let { userMap[ it.toString() ] }
-            ?.toStudent()
+            ?.let { id -> userMap[id.toString()]?.toStudent(id in command.attendedUserIds) }
             ?: return@mapNotNull null
 
-        val members = command.memberIds.mapNotNull { userMap[it.toString()]?.toStudent() }
+        val members = command.memberIds.mapNotNull { id ->
+            userMap[id.toString()]?.toStudent(id in command.attendedUserIds)
+        }
 
         with(command.nightStudy) {
             OpenApiNightStudyResponse(
