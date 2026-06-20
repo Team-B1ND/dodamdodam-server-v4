@@ -20,5 +20,6 @@ data class OpenApiNightStudyResponse(
         val grade: Int,
         val room: Int,
         val number: Int,
+        val attended: Boolean,
     )
 }
