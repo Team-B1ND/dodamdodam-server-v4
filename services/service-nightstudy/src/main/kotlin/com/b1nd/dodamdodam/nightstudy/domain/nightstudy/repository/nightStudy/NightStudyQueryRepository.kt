@@ -24,4 +24,5 @@ interface NightStudyQueryRepository {
     fun findActivePersonalsByUserIdsAndPeriodOverlap(userIds: List<UUID>, period: Int, startAt: LocalDate, endAt: LocalDate): List<NightStudyEntity>
     fun findProjectMemberNightStudyIds(nightStudies: List<NightStudyEntity>): Set<Long>
     fun findAllByTypeAndStartAtLessThanEqualAndEndAtGreaterThanEqual(type: NightStudyType, startAt: LocalDate, endAt: LocalDate): List<NightStudyEntity>
+    fun findAllByStatusAndStartAtLessThanEqualAndEndAtGreaterThanEqual(status: NightStudyStatusType, startAt: LocalDate, endAt: LocalDate): List<NightStudyEntity>
 }

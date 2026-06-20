@@ -6,5 +6,6 @@ import java.util.UUID
 data class NightStudyWithMembersCommand(
     val nightStudy: NightStudyEntity,
     val leaderId: UUID?,
-    val memberIds: List<UUID>
+    val memberIds: List<UUID>,
+    val attendedUserIds: Set<UUID>,
 )

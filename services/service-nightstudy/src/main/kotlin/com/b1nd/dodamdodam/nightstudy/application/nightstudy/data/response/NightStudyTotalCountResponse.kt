@@ -23,13 +23,13 @@ data class NightStudyTotalCountResponse(
 
     companion object {
         fun of(count: Map<Triple<Int, NightStudyType, Int>, Int>): NightStudyTotalCountResponse {
-            fun typeCount(floor: Int, period: Int) = TypeCount(
-                personal = count[Triple(floor, NightStudyType.PERSONAL, period)] ?: 0,
-                project = count[Triple(floor, NightStudyType.PROJECT, period)] ?: 0,
+            fun typeCount(floor: Int, vararg periods: Int) = TypeCount(
+                personal = periods.sumOf { count[Triple(floor, NightStudyType.PERSONAL, it)] ?: 0 },
+                project = periods.sumOf { count[Triple(floor, NightStudyType.PROJECT, it)] ?: 0 },
             )
             fun periodCount(floor: Int) = PeriodCount(
-                period1 = typeCount(floor,1),
-                period2 = typeCount(floor,2),
+                period1 = typeCount(floor, 1, 2),
+                period2 = typeCount(floor, 2),
             )
 
             val floors = listOf(2, 3).map { floor ->
