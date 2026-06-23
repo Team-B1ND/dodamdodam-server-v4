@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package out_sleeping;
+
+option java_multiple_files = true;
+option java_package = "com.b1nd.dodamdodam.grpc.outsleeping";
+
+service OutSleepingQueryService {
+  rpc GetOutSleeping (GetOutSleepingRequest) returns (GetOutSleepingResponse);
+}
+
+message GetOutSleepingRequest {
+  repeated string userId = 1;
+}
+
+message GetOutSleepingResponse {
+  repeated OutSleeping outSleepings = 1;
+}
+
+message OutSleeping {
+  string userId  = 1;
+  string startAt = 2;
+  string endAt   = 3;
+  string status  = 4;
+}
