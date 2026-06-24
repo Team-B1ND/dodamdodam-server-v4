@@ -1,6 +1,8 @@
 package com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request
 
 import com.fasterxml.jackson.annotation.JsonFormat
+import jakarta.validation.constraints.Max
+import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import java.time.LocalDate
 
