@@ -21,3 +21,5 @@ class NotProjectNightStudyException: BasicException(NightStudyExceptionCode.NOT_
 class RoomAlreadyAssignedException: BasicException(NightStudyExceptionCode.ROOM_ALREADY_ASSIGNED)
 
 class AlreadyApprovedException: BasicException(NightStudyExceptionCode.ALREADY_APPROVED)
+
+class InvalidNightStudyTypeException: BasicException(NightStudyExceptionCode.INVALID_NIGHT_STUDY_TYPE)
