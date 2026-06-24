@@ -27,3 +27,6 @@ grpc:
     service-user:
       address: 'static://user.dodam.svc.cluster.local:9090'
       negotiation-type: plaintext
+    service-out-sleeping:
+      address: 'static://out-sleeping.dodam.svc.cluster.local:9090'
+      negotiation-type: plaintext

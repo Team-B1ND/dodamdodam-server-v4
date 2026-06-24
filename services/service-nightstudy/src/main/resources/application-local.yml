@@ -28,3 +28,6 @@ grpc:
     service-user:
       address: 'static://localhost:9091'
       negotiation-type: plaintext
+    service-out-sleeping:
+      address: 'static://localhost:9097'
+      negotiation-type: plaintext

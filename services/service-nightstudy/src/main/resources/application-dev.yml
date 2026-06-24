@@ -26,3 +26,6 @@ grpc:
     service-user:
       address: 'static://service-user:9090'
       negotiation-type: plaintext
+    service-out-sleeping:
+      address: 'static://service-out-sleeping:9090'
+      negotiation-type: plaintext
