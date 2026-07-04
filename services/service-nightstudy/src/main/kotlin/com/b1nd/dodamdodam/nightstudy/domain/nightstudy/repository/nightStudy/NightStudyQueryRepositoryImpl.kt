@@ -149,7 +149,7 @@ class NightStudyQueryRepositoryImpl(
             .where(
                 nightStudyMemberEntity.userId.eq(userId),
                 nightStudyEntity.status.eq(NightStudyStatusType.ALLOWED),
-                nightStudyEntity.period.eq(period),
+                nightStudyEntity.period.goe(period),
                 nightStudyEntity.startAt.loe(date),
                 nightStudyEntity.endAt.goe(date),
             )
@@ -162,7 +162,7 @@ class NightStudyQueryRepositoryImpl(
             .join(nightStudyMemberEntity.nightStudy, nightStudyEntity)
             .where(
                 nightStudyEntity.status.eq(NightStudyStatusType.ALLOWED),
-                nightStudyEntity.period.eq(period),
+                nightStudyEntity.period.goe(period),
                 nightStudyEntity.startAt.loe(date),
                 nightStudyEntity.endAt.goe(date),
             )
