@@ -63,10 +63,13 @@ class ClientController(
     @DeleteMapping("/{clientId}")
     suspend fun deactivateClient(
         @PathVariable clientId: String,
-        @RequestBody body: Map<String, String>,
+        @RequestHeader("X-User-Passport", required = false) passport: String?,
+        @RequestBody(required = false) body: Map<String, String>?,
     ): Response<Unit> {
-        val secret = body["clientSecret"] ?: throw OauthException(OauthExceptionCode.INVALID_REQUEST)
-        clientUseCase.deactivateClient(clientId, secret)
+        val ownerPublicId = passport
+            ?.takeIf { it.isNotBlank() }
+            ?.let { PassportResolver.extractUserId(it) }
+        clientUseCase.deactivateClient(clientId, body?.get("clientSecret"), ownerPublicId)
         return Response.ok("클라이언트가 비활성화되었어요.")
     }
 
