@@ -73,9 +73,12 @@ class OauthClientUseCase(
     }
 
     @Transactional
-    suspend fun deactivateClient(clientId: String, clientSecret: String) {
+    suspend fun deactivateClient(clientId: String, clientSecret: String?, ownerPublicId: UUID? = null) {
         val client = clientService.findByClientId(clientId)
-        clientService.verifyClientSecret(client, clientSecret, passwordEncoder)
+        if (client.ownerPublicId != ownerPublicId) {
+            if (clientSecret.isNullOrBlank()) throw OauthException(OauthExceptionCode.INVALID_REQUEST)
+            clientService.verifyClientSecret(client, clientSecret, passwordEncoder)
+        }
         clientService.save(client.copy(isActive = false))
     }
 
