@@ -5,4 +5,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 @ConfigurationProperties("inapp")
 data class InAppProperties(
     val s3BaseUrl: String = "",
+    val s3KeyPrefix: String = "",
 )

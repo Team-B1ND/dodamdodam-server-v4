@@ -3,6 +3,7 @@ package com.b1nd.dodamdodam.inapp.infrastructure.grpc.server
 import com.b1nd.dodamdodam.grpc.inapp.AppQueryServiceGrpcKt
 import com.b1nd.dodamdodam.grpc.inapp.GetAppRequest
 import com.b1nd.dodamdodam.grpc.inapp.GetAppResponse
+import com.b1nd.dodamdodam.inapp.application.app.data.buildInAppWebViewUrl
 import com.b1nd.dodamdodam.inapp.domain.app.repository.AppReleaseRepository
 import com.b1nd.dodamdodam.inapp.domain.app.service.AppService
 import com.b1nd.dodamdodam.inapp.infrastructure.config.InAppProperties
@@ -19,9 +20,12 @@ class AppQueryGrpcService(
     override suspend fun getApp(request: GetAppRequest): GetAppResponse {
         val app = appService.getApp(UUID.fromString(request.appPublicId))
         val activeRelease = appReleaseRepository.findAllByAppAndEnabledIsTrue(app).firstOrNull()
-        val appUrl = if (inAppProperties.s3BaseUrl.isNotBlank() && activeRelease != null) {
-            "${inAppProperties.s3BaseUrl.trimEnd('/')}/inapp/${app.publicId}/releases/${activeRelease.publicId}/index.html"
-        } else ""
+        val appUrl = buildInAppWebViewUrl(
+            inAppProperties.s3BaseUrl,
+            inAppProperties.s3KeyPrefix,
+            app.publicId,
+            activeRelease?.publicId,
+        ) ?: ""
 
         return GetAppResponse.newBuilder()
             .setAppPublicId(app.publicId.toString())
