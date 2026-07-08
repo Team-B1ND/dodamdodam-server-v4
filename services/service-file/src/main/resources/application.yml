@@ -38,6 +38,7 @@ cloud:
       secret-key: ${AWS_SECRET_KEY:}
       path-style-access: ${AWS_S3_PATH_STYLE:false}
       key-prefix: ${AWS_S3_KEY_PREFIX:}
+      public-read: ${AWS_S3_PUBLIC_READ:false}
 
 app:
   swagger:

@@ -21,6 +21,13 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service.NightStudyServic
 import com.b1nd.dodamdodam.nightstudy.domain.room.service.ProjectRoomService
 import com.b1nd.dodamdodam.nightstudy.infrastructure.outSleeping.client.OutSleepingClient
 import com.b1nd.dodamdodam.nightstudy.infrastructure.user.client.UserQueryClient
+import com.b1nd.dodamdodam.grpc.user.UserResponse
+import com.b1nd.dodamdodam.core.common.data.InfinityScrollPageResponse
+import com.b1nd.dodamdodam.core.common.exception.BasicException
+import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyTotalCountResponse
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.InvalidNightStudyTypeException
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyExceptionCode
 import kotlinx.coroutines.runBlocking
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Component
@@ -41,14 +48,14 @@ class NightStudyUseCase(
 
     fun applyPersonalNightStudy(request: PersonalNightStudyApplyRequest): Response<Any> {
         val userId = PassportHolder.current().requireUserId()
-        validateApplicationAvailability(request.startAt)
+        validateApplicationAvailability(request.startAt, request.period)
         nightStudyService.save(request.toEntity(), userId, null)
         return Response.created("개인 심자 신청이 완료됐어요.")
     }
 
     fun applyProjectNightStudy(request: ProjectNightStudyApplyRequest): Response<Any> {
         val userId = PassportHolder.current().requireUserId()
-        validateApplicationAvailability(request.startAt)
+        validateApplicationAvailability(request.startAt, request.period)
         nightStudyService.save(request.toEntity(), userId, request.members)
         return Response.created("프로젝트 심자 신청이 완료됐어요.")
     }
@@ -289,12 +296,14 @@ class NightStudyUseCase(
             .associate { it.publicId to it.toOpenApiUserInfoResponse() }
     }
 
-    private fun validateApplicationAvailability(stratAt: LocalDate) {
+    private fun validateApplicationAvailability(stratAt: LocalDate, period: Int) {
         val now = LocalDateTime.now()
         val deadline = LocalDate.now().atTime(20, 30)
         if (now.isAfter(deadline))
             throw BasicException(NightStudyExceptionCode.NOT_APPLICATION_TIME)
         if (stratAt.isBefore(now.toLocalDate()))
             throw BasicException(NightStudyExceptionCode.INVALID_START_AT)
+        if (period > 2 || period < 1)
+            throw InvalidNightStudyTypeException()
     }
 }

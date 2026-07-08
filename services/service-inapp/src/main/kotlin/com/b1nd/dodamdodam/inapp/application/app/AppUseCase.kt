@@ -77,10 +77,17 @@ class AppUseCase(
     @Transactional(readOnly = true)
     fun getActiveApps(pageable: Pageable): Response<PageResponse<ActiveAppResponse>> {
         val appsWithRelease = appService.getActiveAppsWithRelease(pageable)
-        val s3BaseUrl = inAppProperties.s3BaseUrl
         return Response.ok(
             "서비스 목록을 조회했어요.",
-            PageResponse.of(appsWithRelease.map { it.app.toActiveAppResponse(it.releasePublicId, s3BaseUrl) })
+            PageResponse.of(
+                appsWithRelease.map {
+                    it.app.toActiveAppResponse(
+                        it.releasePublicId,
+                        inAppProperties.s3BaseUrl,
+                        inAppProperties.s3KeyPrefix,
+                    )
+                }
+            )
         )
     }
 

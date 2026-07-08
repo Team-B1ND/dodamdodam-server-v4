@@ -151,6 +151,7 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:5001
       GITHUB_TOKEN: ${GITHUB_TOKEN}
       INAPP_S3_BASE_URL: ${INAPP_S3_BASE_URL}
+      INAPP_S3_KEY_PREFIX: ${AWS_S3_KEY_PREFIX}
     depends_on:
       mysql:
         condition: service_healthy

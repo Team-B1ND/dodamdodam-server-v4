@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component
 import org.springframework.web.multipart.MultipartFile
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
+import software.amazon.awssdk.services.s3.model.ObjectCannedACL
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import java.nio.file.Files
 import java.nio.file.Path
@@ -25,6 +26,11 @@ class S3FileStorageClient(
             .key(key)
             .contentType(contentType)
             .contentLength(file.size)
+            .apply {
+                if (properties.publicRead) {
+                    acl(ObjectCannedACL.PUBLIC_READ)
+                }
+            }
             .build()
 
         runCatching {
