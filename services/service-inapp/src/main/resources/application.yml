@@ -25,6 +25,7 @@ management:
 
 inapp:
   s3-base-url: ${INAPP_S3_BASE_URL:}
+  s3-key-prefix: ${INAPP_S3_KEY_PREFIX:${AWS_S3_KEY_PREFIX:}}
 
 github:
   token: ${GITHUB_TOKEN:}

@@ -3,6 +3,7 @@ package com.b1nd.dodamdodam.file.infrastructure.s3
 import org.springframework.stereotype.Component
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
+import software.amazon.awssdk.services.s3.model.ObjectCannedACL
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import java.io.ByteArrayInputStream
 import java.util.*
@@ -32,6 +33,11 @@ class S3ReleaseUploader(
                             .key(key)
                             .contentType(contentType)
                             .contentLength(bytes.size.toLong())
+                            .apply {
+                                if (properties.publicRead) {
+                                    acl(ObjectCannedACL.PUBLIC_READ)
+                                }
+                            }
                             .build()
 
                         s3Client.putObject(request, RequestBody.fromBytes(bytes))
