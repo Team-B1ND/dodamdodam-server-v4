@@ -87,17 +87,26 @@ fun AppEntity.toActiveAppResponse() = ActiveAppResponse(
     darkIconUrl = darkIconUrl,
 )
 
-fun AppEntity.toActiveAppResponse(releasePublicId: java.util.UUID?, s3BaseUrl: String?) = ActiveAppResponse(
+fun AppEntity.toActiveAppResponse(releasePublicId: UUID?, s3BaseUrl: String?, s3KeyPrefix: String?) = ActiveAppResponse(
     appId = publicId!!,
     name = name,
     subtitle = subtitle,
     description = description,
     iconUrl = iconUrl,
     darkIconUrl = darkIconUrl,
-    appUrl = if (!s3BaseUrl.isNullOrBlank() && releasePublicId != null) {
-        "${s3BaseUrl.trimEnd('/')}/inapp/$publicId/releases/$releasePublicId/index.html"
-    } else null,
+    appUrl = buildInAppWebViewUrl(s3BaseUrl, s3KeyPrefix, publicId, releasePublicId),
 )
+
+fun buildInAppWebViewUrl(s3BaseUrl: String?, s3KeyPrefix: String?, appPublicId: UUID?, releasePublicId: UUID?): String? {
+    if (s3BaseUrl.isNullOrBlank() || appPublicId == null || releasePublicId == null) {
+        return null
+    }
+
+    val prefix = s3KeyPrefix?.trim('/')?.takeIf { it.isNotBlank() }
+    val releasePath = "inapp/$appPublicId/releases/$releasePublicId/index.html"
+    val objectPath = listOfNotNull(prefix, releasePath).joinToString("/")
+    return "${s3BaseUrl.trimEnd('/')}/$objectPath"
+}
 
 fun CreateAppRequest.toCommand() = CreateAppCommand(
     teamId = teamId,
