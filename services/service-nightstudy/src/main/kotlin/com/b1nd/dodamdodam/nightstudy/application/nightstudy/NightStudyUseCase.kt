@@ -1,11 +1,5 @@
 package com.b1nd.dodamdodam.nightstudy.application.nightstudy
 
-import com.b1nd.dodamdodam.core.common.data.InfinityScrollPageResponse
-import com.b1nd.dodamdodam.core.common.data.Response
-import com.b1nd.dodamdodam.core.common.exception.BasicException
-import com.b1nd.dodamdodam.core.security.passport.holder.PassportHolder
-import com.b1nd.dodamdodam.core.security.passport.requireUserId
-import com.b1nd.dodamdodam.grpc.user.UserResponse
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.*
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.PersonalNightStudyApplyRequest
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.ProjectNightStudyApplyRequest
@@ -23,11 +17,12 @@ import com.b1nd.dodamdodam.nightstudy.infrastructure.outSleeping.client.OutSleep
 import com.b1nd.dodamdodam.nightstudy.infrastructure.user.client.UserQueryClient
 import com.b1nd.dodamdodam.grpc.user.UserResponse
 import com.b1nd.dodamdodam.core.common.data.InfinityScrollPageResponse
+import com.b1nd.dodamdodam.core.common.data.Response
 import com.b1nd.dodamdodam.core.common.exception.BasicException
+import com.b1nd.dodamdodam.core.security.passport.holder.PassportHolder
+import com.b1nd.dodamdodam.core.security.passport.requireUserId
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyTotalCountResponse
-import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.InvalidNightStudyTypeException
-import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyExceptionCode
 import kotlinx.coroutines.runBlocking
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Component
