@@ -22,6 +22,9 @@ spring:
 server:
   port: 8080
 
+inapp:
+  s3-key-prefix: ${INAPP_S3_KEY_PREFIX:${AWS_S3_KEY_PREFIX:prod/static}}
+
 grpc:
   server:
     port: 9090
