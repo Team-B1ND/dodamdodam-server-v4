@@ -102,7 +102,9 @@ fun buildInAppWebViewUrl(s3BaseUrl: String?, s3KeyPrefix: String?, appPublicId: 
         return null
     }
 
+    val base = s3BaseUrl.trimEnd('/')
     val prefix = s3KeyPrefix?.trim('/')?.takeIf { it.isNotBlank() }
+        ?.takeUnless { base.endsWith("/$it") }
     val releasePath = "inapp/$appPublicId/releases/$releasePublicId/index.html"
     val objectPath = listOfNotNull(prefix, releasePath).joinToString("/")
     return "${s3BaseUrl.trimEnd('/')}/$objectPath"
