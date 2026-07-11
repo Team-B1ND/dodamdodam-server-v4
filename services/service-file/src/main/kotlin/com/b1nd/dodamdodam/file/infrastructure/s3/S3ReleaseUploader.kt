@@ -34,7 +34,7 @@ class S3ReleaseUploader(
                             .contentType(contentType)
                             .contentLength(bytes.size.toLong())
                             .apply {
-                                if (properties.publicRead) {
+                                if (properties.releasePublicRead) {
                                     acl(ObjectCannedACL.PUBLIC_READ)
                                 }
                             }
