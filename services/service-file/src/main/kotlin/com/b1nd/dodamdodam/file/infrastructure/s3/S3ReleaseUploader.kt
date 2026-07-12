@@ -33,11 +33,6 @@ class S3ReleaseUploader(
                             .key(key)
                             .contentType(contentType)
                             .contentLength(bytes.size.toLong())
-                            .apply {
-                                if (properties.publicRead) {
-                                    acl(ObjectCannedACL.PUBLIC_READ)
-                                }
-                            }
                             .build()
 
                         s3Client.putObject(request, RequestBody.fromBytes(bytes))
