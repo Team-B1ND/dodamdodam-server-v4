@@ -39,7 +39,6 @@ cloud:
       path-style-access: ${AWS_S3_PATH_STYLE:false}
       key-prefix: ${AWS_S3_KEY_PREFIX:}
       public-read: ${AWS_S3_PUBLIC_READ:false}
-      release-public-read: ${AWS_S3_RELEASE_PUBLIC_READ:true}
 
 app:
   swagger:
