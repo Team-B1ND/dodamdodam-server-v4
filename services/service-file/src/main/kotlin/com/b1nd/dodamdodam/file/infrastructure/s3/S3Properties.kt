@@ -12,5 +12,4 @@ data class S3Properties(
     val pathStyleAccess: Boolean = false,
     val keyPrefix: String = "",
     val publicRead: Boolean = false,
-    val releasePublicRead: Boolean = true
 )
