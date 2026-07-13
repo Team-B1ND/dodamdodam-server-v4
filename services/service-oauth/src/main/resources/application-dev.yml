@@ -1,6 +1,6 @@
 spring:
   r2dbc:
-    url: r2dbc:${MYSQL_HOST}
+    url: r2dbc:${MYSQL_HOST}?serverZoneId=Asia/Seoul
     username: ${MYSQL_USER}
     password: ${MYSQL_PASSWORD}
   flyway:

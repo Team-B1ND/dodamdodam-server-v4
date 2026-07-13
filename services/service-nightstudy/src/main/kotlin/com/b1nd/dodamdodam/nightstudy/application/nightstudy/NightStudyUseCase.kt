@@ -1,45 +1,35 @@
 package com.b1nd.dodamdodam.nightstudy.application.nightstudy
 
-import com.b1nd.dodamdodam.core.common.data.Response
-import com.b1nd.dodamdodam.core.security.passport.holder.PassportHolder
-import com.b1nd.dodamdodam.core.security.passport.requireUserId
+import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.*
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.PersonalNightStudyApplyRequest
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.ProjectNightStudyApplyRequest
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.UpdateNightStudyAttendanceRequest
-import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyApplicationResponse
-import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyApprovedCountResponse
-import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyAttendanceCountResponse
-import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyAttendanceResponse
+import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.*
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand
-import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyApplicantResponse
-import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.PersonalNightStudyResponse
-import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.ProjectNightStudyResponse
-import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.toEntity
-import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.toNightStudyApplicationDetailResponse
-import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.toNightStudyApplicationResponses
-import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.toOpenApiUserInfoResponse
-import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.toPersonalNightStudyListResponse
-import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.toProjectNightStudyResponse
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyExceptionCode
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service.NightStudyAttendanceService
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service.NightStudyService
 import com.b1nd.dodamdodam.nightstudy.domain.room.service.ProjectRoomService
+import com.b1nd.dodamdodam.nightstudy.infrastructure.outSleeping.client.OutSleepingClient
 import com.b1nd.dodamdodam.nightstudy.infrastructure.user.client.UserQueryClient
 import com.b1nd.dodamdodam.grpc.user.UserResponse
 import com.b1nd.dodamdodam.core.common.data.InfinityScrollPageResponse
+import com.b1nd.dodamdodam.core.common.data.Response
 import com.b1nd.dodamdodam.core.common.exception.BasicException
+import com.b1nd.dodamdodam.core.security.passport.holder.PassportHolder
+import com.b1nd.dodamdodam.core.security.passport.requireUserId
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyTotalCountResponse
-import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.InvalidNightStudyTypeException
-import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyExceptionCode
 import kotlinx.coroutines.runBlocking
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.UUID
+import java.util.*
 
 @Component
 @Transactional(rollbackFor = [Exception::class])
@@ -48,6 +38,7 @@ class NightStudyUseCase(
     private val nightStudyAttendanceService: NightStudyAttendanceService,
     private val projectRoomService: ProjectRoomService,
     private val userQueryClient: UserQueryClient,
+    private val outSleepingClient: OutSleepingClient
 ) {
 
     fun applyPersonalNightStudy(request: PersonalNightStudyApplyRequest): Response<Any> {
@@ -95,10 +86,14 @@ class NightStudyUseCase(
 
         val allNightStudies = nightStudyService.searchByType(type, userIds, status)
         val nightStudiesWithMembers = getNightStudiesWithMembersAndLeaders(allNightStudies)
-        val usersMap = fetchUsersMap(nightStudiesWithMembers)
+
+        val outSleepingUserIds = fetchOngoingOutSleepingUserIds(nightStudiesWithMembers)
+        val visibleNightStudies = nightStudiesWithMembers.filter { it.leaderId !in outSleepingUserIds }
+
+        val usersMap = fetchUsersMap(visibleNightStudies)
         val projectMemberNightStudyIds = nightStudyService.getProjectMemberNightStudyIds(allNightStudies)
 
-        val sorted = nightStudiesWithMembers.sortedWith(compareBy(
+        val sorted = visibleNightStudies.sortedWith(compareBy(
             { usersMap[it.leaderId?.toString()]?.student?.grade ?: Int.MAX_VALUE },
             { usersMap[it.leaderId?.toString()]?.student?.room ?: Int.MAX_VALUE },
             { usersMap[it.leaderId?.toString()]?.student?.number ?: Int.MAX_VALUE }
@@ -251,6 +246,24 @@ class NightStudyUseCase(
                 attendedUserIds = emptySet(),
             )
         }
+    }
+
+    private fun fetchOngoingOutSleepingUserIds(
+        nightStudiesWithMembers: List<NightStudyWithMembersCommand>
+    ): Set<UUID> {
+        val leaderIds = nightStudiesWithMembers.mapNotNull { it.leaderId }.distinct()
+        if (leaderIds.isEmpty()) return emptySet()
+
+        val today = LocalDate.now()
+        return runBlocking { outSleepingClient.getOutSleeping(leaderIds) }
+            .outSleepingsList
+            .filter { outSleeping ->
+                outSleeping.status == "ALLOWED" &&
+                    !today.isBefore(LocalDate.parse(outSleeping.startAt)) &&
+                    !today.isAfter(LocalDate.parse(outSleeping.endAt))
+            }
+            .map { UUID.fromString(it.userId) }
+            .toSet()
     }
 
     private fun fetchUsersMap(
