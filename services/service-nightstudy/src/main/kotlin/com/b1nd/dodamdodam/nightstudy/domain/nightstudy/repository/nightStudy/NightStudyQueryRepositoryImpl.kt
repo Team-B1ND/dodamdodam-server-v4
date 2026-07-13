@@ -69,6 +69,7 @@ class NightStudyQueryRepositoryImpl(
             .where(
                 nightStudyEntity.type.eq(type),
                 nightStudyEntity.endAt.goe(today),
+                nightStudyEntity.startAt.loe(today),
                 status?.let { nightStudyEntity.status.eq(it) },
             )
             .fetch()
