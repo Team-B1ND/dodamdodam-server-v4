@@ -10,7 +10,69 @@ env:
   SPRING_SERVICES: "gateway auth user wakeup-song inapp file neis out-sleeping nightstudy oauth"
 
 jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      spring_services: ${{ steps.changes.outputs.spring_services }}
+      deploy_services: ${{ steps.changes.outputs.deploy_services }}
+      notification: ${{ steps.changes.outputs.notification }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed services
+        id: changes
+        run: |
+          ALL_SPRING="$SPRING_SERVICES"
+
+          # 직전 태그 기준으로 변경 파일 목록 계산 (첫 태그면 전체 빌드)
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -z "$PREV_TAG" ]; then
+            echo "No previous tag found, building everything"
+            CHANGED_FILES="__ALL__"
+          else
+            echo "Comparing against $PREV_TAG"
+            CHANGED_FILES=$(git diff --name-only "$PREV_TAG"..HEAD)
+          fi
+
+          # 공용 코드/빌드 설정이 바뀌면 전체 빌드
+          if [ "$CHANGED_FILES" = "__ALL__" ] || echo "$CHANGED_FILES" | grep -qE '^(core/|builds/|gradle/|\.github/workflows/|build\.gradle|settings\.gradle)'; then
+            SPRING_CHANGED="$ALL_SPRING"
+            NOTIFICATION="true"
+          else
+            SPRING_CHANGED=""
+            for svc in $ALL_SPRING; do
+              if echo "$CHANGED_FILES" | grep -q "^services/service-${svc}/"; then
+                SPRING_CHANGED="$SPRING_CHANGED $svc"
+              fi
+            done
+            SPRING_CHANGED=$(echo $SPRING_CHANGED)
+
+            if echo "$CHANGED_FILES" | grep -q "^services/service-notification/"; then
+              NOTIFICATION="true"
+            else
+              NOTIFICATION="false"
+            fi
+          fi
+
+          if [ -n "$SPRING_CHANGED" ]; then
+            JSON=$(echo "$SPRING_CHANGED" | tr ' ' '\n' | jq -R . | jq -sc .)
+          else
+            JSON="[]"
+          fi
+
+          echo "Changed spring services: ${SPRING_CHANGED:-none}"
+          echo "Notification changed: $NOTIFICATION"
+
+          echo "spring_services=$JSON" >> "$GITHUB_OUTPUT"
+          echo "deploy_services=$SPRING_CHANGED" >> "$GITHUB_OUTPUT"
+          echo "notification=$NOTIFICATION" >> "$GITHUB_OUTPUT"
+
   build:
+    needs: detect
+    if: needs.detect.outputs.spring_services != '[]' || needs.detect.outputs.notification == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -70,12 +132,13 @@ jobs:
           path: services/service-notification/
 
   push:
-    needs: build
+    needs: [detect, build]
+    if: needs.detect.outputs.spring_services != '[]'
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 3
       matrix:
-        service: [gateway, auth, user, wakeup-song, inapp, file, neis, out-sleeping, nightstudy, oauth]
+        service: ${{ fromJSON(needs.detect.outputs.spring_services) }}
     steps:
       - name: Checkout (for Dockerfile)
         uses: actions/checkout@v4
@@ -128,7 +191,8 @@ jobs:
           build-args: JAR_FILE=service-${{ matrix.service }}.jar
 
   push-node:
-    needs: build
+    needs: [detect, build]
+    if: needs.detect.outputs.notification == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Download build
@@ -167,7 +231,12 @@ jobs:
             ${{ env.IMAGE_PREFIX }}-notification:${{ steps.version.outputs.tag }}
 
   deploy:
-    needs: [push, push-node]
+    needs: [detect, push, push-node]
+    if: |
+      always() &&
+      needs.push.result != 'failure' && needs.push.result != 'cancelled' &&
+      needs.push-node.result != 'failure' && needs.push-node.result != 'cancelled' &&
+      (needs.detect.outputs.deploy_services != '' || needs.detect.outputs.notification == 'true')
     runs-on: ubuntu-latest
     steps:
       - name: Extract version from tag
@@ -187,8 +256,19 @@ jobs:
             PREFIX=teamb1nd/dodam
             KC="sudo k3s kubectl"
 
+            CHANGED="${{ needs.detect.outputs.deploy_services }}"
+            if [ "${{ needs.detect.outputs.notification }}" = "true" ]; then
+              CHANGED="$CHANGED notification"
+            fi
+            echo "배포 대상: $CHANGED"
+
             SERVICES="auth user neis nightstudy out-sleeping wakeup-song inapp notification file oauth gateway"
             for svc in $SERVICES; do
+              case " $CHANGED " in
+                *" $svc "*) ;;
+                *) echo "⏭️  [$svc] 변경 없음, skip"; continue ;;
+              esac
+
               # replicas=0 인 서비스는 이미지만 업데이트하고 rollout 건너뜀
               REPLICAS=$($KC get deployment/${svc} -n dodam -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "0")
               if [ "${REPLICAS}" = "0" ]; then
