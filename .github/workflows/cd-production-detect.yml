@@ -1,0 +1,31 @@
+name: CD Production - Detect changes
+
+on:
+  workflow_call:
+    outputs:
+      services:
+        description: JSON array of services to build and deploy
+        value: ${{ jobs.detect.outputs.services }}
+      has_services:
+        description: Whether at least one service changed
+        value: ${{ jobs.detect.outputs.has_services }}
+      tag:
+        description: Production image tag
+        value: ${{ jobs.detect.outputs.tag }}
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.changes.outputs.services }}
+      has_services: ${{ steps.changes.outputs.has_services }}
+      tag: ${{ steps.changes.outputs.tag }}
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve changed services
+        id: changes
+        run: bash .github/scripts/production/detect/changed-services.sh
