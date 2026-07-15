@@ -121,11 +121,24 @@ class NightStudyService(
         ns.allow()
         if (ns.type == NightStudyType.PROJECT && !wasAlreadyAllowed) {
             val memberIds = nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(ns)
-            if (memberIds.isEmpty()) return
-            val targets = nightStudyQueryRepository.findActivePersonalsByUserIdsAndPeriodOverlap(
-                memberIds, ns.period, ns.startAt, ns.endAt
-            )
-            targets.forEach { it.reject("프로젝트 심자로 대체됨") }
+            memberIds.forEach { memberId ->
+                val hasPersonal = nightStudyQueryRepository.existsByUserIdAndPeriodOverlap(
+                     memberId, 2, NightStudyType.PERSONAL, ns.startAt, ns.endAt
+                )
+                if (hasPersonal) return@forEach
+
+                val nightStudy = NightStudyEntity(
+                        description = "프로젝트 심야자습으로 인한 자동 신청",
+                        period = if (ns.period == 1) 2 else 1,
+                        type = NightStudyType.PERSONAL,
+                        startAt = ns.startAt,
+                        endAt = ns.endAt,
+                        status = NightStudyStatusType.ALLOWED,
+                        needPhone = false
+                )
+
+                save(nightStudy, memberId, null)
+            }
         }
     }
 
