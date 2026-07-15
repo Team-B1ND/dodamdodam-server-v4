@@ -5,42 +5,68 @@ on:
     branches: [develop, main]
 
 jobs:
-  build-and-test:
+  detect:
     runs-on: ubuntu-latest
-
+    outputs:
+      services: ${{ steps.changes.outputs.services }}
+      has_services: ${{ steps.changes.outputs.has_services }}
     steps:
-      - name: Checkout
+      - name: Checkout pull request
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Detect changed services
+        id: changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: bash .github/scripts/ci/detect-changes.sh
+
+  build:
+    needs: detect
+    if: needs.detect.outputs.has_services == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        service: ${{ fromJSON(needs.detect.outputs.services) }}
+    steps:
+      - name: Checkout pull request
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
 
       - name: Set up JDK 21
+        if: matrix.service != 'notification'
         uses: actions/setup-java@v4
         with:
           java-version: '21'
-          distribution: 'temurin'
+          distribution: temurin
 
       - name: Cache Gradle
+        if: matrix.service != 'notification'
         uses: actions/cache@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts', 'gradle/libs.versions.toml') }}
-          restore-keys: ${{ runner.os }}-gradle-
-
-      - name: Grant execute permission
-        run: chmod +x gradlew
-
-      - name: Build
-        run: ./gradlew build -x test --no-daemon
-
-      - name: Test
-        run: ./gradlew test --no-daemon
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts', 'gradle/libs.versions.toml') }}-${{ matrix.service }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
       - name: Set up Node.js
+        if: matrix.service == 'notification'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: npm
+          cache-dependency-path: services/service-notification/package-lock.json
 
-      - name: Build service-notification
-        working-directory: services/service-notification
-        run: npm ci && npm run build
+      - name: Build changed service
+        env:
+          SERVICE: ${{ matrix.service }}
+        run: bash .github/scripts/ci/build-service.sh
