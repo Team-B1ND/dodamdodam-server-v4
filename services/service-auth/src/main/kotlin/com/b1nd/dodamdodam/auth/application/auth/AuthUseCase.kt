@@ -35,7 +35,6 @@ class AuthUseCase(
         if (!principal.status) throw UserNotActiveException()
         val tokens = jwtSigner.createTokens(JwtClaims(principal.userId, principal.username))
         principalService.saveRefreshToken(principal, tokens.refreshToken, userAgent)
-        cookieProvider.clearStaleTokenCookies()
         cookieProvider.addTokenCookies(tokens.accessToken, tokens.refreshToken)
         return Response.ok("로그인에 성공했어요.", LoginResponse.fromJwtPair(tokens))
     }
