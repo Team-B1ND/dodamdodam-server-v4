@@ -33,7 +33,7 @@ class NightStudyTeamEntity(
 
     fun update(name: String, description: String?, imageUrl: String?) {
         this.name = name
-        this.description = description
-        this.imageUrl = imageUrl
+        description?.let { this.description = it }
+        imageUrl?.let { this.imageUrl = it }
     }
 }
