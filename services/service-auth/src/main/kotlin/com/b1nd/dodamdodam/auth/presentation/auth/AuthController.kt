@@ -47,4 +47,5 @@ class AuthController(
     @GetMapping("/test")
     fun test(): String = "TEST"
 
+
 }
