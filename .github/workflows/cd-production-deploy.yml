@@ -26,5 +26,8 @@ jobs:
       SERVICES: ${{ inputs.services }}
       TAG: ${{ inputs.tag }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Dispatch and wait two services at a time
         run: bash .github/scripts/production/deploy/dispatch-batches.sh
