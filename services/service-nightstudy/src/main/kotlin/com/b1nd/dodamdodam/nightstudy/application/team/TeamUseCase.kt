@@ -58,13 +58,6 @@ class TeamUseCase(
         )
     }
 
-    private fun fetchUsersMap(userIds: List<String>): Map<String, UserResponse> {
-        return if (userIds.isNotEmpty()) {
-            runBlocking { userQueryClient.getUsers(userIds) }
-                .usersList.associateBy { it.publicId }
-        } else emptyMap()
-    }
-
     fun updateTeam(request: UpdateTeamRequest): Response<Any> {
         val userId = PassportHolder.current().requireUserId()
         val team = nightStudyTeamService.findByLeaderId(request.publicId, userId)
@@ -99,6 +92,13 @@ class TeamUseCase(
         val userId = PassportHolder.current().requireUserId()
         nightStudyTeamService.rejectInvitation(publicId, userId)
         return Response.ok("팀 초대를 거절했어요.")
+    }
+
+    private fun fetchUsersMap(userIds: List<String>): Map<String, UserResponse> {
+        return if (userIds.isNotEmpty()) {
+            runBlocking { userQueryClient.getUsers(userIds) }
+                .usersList.associateBy { it.publicId }
+        } else emptyMap()
     }
 
     private fun ensureUsersExist(members: List<UUID>) {
