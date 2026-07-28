@@ -10,6 +10,7 @@ import java.util.UUID
 interface NightStudyTeamMemberRepository: JpaRepository<NightStudyTeamMemberEntity, Long> {
     fun findByUser(userId: UUID, pageable: Pageable): Page<NightStudyTeamMemberEntity>
 //    fun findByUser(userId: UUID): NightStudyTeamMemberEntity
+    fun findByUserAndIsAcceptFalse(userId: UUID, pageable: Pageable): Page<NightStudyTeamMemberEntity>
     fun findByUserAndTeamAndIsOwnerTrue(userId: UUID, team: NightStudyTeamEntity): NightStudyTeamMemberEntity?
     fun findByTeam(team: NightStudyTeamEntity): List<NightStudyTeamMemberEntity>
     fun findByTeamAndUserIn(team: NightStudyTeamEntity, users: List<UUID>): List<NightStudyTeamMemberEntity>
