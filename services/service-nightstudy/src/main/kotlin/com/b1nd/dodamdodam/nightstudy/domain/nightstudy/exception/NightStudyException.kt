@@ -23,3 +23,13 @@ class RoomAlreadyAssignedException: BasicException(NightStudyExceptionCode.ROOM_
 class AlreadyApprovedException: BasicException(NightStudyExceptionCode.ALREADY_APPROVED)
 
 class InvalidNightStudyTypeException: BasicException(NightStudyExceptionCode.INVALID_NIGHT_STUDY_TYPE)
+
+class NightStudyTeamNotFound: BasicException(NightStudyExceptionCode.TEAM_NOT_FOUND)
+
+class NightStudyNotTeamOwnerException: BasicException(NightStudyExceptionCode.NOT_TEAM_OWNER)
+
+class NightStudyTeamInviteeNotFoundException: BasicException(NightStudyExceptionCode.TEAM_INVITEE_NOT_FOUND)
+
+class NightStudyTeamInvitationNotReceivedException: BasicException(NightStudyExceptionCode.TEAM_INVITATION_NOT_RECEIVED)
+
+class AlreadyJoinedTeamException: BasicException(NightStudyExceptionCode.ALREADY_JOINED_TEAM)
