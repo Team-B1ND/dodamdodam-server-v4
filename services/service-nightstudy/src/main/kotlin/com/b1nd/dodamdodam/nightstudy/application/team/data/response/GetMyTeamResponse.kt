@@ -3,20 +3,22 @@ package com.b1nd.dodamdodam.nightstudy.application.team.data.response
 import com.b1nd.dodamdodam.nightstudy.domain.team.NightStudyTeamEntity
 import java.util.UUID
 
-data class GetMyTeamResponse(
+data class GetTeamResponse(
     val publicId: UUID?,
     val name: String,
+    val description: String?,
     val imageUrl: String?
 ) {
     companion object {
-        fun of(nightStudyTeamEntity: NightStudyTeamEntity): GetMyTeamResponse =
-            GetMyTeamResponse(
+        fun of(nightStudyTeamEntity: NightStudyTeamEntity): GetTeamResponse =
+            GetTeamResponse(
                 publicId = nightStudyTeamEntity.publicId,
                 name = nightStudyTeamEntity.name,
+                description = nightStudyTeamEntity.description,
                 imageUrl = nightStudyTeamEntity.imageUrl
             )
 
-        fun fromList(nightStudyTeamEntityList: List<NightStudyTeamEntity>): List<GetMyTeamResponse> =
-            nightStudyTeamEntityList.map(GetMyTeamResponse::of)
+        fun fromList(nightStudyTeamEntityList: List<NightStudyTeamEntity>): List<GetTeamResponse> =
+            nightStudyTeamEntityList.map(GetTeamResponse::of)
     }
 }

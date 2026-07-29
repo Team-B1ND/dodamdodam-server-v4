@@ -8,8 +8,8 @@ import com.b1nd.dodamdodam.grpc.user.UserResponse
 import com.b1nd.dodamdodam.nightstudy.application.team.data.request.CreateTeamRequest
 import com.b1nd.dodamdodam.nightstudy.application.team.data.request.InviteTeamRequest
 import com.b1nd.dodamdodam.nightstudy.application.team.data.request.UpdateTeamRequest
-import com.b1nd.dodamdodam.nightstudy.application.team.data.response.GetMyTeamResponse
 import com.b1nd.dodamdodam.nightstudy.application.team.data.response.GetTeamMembersResponse
+import com.b1nd.dodamdodam.nightstudy.application.team.data.response.GetTeamResponse
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyTeamInviteeNotFoundException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service.NightStudyTeamService
 import com.b1nd.dodamdodam.nightstudy.infrastructure.user.client.UserQueryClient
@@ -17,7 +17,7 @@ import kotlinx.coroutines.runBlocking
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import java.util.UUID
+import java.util.*
 
 @Component
 @Transactional(rollbackFor = [Exception::class])
@@ -33,13 +33,13 @@ class TeamUseCase(
     }
 
     @Transactional(readOnly = true)
-    fun getMyTeam(pageable: Pageable): Response<InfinityScrollPageResponse<GetMyTeamResponse>> {
+    fun getMyTeam(pageable: Pageable): Response<InfinityScrollPageResponse<GetTeamResponse>> {
         val userId = PassportHolder.current().requireUserId()
         val teams = nightStudyTeamService.findByUserId(userId, pageable)
         return Response.ok(
-            "전체 팀을 조회했어요.",
+            "내가 소속된 팀을 조회했어요.",
             InfinityScrollPageResponse(
-                content = GetMyTeamResponse.fromList(teams.content),
+                content = GetTeamResponse.fromList(teams.content),
                 hasNext = teams.hasNext(),
             )
         )
@@ -58,11 +58,17 @@ class TeamUseCase(
         )
     }
 
-    private fun fetchUsersMap(userIds: List<String>): Map<String, UserResponse> {
-        return if (userIds.isNotEmpty()) {
-            runBlocking { userQueryClient.getUsers(userIds) }
-                .usersList.associateBy { it.publicId }
-        } else emptyMap()
+    @Transactional(readOnly = true)
+    fun getAllTeam(pageable: Pageable): Response<InfinityScrollPageResponse<GetTeamResponse>> {
+        val teams = nightStudyTeamService.findAll(pageable)
+
+        return Response.ok(
+            "전체 팀을 조회했어요.",
+            InfinityScrollPageResponse(
+                content = GetTeamResponse.fromList(teams.content),
+                hasNext = teams.hasNext(),
+            )
+        )
     }
 
     fun updateTeam(request: UpdateTeamRequest): Response<Any> {
@@ -99,6 +105,33 @@ class TeamUseCase(
         val userId = PassportHolder.current().requireUserId()
         nightStudyTeamService.rejectInvitation(publicId, userId)
         return Response.ok("팀 초대를 거절했어요.")
+    }
+
+    fun leaveTeam(publicId: UUID): Response<Any> {
+        val userId = PassportHolder.current().requireUserId()
+        nightStudyTeamService.leaveTeam(userId, publicId)
+
+        return Response.ok("팀을 탈퇴했어요.");
+    }
+
+    @Transactional(readOnly = true)
+    fun getMyInvitations(pageable: Pageable): Response<InfinityScrollPageResponse<GetTeamResponse>> {
+        val userId = PassportHolder.current().requireUserId()
+        val teams = nightStudyTeamService.findInvitedByUserId(userId, pageable)
+        return Response.ok(
+            "내가 받은 초대를 조회했어요.",
+            InfinityScrollPageResponse(
+                content = GetTeamResponse.fromList(teams.content),
+                hasNext = teams.hasNext(),
+            )
+        )
+    }
+
+    private fun fetchUsersMap(userIds: List<String>): Map<String, UserResponse> {
+        return if (userIds.isNotEmpty()) {
+            runBlocking { userQueryClient.getUsers(userIds) }
+                .usersList.associateBy { it.publicId }
+        } else emptyMap()
     }
 
     private fun ensureUsersExist(members: List<UUID>) {

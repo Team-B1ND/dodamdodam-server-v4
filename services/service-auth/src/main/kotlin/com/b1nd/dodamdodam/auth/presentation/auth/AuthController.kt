@@ -46,4 +46,6 @@ class AuthController(
     @UserAccess(enabledOnly = true)
     @GetMapping("/test")
     fun test(): String = "TEST"
+
+
 }

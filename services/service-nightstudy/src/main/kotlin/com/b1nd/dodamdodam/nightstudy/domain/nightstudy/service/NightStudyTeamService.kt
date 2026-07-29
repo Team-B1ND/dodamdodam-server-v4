@@ -4,6 +4,7 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.AlreadyJoinedT
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyNotTeamOwnerException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyTeamInvitationNotReceivedException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyTeamNotFound
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NotJoinedTeamException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyTeamMemberRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyTeamRepository
 import com.b1nd.dodamdodam.nightstudy.domain.team.NightStudyTeamEntity
@@ -56,6 +57,10 @@ class NightStudyTeamService(
         nightStudyTeamMemberRepository.findByUser(userId, pageable)
             .map { it.team }
 
+    fun findInvitedByUserId(userId: UUID, pageable: Pageable): Page<NightStudyTeamEntity> =
+        nightStudyTeamMemberRepository.findByUserAndIsAcceptFalse(userId, pageable)
+            .map { it.team }
+
     fun findByLeaderId(publicId: UUID?, userId: UUID): NightStudyTeamEntity {
         val team = nightStudyTeamRepository.findByPublicId(publicId)
             ?: throw NightStudyTeamNotFound()
@@ -104,6 +109,30 @@ class NightStudyTeamService(
             ?: throw NightStudyTeamNotFound()
 
         return nightStudyTeamMemberRepository.findByTeam(team)
+    }
+
+    fun findAll(pageable: Pageable): Page<NightStudyTeamEntity> =
+        nightStudyTeamRepository.findAll(pageable)
+
+    fun leaveTeam(userId: UUID, teamId: UUID) {
+        val team = nightStudyTeamRepository.findByPublicId(teamId)
+            ?: throw NightStudyTeamNotFound()
+
+        val member = getJoinedMember(userId, team)
+
+        nightStudyTeamMemberRepository.delete(member)
+    }
+
+    private fun getJoinedMember(userId: UUID, team: NightStudyTeamEntity): NightStudyTeamMemberEntity {
+        if (!nightStudyTeamMemberRepository.existsByTeamAndUser(team, userId))
+            throw NotJoinedTeamException()
+
+        val member = nightStudyTeamMemberRepository.findByUserAndTeam(userId, team)
+
+        if (!member.isAccept)
+            throw NotJoinedTeamException()
+
+        return member
     }
 
     private fun ensureUserIsTeamOwner(userId: UUID, team: NightStudyTeamEntity) {

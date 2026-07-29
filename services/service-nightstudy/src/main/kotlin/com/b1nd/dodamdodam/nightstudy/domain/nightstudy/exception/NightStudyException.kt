@@ -33,3 +33,5 @@ class NightStudyTeamInviteeNotFoundException: BasicException(NightStudyException
 class NightStudyTeamInvitationNotReceivedException: BasicException(NightStudyExceptionCode.TEAM_INVITATION_NOT_RECEIVED)
 
 class AlreadyJoinedTeamException: BasicException(NightStudyExceptionCode.ALREADY_JOINED_TEAM)
+
+class NotJoinedTeamException: BasicException(NightStudyExceptionCode.NOT_JOINED_TEAM)

@@ -8,19 +8,12 @@ import com.b1nd.dodamdodam.nightstudy.application.team.TeamUseCase
 import com.b1nd.dodamdodam.nightstudy.application.team.data.request.CreateTeamRequest
 import com.b1nd.dodamdodam.nightstudy.application.team.data.request.InviteTeamRequest
 import com.b1nd.dodamdodam.nightstudy.application.team.data.request.UpdateTeamRequest
-import com.b1nd.dodamdodam.nightstudy.application.team.data.response.GetMyTeamResponse
 import com.b1nd.dodamdodam.nightstudy.application.team.data.response.GetTeamMembersResponse
+import com.b1nd.dodamdodam.nightstudy.application.team.data.response.GetTeamResponse
 import jakarta.validation.Valid
 import org.springframework.data.domain.Pageable
-import org.springframework.web.bind.annotation.DeleteMapping
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PatchMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
-import java.util.UUID
+import org.springframework.web.bind.annotation.*
+import java.util.*
 
 @RestController
 @RequestMapping("/teams")
@@ -29,13 +22,18 @@ class TeamController(
 ) {
 
     @UserAccess(roles = [RoleType.STUDENT])
+    @GetMapping
+    fun getAllTeam(pageable: Pageable): Response<InfinityScrollPageResponse<GetTeamResponse>> =
+        teamUseCase.getAllTeam(pageable)
+
+    @UserAccess(roles = [RoleType.STUDENT])
     @PostMapping
     fun createTeam(@RequestBody @Valid request: CreateTeamRequest): Response<Any> =
         teamUseCase.createNightStudyTeam(request)
 
     @UserAccess(roles = [RoleType.STUDENT])
-    @GetMapping
-    fun getMyTeam(pageable: Pageable): Response<InfinityScrollPageResponse<GetMyTeamResponse>> =
+    @GetMapping("/my")
+    fun getMyTeam(pageable: Pageable): Response<InfinityScrollPageResponse<GetTeamResponse>> =
         teamUseCase.getMyTeam(pageable)
 
     @UserAccess(roles = [RoleType.STUDENT])
@@ -67,4 +65,14 @@ class TeamController(
     @DeleteMapping("/invite/reject/{publicId}")
     fun rejectInvitation(@PathVariable("publicId") publicId: UUID): Response<Any> =
         teamUseCase.rejectInvitation(publicId)
+
+    @UserAccess(roles = [RoleType.STUDENT])
+    @DeleteMapping("/leave/{publicId}")
+    fun leaveTeam(@PathVariable("publicId") publicId: UUID): Response<Any> =
+        teamUseCase.leaveTeam(publicId)
+
+    @UserAccess(roles = [RoleType.STUDENT])
+    @GetMapping("/invite/my")
+    fun getMyInvitations(pageable: Pageable): Response<InfinityScrollPageResponse<GetTeamResponse>> =
+        teamUseCase.getMyInvitations(pageable)
 }
