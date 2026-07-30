@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import java.util.UUID
 
 interface NightStudyTeamMemberRepository: JpaRepository<NightStudyTeamMemberEntity, Long> {
-    fun findByUser(userId: UUID, pageable: Pageable): Page<NightStudyTeamMemberEntity>
+    fun findByUserAndIsAcceptTrue(userId: UUID, pageable: Pageable): Page<NightStudyTeamMemberEntity>
 //    fun findByUser(userId: UUID): NightStudyTeamMemberEntity
     fun findByUserAndIsAcceptFalse(userId: UUID, pageable: Pageable): Page<NightStudyTeamMemberEntity>
     fun findByUserAndTeamAndIsOwnerTrue(userId: UUID, team: NightStudyTeamEntity): NightStudyTeamMemberEntity?
