@@ -25,6 +25,20 @@ class TokenCookieProvider(
         response.addHeader(HttpHeaders.SET_COOKIE, createExpiredCookie(cookieProperties.refreshTokenName, cookieProperties.refreshTokenPath).toString())
     }
 
+    fun clearStaleTokenCookies() {
+        val response = currentResponse()
+        val names = listOf(cookieProperties.accessTokenName, cookieProperties.refreshTokenName)
+        val domains = listOf("", cookieProperties.domain).distinct()
+        val paths = listOf("/", cookieProperties.refreshTokenPath).distinct()
+        names.forEach { name ->
+            domains.forEach { domain ->
+                paths.forEach { path ->
+                    response.addHeader(HttpHeaders.SET_COOKIE, createExpiredCookie(name, path, domain).toString())
+                }
+            }
+        }
+    }
+
     private fun currentResponse() =
         (RequestContextHolder.getRequestAttributes() as ServletRequestAttributes).response!!
 
@@ -43,18 +57,22 @@ class TokenCookieProvider(
             .maxAge(cookieMaxAge())
             .build()
 
-    private fun createExpiredCookie(name: String, path: String): ResponseCookie =
-        buildCookie(name, "")
+    private fun createExpiredCookie(name: String, path: String, cookieDomain: String = cookieProperties.domain): ResponseCookie =
+        buildCookie(name, "", cookieDomain)
             .path(path)
             .maxAge(0)
             .build()
 
-    private fun buildCookie(name: String, value: String): ResponseCookie.ResponseCookieBuilder =
+    private fun buildCookie(
+        name: String,
+        value: String,
+        cookieDomain: String = cookieProperties.domain
+    ): ResponseCookie.ResponseCookieBuilder =
         ResponseCookie.from(name, value)
             .httpOnly(true)
             .secure(cookieProperties.secure)
             .sameSite(cookieProperties.sameSite)
             .apply {
-                cookieProperties.domain.takeIf { it.isNotBlank() }?.let { domain(it) }
+                cookieDomain.takeIf { it.isNotBlank() }?.let { domain(it) }
             }
 }
