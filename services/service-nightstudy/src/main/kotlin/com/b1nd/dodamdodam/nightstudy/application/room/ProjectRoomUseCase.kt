@@ -2,10 +2,12 @@ package com.b1nd.dodamdodam.nightstudy.application.room
 
 import com.b1nd.dodamdodam.core.common.data.Response
 import com.b1nd.dodamdodam.nightstudy.application.room.data.request.SaveProjectRoomRequest
+import com.b1nd.dodamdodam.nightstudy.application.room.data.response.ProjectRoomResponse
 import com.b1nd.dodamdodam.nightstudy.application.room.data.response.RoomDetailResponse
 import com.b1nd.dodamdodam.nightstudy.application.room.data.response.RoomMemberResponse
 import com.b1nd.dodamdodam.nightstudy.application.room.data.response.RoomSummaryResponse
 import com.b1nd.dodamdodam.nightstudy.application.room.data.toEntity
+import com.b1nd.dodamdodam.nightstudy.application.room.data.toResponseList
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyRoomMemberCommand
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.InvalidNightStudyTypeException
@@ -41,7 +43,13 @@ class ProjectRoomUseCase(
     }
 
     @Transactional(readOnly = true)
-    fun getAll(date: LocalDate, period: Int): Response<List<RoomSummaryResponse>> {
+    fun getAll(): Response<List<ProjectRoomResponse>> {
+        val rooms = projectRoomService.getAll().toResponseList()
+        return Response.ok("방 목록을 조회했어요.", rooms)
+    }
+
+    @Transactional(readOnly = true)
+    fun getAllWithStatus(date: LocalDate, period: Int): Response<List<RoomSummaryResponse>> {
         val snapshot = createSnapshot(date, period)
         val rooms = snapshot.rooms.map { room ->
             val members = snapshot.membersByRoom[room.id].orEmpty()

@@ -50,7 +50,7 @@ class ProjectRoomUseCaseTest {
             student(secondUserId, "두 번째 학생", grade = 3, room = 4, number = 2),
         )
 
-        val response = useCase.getAll(date, 1)
+        val response = useCase.getAllWithStatus(date, 1)
         val thirdGradeRoom = response.data!!.single { it.roomId == "GRADE_3" }
 
         assertEquals(2, thirdGradeRoom.memberCount)
@@ -74,7 +74,7 @@ class ProjectRoomUseCaseTest {
         `when`(attendanceService.getAttendedUserIds(setOf(userId), date, 2)).thenReturn(emptySet())
         stubUsers(student(userId, "프로젝트 학생", grade = 1, room = 1, number = 1))
 
-        val response = useCase.getAll(date, 2)
+        val response = useCase.getAllWithStatus(date, 2)
         val project = response.data!!.single { it.roomId == "PROJECT_12" }
         val classRoom = response.data!!.single { it.roomId == "CLASS_1_1" }
 

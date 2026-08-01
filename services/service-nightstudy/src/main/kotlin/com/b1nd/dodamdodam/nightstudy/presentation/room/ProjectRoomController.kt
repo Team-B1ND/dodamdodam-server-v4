@@ -5,6 +5,7 @@ import com.b1nd.dodamdodam.core.security.annotation.authentication.UserAccess
 import com.b1nd.dodamdodam.core.security.passport.enumerations.RoleType
 import com.b1nd.dodamdodam.nightstudy.application.room.ProjectRoomUseCase
 import com.b1nd.dodamdodam.nightstudy.application.room.data.request.SaveProjectRoomRequest
+import com.b1nd.dodamdodam.nightstudy.application.room.data.response.ProjectRoomResponse
 import com.b1nd.dodamdodam.nightstudy.application.room.data.response.RoomDetailResponse
 import com.b1nd.dodamdodam.nightstudy.application.room.data.response.RoomSummaryResponse
 import jakarta.validation.Valid
@@ -25,14 +26,19 @@ class ProjectRoomController(
 
     @UserAccess(roles = [RoleType.DORMITORY_MANAGER])
     @GetMapping
-    fun getAll(
+    fun getAll(): Response<List<ProjectRoomResponse>> =
+        projectRoomUseCase.getAll()
+
+    @UserAccess(roles = [RoleType.DORMITORY_MANAGER])
+    @GetMapping("/status")
+    fun getAllWithStatus(
         @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") date: LocalDate?,
         @RequestParam period: Int,
     ): Response<List<RoomSummaryResponse>> =
-        projectRoomUseCase.getAll(date ?: LocalDate.now(), period)
+        projectRoomUseCase.getAllWithStatus(date ?: LocalDate.now(), period)
 
     @UserAccess(roles = [RoleType.DORMITORY_MANAGER])
-    @GetMapping("/{roomId}")
+    @GetMapping("/status/{roomId}")
     fun getByRoomId(
         @PathVariable roomId: String,
         @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") date: LocalDate?,
