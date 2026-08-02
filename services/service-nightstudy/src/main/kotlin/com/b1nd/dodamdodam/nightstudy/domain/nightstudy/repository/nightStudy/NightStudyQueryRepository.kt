@@ -3,6 +3,7 @@ package com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
+import com.b1nd.dodamdodam.nightstudy.domain.room.command.RoomPeriodCommand
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import java.time.LocalDate
@@ -25,4 +26,5 @@ interface NightStudyQueryRepository {
     fun findProjectMemberNightStudyIds(nightStudies: List<NightStudyEntity>): Set<Long>
     fun findAllByTypeAndStartAtLessThanEqualAndEndAtGreaterThanEqual(type: NightStudyType, startAt: LocalDate, endAt: LocalDate): List<NightStudyEntity>
     fun findAllByStatusAndStartAtLessThanEqualAndEndAtGreaterThanEqual(status: NightStudyStatusType, startAt: LocalDate, endAt: LocalDate): List<NightStudyEntity>
+    fun findInUseRoomPeriods(date: LocalDate): List<RoomPeriodCommand>
 }

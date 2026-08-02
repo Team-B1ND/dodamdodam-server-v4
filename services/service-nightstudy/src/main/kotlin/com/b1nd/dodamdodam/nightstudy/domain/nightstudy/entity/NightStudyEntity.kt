@@ -48,6 +48,10 @@ class NightStudyEntity (
     @Enumerated(EnumType.STRING)
     @Column(length = 10)
     var type: NightStudyType,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fk_wish_room_id")
+    var wishRoom: ProjectRoomEntity? = null,
 ): BaseTimeEntity() {
 
     @ManyToOne(fetch = FetchType.LAZY)
