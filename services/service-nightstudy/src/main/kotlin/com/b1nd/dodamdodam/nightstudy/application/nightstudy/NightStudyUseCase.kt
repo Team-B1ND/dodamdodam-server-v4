@@ -51,7 +51,8 @@ class NightStudyUseCase(
     fun applyProjectNightStudy(request: ProjectNightStudyApplyRequest): Response<Any> {
         val userId = PassportHolder.current().requireUserId()
         validateApplicationAvailability(request.startAt, request.period)
-        nightStudyService.save(request.toEntity(), userId, request.members)
+        val wishRoom = request.wishRoomId?.let { projectRoomService.getById(it) }
+        nightStudyService.save(request.toEntity(wishRoom), userId, request.members)
         return Response.created("프로젝트 심자 신청이 완료됐어요.")
     }
 

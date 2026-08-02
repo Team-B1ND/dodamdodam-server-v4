@@ -10,6 +10,7 @@ import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.Proje
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
+import com.b1nd.dodamdodam.nightstudy.domain.room.entity.ProjectRoomEntity
 import java.util.UUID
 
 fun PersonalNightStudyApplyRequest.toEntity() = NightStudyEntity(
@@ -22,14 +23,15 @@ fun PersonalNightStudyApplyRequest.toEntity() = NightStudyEntity(
     needPhoneReason = needPhoneReason,
 )
 
-fun ProjectNightStudyApplyRequest.toEntity() = NightStudyEntity(
+fun ProjectNightStudyApplyRequest.toEntity(wishRoom: ProjectRoomEntity?) = NightStudyEntity(
     name = name,
     description = description,
     period = period,
     startAt = startAt,
     endAt = endAt,
     type = NightStudyType.PROJECT,
-    needPhone = false
+    needPhone = false,
+    wishRoom = wishRoom,
 )
 
 fun NightStudyEntity.toPersonalNightStudyResponse() = PersonalNightStudyResponse(
@@ -57,6 +59,7 @@ fun NightStudyEntity.toProjectNightStudyResponse(isLeader: Boolean) = ProjectNig
     isLeader = isLeader,
     status = status,
     room = room?.let { ProjectNightStudyResponse.RoomInfo(id = it.id!!, name = it.name) },
+    wishRoom = wishRoom?.let { ProjectNightStudyResponse.RoomInfo(id = it.id!!, name = it.name) },
 )
 
 fun UserResponse.toOpenApiUserInfoResponse() = NightStudyApplicantResponse(
@@ -100,6 +103,7 @@ fun NightStudyEntity.toOpenApiNightStudyResponse(
     rejectionReason = rejectionReason,
     type = type,
     room = room?.let { NightStudyApplicationResponse.RoomInfo(id = it.id!!, name = it.name) },
+    wishRoom = wishRoom?.let { NightStudyApplicationResponse.RoomInfo(id = it.id!!, name = it.name) },
     isProjectNightStudyMember = isProjectNightStudyMember,
 )
 
