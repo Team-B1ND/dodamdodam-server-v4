@@ -22,7 +22,8 @@ class ProjectRoomUseCase(
 
     @Transactional(readOnly = true)
     fun getAll(): Response<List<ProjectRoomResponse>> {
-        val rooms = projectRoomService.getAll().toResponseList()
+        val inUsePeriods = projectRoomService.getInUsePeriods()
+        val rooms = projectRoomService.getAll().toResponseList(inUsePeriods)
         return Response.ok("방 목록을 조회했어요.", rooms)
     }
 
