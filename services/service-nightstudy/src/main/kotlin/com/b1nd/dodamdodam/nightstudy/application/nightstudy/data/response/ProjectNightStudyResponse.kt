@@ -15,6 +15,7 @@ data class ProjectNightStudyResponse(
     val isLeader: Boolean,
     val status: NightStudyStatusType,
     val room: RoomInfo?,
+    val wishRoom: RoomInfo?,
 ) {
     data class RoomInfo(
         val id: Long,

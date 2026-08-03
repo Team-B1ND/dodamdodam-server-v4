@@ -16,4 +16,5 @@ data class ProjectNightStudyApplyRequest(
     @JsonFormat(pattern = "yyyy-MM-dd")
     val endAt: LocalDate,
     val members: List<UUID>,
+    val wishRoomId: Long? = null,
 )

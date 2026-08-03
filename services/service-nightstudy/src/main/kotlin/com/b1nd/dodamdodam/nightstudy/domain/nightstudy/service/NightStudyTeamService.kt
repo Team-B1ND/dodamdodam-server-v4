@@ -54,7 +54,7 @@ class NightStudyTeamService(
     }
 
     fun findByUserId(userId: UUID, pageable: Pageable): Page<NightStudyTeamEntity> =
-        nightStudyTeamMemberRepository.findByUser(userId, pageable)
+        nightStudyTeamMemberRepository.findByUserAndIsAcceptTrue(userId, pageable)
             .map { it.team }
 
     fun findInvitedByUserId(userId: UUID, pageable: Pageable): Page<NightStudyTeamEntity> =

@@ -1,6 +1,7 @@
 package com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service
 
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyRoomMemberCommand
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyMemberEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
@@ -64,6 +65,10 @@ class NightStudyService(
 
     fun countAllowedMembersGroupByTypeAndPeriod(): Map<Pair<NightStudyType, Int>, Int> {
         return nightStudyQueryRepository.countAllowedMembersGroupByTypeAndPeriod()
+    }
+
+    fun getAllowedRoomMembers(date: LocalDate, period: Int): List<NightStudyRoomMemberCommand> {
+        return nightStudyQueryRepository.findAllowedRoomMembersByDateAndPeriod(date, period)
     }
 
     fun searchByType(type: NightStudyType, userIds: List<UUID>?, status: NightStudyStatusType?): List<NightStudyEntity> {

@@ -1,5 +1,6 @@
 package com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy
 
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyRoomMemberCommand
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyAttendanceEntity.nightStudyAttendanceEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyEntity
@@ -8,6 +9,7 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyMember
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyMemberEntity.nightStudyMemberEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
+import com.b1nd.dodamdodam.nightstudy.domain.room.command.RoomPeriodCommand
 import com.b1nd.dodamdodam.nightstudy.domain.room.entity.QProjectRoomEntity
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.data.domain.Page
@@ -171,6 +173,38 @@ class NightStudyQueryRepositoryImpl(
             .fetch()
     }
 
+    override fun findAllowedRoomMembersByDateAndPeriod(
+        date: LocalDate,
+        period: Int,
+    ): List<NightStudyRoomMemberCommand> {
+        val projectRoom = QProjectRoomEntity("roomForMember")
+
+        return queryFactory
+            .select(
+                nightStudyMemberEntity.userId,
+                nightStudyEntity.type,
+                projectRoom.id,
+            )
+            .from(nightStudyMemberEntity)
+            .join(nightStudyMemberEntity.nightStudy, nightStudyEntity)
+            .leftJoin(nightStudyEntity.room, projectRoom)
+            .where(
+                nightStudyEntity.status.eq(NightStudyStatusType.ALLOWED),
+                nightStudyEntity.period.goe(period),
+                nightStudyEntity.startAt.loe(date),
+                nightStudyEntity.endAt.goe(date),
+            )
+            .distinct()
+            .fetch()
+            .map { tuple ->
+                NightStudyRoomMemberCommand(
+                    userId = tuple.get(nightStudyMemberEntity.userId)!!,
+                    type = tuple.get(nightStudyEntity.type)!!,
+                    projectRoomId = tuple.get(projectRoom.id),
+                )
+            }
+    }
+
     override fun countAttendedUserIdsByDateAndPeriod(date: LocalDate, period: Int, userIds: List<UUID>): Long {
         if (userIds.isEmpty()) return 0
 
@@ -205,6 +239,22 @@ class NightStudyQueryRepositoryImpl(
                 nightStudyEntity.status.ne(NightStudyStatusType.REJECTED)
             )
             .fetchFirst() != null
+    }
+
+    override fun findInUseRoomPeriods(date: LocalDate): List<RoomPeriodCommand> {
+        val room = QProjectRoomEntity("assignedRoom")
+        return queryFactory
+            .select(room.id, nightStudyEntity.period)
+            .from(nightStudyEntity)
+            .join(nightStudyEntity.room, room)
+            .where(
+                nightStudyEntity.startAt.loe(date),
+                nightStudyEntity.endAt.goe(date),
+                nightStudyEntity.status.ne(NightStudyStatusType.REJECTED),
+            )
+            .distinct()
+            .fetch()
+            .map { RoomPeriodCommand(it.get(room.id)!!, it.get(nightStudyEntity.period)!!) }
     }
 
     override fun findActivePersonalsByUserIdsAndPeriodOverlap(
