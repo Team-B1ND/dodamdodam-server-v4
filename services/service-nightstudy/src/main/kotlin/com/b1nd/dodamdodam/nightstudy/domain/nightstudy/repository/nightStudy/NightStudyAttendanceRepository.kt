@@ -8,4 +8,9 @@ import java.util.UUID
 interface NightStudyAttendanceRepository: JpaRepository<NightStudyAttendanceEntity, Long> {
     fun findByUserIdAndDateAndPeriod(userId: UUID, date: LocalDate, period: Int): NightStudyAttendanceEntity?
     fun findAllByDateAndAttendedIsTrue(date: LocalDate): List<NightStudyAttendanceEntity>
+    fun findAllByUserIdInAndDateAndPeriodAndAttendedIsTrue(
+        userIds: Collection<UUID>,
+        date: LocalDate,
+        period: Int,
+    ): List<NightStudyAttendanceEntity>
 }

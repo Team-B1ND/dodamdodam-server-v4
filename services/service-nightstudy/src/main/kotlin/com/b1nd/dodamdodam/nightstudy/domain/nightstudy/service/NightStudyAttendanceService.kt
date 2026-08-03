@@ -51,6 +51,15 @@ class NightStudyAttendanceService(
         return attendedCount to (allowedUserIds.size - attendedCount)
     }
 
+    fun getAttendedUserIds(userIds: Collection<UUID>, date: LocalDate, period: Int): Set<UUID> {
+        if (userIds.isEmpty()) return emptySet()
+
+        return attendanceRepository
+            .findAllByUserIdInAndDateAndPeriodAndAttendedIsTrue(userIds, date, period)
+            .map { it.userId }
+            .toSet()
+    }
+
     private fun validateAllowedMember(userId: UUID, date: LocalDate, period: Int) {
         if (!nightStudyQueryRepository.existsAllowedMemberByUserIdAndDateAndPeriod(userId, date, period)) {
             throw BasicException(NightStudyExceptionCode.NOT_NIGHT_STUDY_MEMBER)

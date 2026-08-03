@@ -1,5 +1,6 @@
 package com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy
 
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyRoomMemberCommand
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyAttendanceEntity.nightStudyAttendanceEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyEntity
@@ -170,6 +171,38 @@ class NightStudyQueryRepositoryImpl(
             )
             .distinct()
             .fetch()
+    }
+
+    override fun findAllowedRoomMembersByDateAndPeriod(
+        date: LocalDate,
+        period: Int,
+    ): List<NightStudyRoomMemberCommand> {
+        val projectRoom = QProjectRoomEntity("roomForMember")
+
+        return queryFactory
+            .select(
+                nightStudyMemberEntity.userId,
+                nightStudyEntity.type,
+                projectRoom.id,
+            )
+            .from(nightStudyMemberEntity)
+            .join(nightStudyMemberEntity.nightStudy, nightStudyEntity)
+            .leftJoin(nightStudyEntity.room, projectRoom)
+            .where(
+                nightStudyEntity.status.eq(NightStudyStatusType.ALLOWED),
+                nightStudyEntity.period.goe(period),
+                nightStudyEntity.startAt.loe(date),
+                nightStudyEntity.endAt.goe(date),
+            )
+            .distinct()
+            .fetch()
+            .map { tuple ->
+                NightStudyRoomMemberCommand(
+                    userId = tuple.get(nightStudyMemberEntity.userId)!!,
+                    type = tuple.get(nightStudyEntity.type)!!,
+                    projectRoomId = tuple.get(projectRoom.id),
+                )
+            }
     }
 
     override fun countAttendedUserIdsByDateAndPeriod(date: LocalDate, period: Int, userIds: List<UUID>): Long {
