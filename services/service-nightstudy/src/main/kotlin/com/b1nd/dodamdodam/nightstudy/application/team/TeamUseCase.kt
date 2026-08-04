@@ -28,8 +28,8 @@ class TeamUseCase(
 
     fun createNightStudyTeam(request: CreateTeamRequest): Response<Any> {
         val userId = PassportHolder.current().requireUserId()
-        nightStudyTeamService.createTeam(request.toEntity(), userId)
-        return Response.created("팀을 생성했어요.")
+        val team = nightStudyTeamService.createTeam(request.toEntity(), userId)
+        return Response.created("팀을 생성했어요.", team.publicId)
     }
 
     @Transactional(readOnly = true)
