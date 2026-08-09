@@ -19,7 +19,7 @@ class NightStudyTeamService(
     private val nightStudyTeamRepository: NightStudyTeamRepository,
     private val nightStudyTeamMemberRepository: NightStudyTeamMemberRepository
 ) {
-    fun createTeam(entity: NightStudyTeamEntity, userid: UUID) {
+    fun createTeam(entity: NightStudyTeamEntity, userid: UUID): NightStudyTeamEntity {
         val nightStudyTeamEntity = nightStudyTeamRepository.save(entity)
         nightStudyTeamMemberRepository.save(
             NightStudyTeamMemberEntity(
@@ -28,6 +28,8 @@ class NightStudyTeamService(
                 isOwner = true,
                 isAccept = true
             ))
+
+        return nightStudyTeamEntity
     }
 
     fun inviteMembers(team: NightStudyTeamEntity, userIds: List<UUID>): List<UUID> {
