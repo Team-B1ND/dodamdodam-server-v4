@@ -6,6 +6,7 @@ import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingA
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingDuplicateDateException
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingNotFoundException
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingNotOwnerException
+import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingStartDateInPastException
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.repository.OutSleepingRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -44,6 +45,12 @@ class OutSleepingService(
     fun validatePending(outSleeping: OutSleepingEntity) {
         if (outSleeping.status != OutSleepingStatus.PENDING) {
             throw OutSleepingAlreadyProcessedException()
+        }
+    }
+
+    fun validateStartAt(startAt: LocalDate) {
+        if (startAt.isBefore(LocalDate.now())) {
+            throw OutSleepingStartDateInPastException()
         }
     }
 
