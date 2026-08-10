@@ -35,3 +35,5 @@ class NightStudyTeamInvitationNotReceivedException: BasicException(NightStudyExc
 class AlreadyJoinedTeamException: BasicException(NightStudyExceptionCode.ALREADY_JOINED_TEAM)
 
 class NotJoinedTeamException: BasicException(NightStudyExceptionCode.NOT_JOINED_TEAM)
+
+class TeamOwnerCannotLeaveException: BasicException(NightStudyExceptionCode.TEAM_OWNER_CANNOT_LEAVE)

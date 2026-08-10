@@ -27,6 +27,7 @@ enum class NightStudyExceptionCode(
     TEAM_INVITATION_NOT_RECEIVED(HttpStatus.BAD_REQUEST, "팀 초대를 받지 않았어요."),
     ALREADY_JOINED_TEAM(HttpStatus.CONFLICT, "이미 가입되어 있는 팀이에요."),
     NOT_JOINED_TEAM(HttpStatus.BAD_REQUEST, "가입되어 있지 않은 팀이에요."),
+    TEAM_OWNER_CANNOT_LEAVE(HttpStatus.FORBIDDEN, "팀장은 팀을 나갈 수 없어요."),
 
     ;
 }

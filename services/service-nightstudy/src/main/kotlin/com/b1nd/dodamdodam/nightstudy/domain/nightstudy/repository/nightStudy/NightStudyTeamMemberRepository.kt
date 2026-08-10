@@ -17,4 +17,5 @@ interface NightStudyTeamMemberRepository: JpaRepository<NightStudyTeamMemberEnti
     fun deleteByTeam(team: NightStudyTeamEntity)
     fun existsByTeamAndUser(team: NightStudyTeamEntity, user: UUID): Boolean
     fun findByUserAndTeam(userId: UUID, team: NightStudyTeamEntity): NightStudyTeamMemberEntity
+    fun existsByUserAndTeamAndIsOwnerTrue(userId: UUID, team: NightStudyTeamEntity): Boolean
 }
