@@ -94,11 +94,21 @@ class NightStudyUseCase(
         val usersMap = fetchUsersMap(visibleNightStudies)
         val projectMemberNightStudyIds = nightStudyService.getProjectMemberNightStudyIds(allNightStudies)
 
-        val sorted = visibleNightStudies.sortedWith(compareBy(
-            { usersMap[it.leaderId?.toString()]?.student?.grade ?: Int.MAX_VALUE },
-            { usersMap[it.leaderId?.toString()]?.student?.room ?: Int.MAX_VALUE },
-            { usersMap[it.leaderId?.toString()]?.student?.number ?: Int.MAX_VALUE }
-        ))
+        val sorted = if (type == NightStudyType.PROJECT) {
+            visibleNightStudies.sortedWith(
+                compareBy<NightStudyWithMembersCommand> {
+                    it.nightStudy.createdAt ?: LocalDateTime.MAX
+                }.thenBy {
+                    it.nightStudy.id ?: Long.MAX_VALUE
+                }
+            )
+        } else {
+            visibleNightStudies.sortedWith(compareBy(
+                { usersMap[it.leaderId?.toString()]?.student?.grade ?: Int.MAX_VALUE },
+                { usersMap[it.leaderId?.toString()]?.student?.room ?: Int.MAX_VALUE },
+                { usersMap[it.leaderId?.toString()]?.student?.number ?: Int.MAX_VALUE }
+            ))
+        }
 
         val offset = pageable.offset.toInt()
         val pageSize = pageable.pageSize
