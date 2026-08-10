@@ -24,7 +24,7 @@ class ProjectRoomController(
     fun create(@RequestBody @Valid request: SaveProjectRoomRequest): Response<Any> =
         projectRoomUseCase.create(request)
 
-    @UserAccess(roles = [RoleType.DORMITORY_MANAGER])
+    @UserAccess(roles = [RoleType.STUDENT])
     @GetMapping
     fun getAll(): Response<List<ProjectRoomResponse>> =
         projectRoomUseCase.getAll()
