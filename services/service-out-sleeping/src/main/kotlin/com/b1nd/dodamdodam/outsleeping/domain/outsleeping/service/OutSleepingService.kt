@@ -4,6 +4,7 @@ import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.entity.OutSleepingEnti
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.enumeration.OutSleepingStatus
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingAlreadyProcessedException
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingDuplicateDateException
+import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingInvalidDateException
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingNotFoundException
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingNotOwnerException
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.repository.OutSleepingRepository
@@ -52,6 +53,12 @@ class OutSleepingService(
                 userId, listOf(OutSleepingStatus.PENDING, OutSleepingStatus.ALLOWED), endAt, startAt
             )) {
             throw OutSleepingDuplicateDateException()
+        }
+    }
+
+    fun validateDate(startAt: LocalDate, endAt: LocalDate) {
+        if (startAt.isBefore(LocalDate.now()) || startAt.isAfter(endAt)) {
+            throw OutSleepingInvalidDateException()
         }
     }
 
