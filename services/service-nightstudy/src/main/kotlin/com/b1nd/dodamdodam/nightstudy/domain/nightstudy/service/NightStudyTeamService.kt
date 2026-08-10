@@ -5,6 +5,7 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyNotT
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyTeamInvitationNotReceivedException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyTeamNotFound
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NotJoinedTeamException
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.TeamOwnerCannotLeaveException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyTeamMemberRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyTeamRepository
 import com.b1nd.dodamdodam.nightstudy.domain.team.NightStudyTeamEntity
@@ -119,6 +120,9 @@ class NightStudyTeamService(
     fun leaveTeam(userId: UUID, teamId: UUID) {
         val team = nightStudyTeamRepository.findByPublicId(teamId)
             ?: throw NightStudyTeamNotFound()
+
+        if (nightStudyTeamMemberRepository.existsByUserAndTeamAndIsOwnerTrue(userId, team))
+            throw TeamOwnerCannotLeaveException()
 
         val member = getJoinedMember(userId, team)
 
