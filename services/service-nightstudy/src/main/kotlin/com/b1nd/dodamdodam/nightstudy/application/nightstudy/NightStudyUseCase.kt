@@ -177,9 +177,9 @@ class NightStudyUseCase(
     }
 
     fun countTotalMembers(): Response<NightStudyTotalCountResponse> {
-        val nightStudys = nightStudyService.getAllAllowed()
+        val nightStudies = nightStudyService.getAllAllowed()
 
-        val membersByNightStudy = nightStudyService.getMembersByNightStudies(nightStudys)
+        val membersByNightStudy = nightStudyService.getMembersByNightStudies(nightStudies)
         val userIds = membersByNightStudy.values.flatten()
             .map { it.toString() }
             .distinct()
@@ -187,21 +187,50 @@ class NightStudyUseCase(
         val userById = runBlocking { userQueryClient.getUsers(userIds) }.usersList
             .associateBy { it.publicId }
 
-        val counts = nightStudys.flatMap { nightStudy ->
+        val members = nightStudies.flatMap { nightStudy ->
             val memberIds = membersByNightStudy[nightStudy.id] ?: emptyList()
 
-            memberIds.map { memberId ->
-                val user = userById[memberId.toString()]
-                Triple(
-                    resolveFloor(nightStudy, user),
-                    nightStudy.type,
-                    nightStudy.period,
+            memberIds.flatMap { memberId ->
+                periodsIncludedBy(nightStudy.period).map { period ->
+                    CountCandidate(memberId, period, nightStudy)
+                }
+            }
+        }.groupBy { it.userId to it.period }
+            .mapNotNull { (_, candidates) ->
+                val selected = candidates.maxWithOrNull(
+                    compareBy<CountCandidate>(
+                        { it.nightStudy.type == NightStudyType.PROJECT },
+                        { it.nightStudy.period == it.period },
+                    )
+                ) ?: return@mapNotNull null
+                val user = userById[selected.userId.toString()]
+                    ?.takeIf { it.hasStudent() }
+                    ?: return@mapNotNull null
+                val grade = user.student.grade.takeIf { it in 1..3 }
+                    ?: return@mapNotNull null
+
+                NightStudyTotalCountResponse.MemberCount(
+                    floor = resolveFloor(selected.nightStudy, user),
+                    grade = grade,
+                    period = selected.period,
+                    gender = NightStudyTotalCountResponse.Gender.MALE,
                 )
             }
-        }.groupingBy { it }.eachCount()
 
-        return Response.ok("심자 층별 인원수를 조회했어요.", NightStudyTotalCountResponse.of(counts))
+        return Response.ok("심자 인원수를 조회했어요.", NightStudyTotalCountResponse.of(members))
     }
+
+    private fun periodsIncludedBy(period: Int): List<Int> = when (period) {
+        1 -> listOf(1)
+        2 -> listOf(1, 2)
+        else -> emptyList()
+    }
+
+    private data class CountCandidate(
+        val userId: UUID,
+        val period: Int,
+        val nightStudy: NightStudyEntity,
+    )
 
     private fun resolveFloor(nightStudy: NightStudyEntity, user: UserResponse?): Int =
         if (nightStudy.type == NightStudyType.PROJECT) {
