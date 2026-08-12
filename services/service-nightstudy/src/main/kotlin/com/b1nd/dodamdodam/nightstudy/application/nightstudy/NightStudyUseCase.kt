@@ -29,6 +29,7 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.*
 
 @Component
@@ -333,7 +334,7 @@ class NightStudyUseCase(
 
     private fun validateApplicationAvailability(stratAt: LocalDate, period: Int) {
         val now = LocalDateTime.now()
-        val deadline = LocalDate.now().atTime(20, 30)
+        val deadline = LocalDate.now(ZoneId.of("Asia/Seoul")).atTime(20, 30)
         if (now.isAfter(deadline))
             throw BasicException(NightStudyExceptionCode.NOT_APPLICATION_TIME)
         if (stratAt.isBefore(now.toLocalDate()))
