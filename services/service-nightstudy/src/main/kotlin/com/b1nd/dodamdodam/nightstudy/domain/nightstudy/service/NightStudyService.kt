@@ -133,12 +133,12 @@ class NightStudyService(
                 if (hasPersonal) return@forEach
 
                 val nightStudy = NightStudyEntity(
-                        description = "프로젝트 심야자습으로 인한 자동 신청",
+                        description = ns.description,
                         period = if (ns.period == 1) 2 else 1,
-                        type = NightStudyType.PERSONAL,
+                        type = NightStudyType.AUTO,
                         startAt = ns.startAt,
                         endAt = ns.endAt,
-                        status = NightStudyStatusType.ALLOWED,
+                        status = NightStudyStatusType.PENDING,
                         needPhone = false
                 )
 
