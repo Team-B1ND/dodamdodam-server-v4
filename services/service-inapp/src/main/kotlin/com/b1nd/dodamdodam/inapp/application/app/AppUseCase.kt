@@ -1,5 +1,6 @@
 package com.b1nd.dodamdodam.inapp.application.app
 
+import com.b1nd.dodamdodam.core.common.data.InfinityScrollPageResponse
 import com.b1nd.dodamdodam.inapp.application.app.data.response.PageResponse
 import com.b1nd.dodamdodam.core.common.data.Response
 import com.b1nd.dodamdodam.core.security.passport.holder.PassportHolder
@@ -17,6 +18,7 @@ import com.b1nd.dodamdodam.inapp.application.app.data.response.AppReleaseDetailR
 import com.b1nd.dodamdodam.inapp.application.app.data.response.AppResponse
 import com.b1nd.dodamdodam.inapp.application.app.data.response.AppSummaryResponse
 import com.b1nd.dodamdodam.core.github.client.GitHubClient
+import com.b1nd.dodamdodam.inapp.application.app.data.response.GetAllAppsResponse
 import com.b1nd.dodamdodam.inapp.application.app.data.toActiveAppResponse
 import com.b1nd.dodamdodam.inapp.application.app.data.toCommand
 import com.b1nd.dodamdodam.inapp.application.app.data.toDetailResponse
@@ -124,6 +126,19 @@ class AppUseCase(
     fun deleteApp(appId: UUID): Response<Any> {
         appService.deleteApp(currentUserId(), appId)
         return Response.ok("앱이 삭제되었어요.")
+    }
+
+    @Transactional(readOnly = true)
+    fun getAllApps(pageable: Pageable):Response<InfinityScrollPageResponse<GetAllAppsResponse>> {
+        val apps = appService.getAllApps(pageable)
+
+        return Response.ok(
+            "모든 앱이 조회되었어요.",
+            InfinityScrollPageResponse(
+                content = GetAllAppsResponse.fromList(apps.content),
+                hasNext = apps.hasNext()
+            )
+        )
     }
 
     private fun currentUserId() = PassportHolder.current().requireUserId()
