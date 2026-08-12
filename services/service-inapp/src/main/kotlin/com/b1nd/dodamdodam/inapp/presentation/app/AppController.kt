@@ -95,4 +95,9 @@ class AppController(
         @RequestParam(required = false) keyword: String?,
         pageable: Pageable,
     ) = appUseCase.getReleases(appId, date, keyword, pageable)
+
+    @UserAccess(roles = [RoleType.ADMIN])
+    @GetMapping
+    fun getApps(pageable: Pageable) =
+        appUseCase.getAllApps(pageable)
 }

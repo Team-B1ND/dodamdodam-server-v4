@@ -158,6 +158,9 @@ class AppService(
         appReleaseRepository.findByPublicId(releaseId)
             ?: throw AppReleaseNotFoundException()
 
+    fun getAllApps(pageable: Pageable) =
+        appRepository.findAll(pageable)
+
     private fun validateAppOwner(userId: UUID, app: AppEntity) {
         if (!teamMemberRepository.existsByUserAndTeamAndIsOwnerIsTrue(userId, app.team)) {
             throw AppTeamOwnerPermissionRequiredException()
