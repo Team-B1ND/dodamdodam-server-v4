@@ -138,8 +138,8 @@ class NightStudyUseCase(
                 personal = byType.getValue(NightStudyType.PERSONAL),
                 project = byType.getValue(NightStudyType.PROJECT),
                 total = NightStudyApprovedCountResponse.PeriodCount(
-                    period1 = byType.values.sumOf { it.period1 },
-                    period2 = byType.values.sumOf { it.period2 },
+                    period1 = byType.values.sumOf { it.period1 } - byType.getValue(NightStudyType.AUTO).period1,
+                    period2 = byType.values.sumOf { it.period2 } - byType.getValue(NightStudyType.AUTO).period2,
                 ),
             ),
         )
