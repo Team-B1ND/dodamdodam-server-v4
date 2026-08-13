@@ -6,5 +6,6 @@ import java.util.UUID
 data class NightStudyRoomMemberCommand(
     val userId: UUID,
     val type: NightStudyType,
+    val period: Int,
     val projectRoomId: Long?,
 )
