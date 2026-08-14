@@ -93,7 +93,7 @@ class ProjectRoomUseCase(
         val validRoomIds = rooms.map { it.id }.toSet()
         val assignments = nightStudyService.getAllowedRoomMembers(date, period)
             .groupBy { it.userId }
-            .mapValues { (_, values) -> selectAssignment(values) }
+            .mapValues { (_, values) -> selectAssignment(values, period) }
         val attendedUserIds = nightStudyAttendanceService.getAttendedUserIds(assignments.keys, date, period)
         val users = if (assignments.isEmpty()) {
             emptyList()
@@ -143,11 +143,16 @@ class ProjectRoomUseCase(
         return classRooms + thirdGradeRoom + projectRooms
     }
 
-    private fun selectAssignment(assignments: List<NightStudyRoomMemberCommand>): NightStudyRoomMemberCommand {
-        return assignments.firstOrNull {
+    private fun selectAssignment(
+        assignments: List<NightStudyRoomMemberCommand>,
+        period: Int,
+    ): NightStudyRoomMemberCommand {
+        val periodAssignments = assignments.filter { it.period == period }.ifEmpty { assignments }
+
+        return periodAssignments.firstOrNull {
             it.type == NightStudyType.PROJECT && it.projectRoomId != null
-        } ?: assignments.firstOrNull { it.type == NightStudyType.PERSONAL }
-        ?: assignments.first()
+        } ?: periodAssignments.firstOrNull { it.type == NightStudyType.PERSONAL }
+        ?: periodAssignments.first()
     }
 
     private fun resolveRoomId(assignment: NightStudyRoomMemberCommand, grade: Int, room: Int): String? {

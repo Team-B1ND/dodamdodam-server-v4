@@ -37,8 +37,8 @@ class ProjectRoomUseCaseTest {
         val firstUserId = UUID.randomUUID()
         val secondUserId = UUID.randomUUID()
         val assignments = listOf(
-            personalAssignment(firstUserId),
-            personalAssignment(secondUserId),
+            personalAssignment(firstUserId, period = 1),
+            personalAssignment(secondUserId, period = 1),
         )
 
         `when`(projectRoomService.getAll()).thenReturn(emptyList())
@@ -63,8 +63,8 @@ class ProjectRoomUseCaseTest {
         val userId = UUID.randomUUID()
         val projectRoom = mock(ProjectRoomEntity::class.java)
         val assignments = listOf(
-            personalAssignment(userId),
-            NightStudyRoomMemberCommand(userId, NightStudyType.PROJECT, projectRoomId = 12L),
+            personalAssignment(userId, period = 2),
+            projectAssignment(userId, period = 2, projectRoomId = 12L),
         )
 
         `when`(projectRoom.id).thenReturn(12L)
@@ -83,10 +83,71 @@ class ProjectRoomUseCaseTest {
         assertEquals(0, classRoom.memberCount)
     }
 
-    private fun personalAssignment(userId: UUID) = NightStudyRoomMemberCommand(
+    @Test
+    fun `심1 개인 심자와 심2 프로젝트 심자가 있으면 심1에는 개인 심자실로 배정한다`() {
+        val date = LocalDate.of(2026, 8, 13)
+        val userId = UUID.randomUUID()
+        val projectRoom = mock(ProjectRoomEntity::class.java)
+        val assignments = listOf(
+            projectAssignment(userId, period = 2, projectRoomId = 13L),
+            personalAssignment(userId, period = 1),
+        )
+
+        `when`(projectRoom.id).thenReturn(13L)
+        `when`(projectRoom.name).thenReturn("LAB 13")
+        `when`(projectRoomService.getAll()).thenReturn(listOf(projectRoom))
+        `when`(nightStudyService.getAllowedRoomMembers(date, 1)).thenReturn(assignments)
+        `when`(attendanceService.getAttendedUserIds(setOf(userId), date, 1)).thenReturn(emptySet())
+        stubUsers(student(userId, "프로젝트 학생", grade = 1, room = 2, number = 1))
+
+        val response = useCase.getAllWithStatus(date, 1)
+        val project = response.data!!.single { it.roomId == "PROJECT_13" }
+        val classRoom = response.data!!.single { it.roomId == "CLASS_1_2" }
+
+        assertEquals(0, project.memberCount)
+        assertEquals(1, classRoom.memberCount)
+    }
+
+    @Test
+    fun `심1과 심2 프로젝트실이 다르면 요청 교시 프로젝트실로 배정한다`() {
+        val date = LocalDate.of(2026, 8, 13)
+        val userId = UUID.randomUUID()
+        val firstPeriodRoom = mock(ProjectRoomEntity::class.java)
+        val secondPeriodRoom = mock(ProjectRoomEntity::class.java)
+        val assignments = listOf(
+            projectAssignment(userId, period = 2, projectRoomId = 13L),
+            projectAssignment(userId, period = 1, projectRoomId = 1L),
+        )
+
+        `when`(firstPeriodRoom.id).thenReturn(1L)
+        `when`(firstPeriodRoom.name).thenReturn("LAB 1")
+        `when`(secondPeriodRoom.id).thenReturn(13L)
+        `when`(secondPeriodRoom.name).thenReturn("LAB 13")
+        `when`(projectRoomService.getAll()).thenReturn(listOf(firstPeriodRoom, secondPeriodRoom))
+        `when`(nightStudyService.getAllowedRoomMembers(date, 1)).thenReturn(assignments)
+        `when`(attendanceService.getAttendedUserIds(setOf(userId), date, 1)).thenReturn(emptySet())
+        stubUsers(student(userId, "프로젝트 학생", grade = 1, room = 1, number = 1))
+
+        val response = useCase.getAllWithStatus(date, 1)
+        val firstPeriodProject = response.data!!.single { it.roomId == "PROJECT_1" }
+        val secondPeriodProject = response.data!!.single { it.roomId == "PROJECT_13" }
+
+        assertEquals(1, firstPeriodProject.memberCount)
+        assertEquals(0, secondPeriodProject.memberCount)
+    }
+
+    private fun personalAssignment(userId: UUID, period: Int) = NightStudyRoomMemberCommand(
         userId = userId,
         type = NightStudyType.PERSONAL,
+        period = period,
         projectRoomId = null,
+    )
+
+    private fun projectAssignment(userId: UUID, period: Int, projectRoomId: Long) = NightStudyRoomMemberCommand(
+        userId = userId,
+        type = NightStudyType.PROJECT,
+        period = period,
+        projectRoomId = projectRoomId,
     )
 
     private fun student(
