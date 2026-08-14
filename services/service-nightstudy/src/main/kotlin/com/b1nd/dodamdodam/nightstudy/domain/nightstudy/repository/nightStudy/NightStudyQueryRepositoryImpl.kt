@@ -183,6 +183,7 @@ class NightStudyQueryRepositoryImpl(
             .select(
                 nightStudyMemberEntity.userId,
                 nightStudyEntity.type,
+                nightStudyEntity.period,
                 projectRoom.id,
             )
             .from(nightStudyMemberEntity)
@@ -200,6 +201,7 @@ class NightStudyQueryRepositoryImpl(
                 NightStudyRoomMemberCommand(
                     userId = tuple.get(nightStudyMemberEntity.userId)!!,
                     type = tuple.get(nightStudyEntity.type)!!,
+                    period = tuple.get(nightStudyEntity.period)!!,
                     projectRoomId = tuple.get(projectRoom.id),
                 )
             }
