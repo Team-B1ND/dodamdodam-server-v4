@@ -14,4 +14,5 @@ data class AppSummaryResponse(
     val inquiryMail: String,
     val releaseEnabled: Boolean?,
     val releaseStatus: AppStatusType?,
+    val isVisible: Boolean?,
 )

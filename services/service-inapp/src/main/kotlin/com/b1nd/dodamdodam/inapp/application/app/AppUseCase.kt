@@ -123,6 +123,16 @@ class AppUseCase(
         return Response.ok("릴리즈 상세를 조회했어요.", release.toDetailResponse(releaseNote))
     }
 
+    fun showApp(appId: UUID): Response<Any> {
+        appService.updateVisibility(currentUserId(), appId, true)
+        return Response.ok("앱이 공개되었어요.")
+    }
+
+    fun hideApp(appId: UUID): Response<Any> {
+        appService.updateVisibility(currentUserId(), appId, false)
+        return Response.ok("앱이 비공개되었어요.")
+    }
+
     fun deleteApp(appId: UUID): Response<Any> {
         appService.deleteApp(currentUserId(), appId)
         return Response.ok("앱이 삭제되었어요.")
