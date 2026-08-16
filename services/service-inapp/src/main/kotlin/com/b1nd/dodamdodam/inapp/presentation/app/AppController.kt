@@ -38,6 +38,16 @@ class AppController(
         appUseCase.editApp(request)
 
     @UserAccess
+    @PatchMapping("/{appId}/show")
+    fun showApp(@PathVariable appId: UUID) =
+        appUseCase.showApp(appId)
+
+    @UserAccess
+    @PatchMapping("/{appId}/hide")
+    fun hideApp(@PathVariable appId: UUID) =
+        appUseCase.hideApp(appId)
+
+    @UserAccess
     @DeleteMapping("/{appId}")
     fun deleteApp(@PathVariable appId: UUID) =
         appUseCase.deleteApp(appId)
