@@ -142,6 +142,11 @@ class AppService(
         app.update(command.name, command.subtitle, command.description, command.iconUrl, command.darkIconUrl, command.inquiryMail)
     }
 
+    fun updateVisibility(userId: UUID, appId: UUID, isVisible: Boolean) {
+        val app = getAppWithMemberPermission(userId, appId)
+        app.updateVisibility(isVisible)
+    }
+
     fun deleteApp(userId: UUID, appId: UUID) {
         val app = getAppWithOwnerPermission(userId, appId)
         appRepository.delete(app)

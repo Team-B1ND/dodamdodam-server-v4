@@ -74,6 +74,7 @@ fun AppEntity.toSummaryResponse() = AppSummaryResponse(
     inquiryMail = inquiryMail,
     releaseEnabled = releaseEnabled,
     releaseStatus = releaseStatus,
+    isVisible = isVisible
 )
 
 fun List<AppEntity>.toSummaryResponses() = map { it.toSummaryResponse() }

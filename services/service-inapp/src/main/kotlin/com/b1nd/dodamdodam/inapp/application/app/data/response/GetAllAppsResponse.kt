@@ -7,7 +7,8 @@ data class GetAllAppsResponse(
     val appId: UUID?,
     val name: String,
     val subtitle: String,
-    val iconUrl: String
+    val iconUrl: String,
+    val isVisible: Boolean,
 ) {
     companion object {
         fun of(app: AppEntity) =
@@ -15,7 +16,8 @@ data class GetAllAppsResponse(
                 appId = app.publicId,
                 name = app.name,
                 subtitle = app.subtitle,
-                iconUrl = app.iconUrl
+                iconUrl = app.iconUrl,
+                isVisible = app.isVisible,
             )
 
         fun fromList(apps: List<AppEntity>): List<GetAllAppsResponse> {

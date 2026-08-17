@@ -36,6 +36,8 @@ class AppEntity(
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "fk_team_id")
     val team: TeamEntity,
+
+    var isVisible: Boolean = false,
 ) {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -64,6 +66,10 @@ class AppEntity(
         iconUrl?.let { this.iconUrl = it }
         darkIconUrl?.let { this.darkIconUrl = it }
         inquiryMail?.let { this.inquiryMail = it }
+    }
+
+    fun updateVisibility(isVisible: Boolean) {
+        this.isVisible = isVisible
     }
 
     fun updateReleaseInfo(enabled: Boolean, status: AppStatusType) {

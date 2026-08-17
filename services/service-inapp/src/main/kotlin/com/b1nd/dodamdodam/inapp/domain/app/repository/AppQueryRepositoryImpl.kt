@@ -52,6 +52,7 @@ class AppQueryRepositoryImpl(
             .where(
                 appEntity.releaseEnabled.isTrue,
                 appEntity.releaseStatus.eq(AppStatusType.ALLOWED),
+                appEntity.isVisible.isTrue,
             )
             .orderBy(appEntity.id.desc())
             .offset(pageable.offset)
@@ -71,6 +72,7 @@ class AppQueryRepositoryImpl(
             .where(
                 appEntity.releaseEnabled.isTrue,
                 appEntity.releaseStatus.eq(AppStatusType.ALLOWED),
+                appEntity.isVisible.isTrue,
             )
             .fetchOne() ?: 0L
 
