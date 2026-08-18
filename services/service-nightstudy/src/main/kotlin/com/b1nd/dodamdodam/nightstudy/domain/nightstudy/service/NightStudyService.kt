@@ -125,21 +125,25 @@ class NightStudyService(
         val wasAlreadyAllowed = ns.status == NightStudyStatusType.ALLOWED
         ns.allow()
         if (ns.type == NightStudyType.PROJECT && !wasAlreadyAllowed) {
-            val memberIds = nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(ns)
+            val autoPeriod = if (ns.period == 1) 2 else 1
+            val memberIds = nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(ns).distinct()
             memberIds.forEach { memberId ->
                 val hasPersonal = nightStudyQueryRepository.existsByUserIdAndPeriodOverlap(
-                     memberId, 2, NightStudyType.PERSONAL, ns.startAt, ns.endAt
+                    memberId, autoPeriod, NightStudyType.PERSONAL, ns.startAt, ns.endAt
                 )
-                if (hasPersonal) return@forEach
+                val hasAuto = nightStudyQueryRepository.existsByUserIdAndPeriodOverlap(
+                    memberId, autoPeriod, NightStudyType.AUTO, ns.startAt, ns.endAt
+                )
+                if (hasPersonal || hasAuto) return@forEach
 
                 val nightStudy = NightStudyEntity(
-                        description = ns.description,
-                        period = if (ns.period == 1) 2 else 1,
-                        type = NightStudyType.AUTO,
-                        startAt = ns.startAt,
-                        endAt = ns.endAt,
-                        status = NightStudyStatusType.PENDING,
-                        needPhone = false
+                    description = ns.description,
+                    period = autoPeriod,
+                    type = NightStudyType.AUTO,
+                    startAt = ns.startAt,
+                    endAt = ns.endAt,
+                    status = NightStudyStatusType.PENDING,
+                    needPhone = false
                 )
 
                 save(nightStudy, memberId, null)
