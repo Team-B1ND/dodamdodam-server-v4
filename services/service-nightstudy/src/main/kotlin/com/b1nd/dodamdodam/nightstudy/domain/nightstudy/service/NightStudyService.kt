@@ -36,10 +36,6 @@ class NightStudyService(
     fun save(nightStudy: NightStudyEntity, userId: UUID, members: List<UUID>?) {
         if (isBanned(userId)) throw NightStudyBannedException()
 
-        if (hasPeriodOverlap(userId, nightStudy.period, nightStudy.type, nightStudy.startAt, nightStudy.endAt)) {
-            throw PeriodOverlappedException()
-        }
-
         members?.forEach { member ->
             if (isBanned(member)) throw NightStudyBannedException()
             if (hasPeriodOverlap(member, nightStudy.period, nightStudy.type, nightStudy.startAt, nightStudy.endAt)) {
@@ -123,23 +119,36 @@ class NightStudyService(
     fun allow(publicId: UUID) {
         val ns = getByPublicId(publicId)
         val wasAlreadyAllowed = ns.status == NightStudyStatusType.ALLOWED
+        val memberIds = nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(ns).distinct()
+
+        if (!wasAlreadyAllowed) {
+            memberIds.forEach { memberId ->
+                if (hasAllowedPeriodOverlap(memberId, ns.period, ns.startAt, ns.endAt, ns.id!!)) {
+                    throw PeriodOverlappedException()
+                }
+            }
+        }
+
         ns.allow()
         if (ns.type == NightStudyType.PROJECT && !wasAlreadyAllowed) {
-            val memberIds = nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(ns)
+            val autoPeriod = if (ns.period == 1) 2 else 1
             memberIds.forEach { memberId ->
                 val hasPersonal = nightStudyQueryRepository.existsByUserIdAndPeriodOverlap(
-                     memberId, 2, NightStudyType.PERSONAL, ns.startAt, ns.endAt
+                    memberId, autoPeriod, NightStudyType.PERSONAL, ns.startAt, ns.endAt
                 )
-                if (hasPersonal) return@forEach
+                val hasAuto = nightStudyQueryRepository.existsByUserIdAndPeriodOverlap(
+                    memberId, autoPeriod, NightStudyType.AUTO, ns.startAt, ns.endAt
+                )
+                if (hasPersonal || hasAuto) return@forEach
 
                 val nightStudy = NightStudyEntity(
-                        description = ns.description,
-                        period = if (ns.period == 1) 2 else 1,
-                        type = NightStudyType.AUTO,
-                        startAt = ns.startAt,
-                        endAt = ns.endAt,
-                        status = NightStudyStatusType.PENDING,
-                        needPhone = false
+                    description = ns.description,
+                    period = autoPeriod,
+                    type = NightStudyType.AUTO,
+                    startAt = ns.startAt,
+                    endAt = ns.endAt,
+                    status = NightStudyStatusType.PENDING,
+                    needPhone = false
                 )
 
                 save(nightStudy, memberId, null)
@@ -186,6 +195,18 @@ class NightStudyService(
 
     private fun isMine(userId: UUID, nightStudy: NightStudyEntity): Boolean {
         return nightStudyMemberRepository.existsByNightStudyAndUserId(nightStudy, userId)
+    }
+
+    private fun hasAllowedPeriodOverlap(
+        userId: UUID,
+        period: Int,
+        startAt: LocalDate,
+        endAt: LocalDate,
+        excludeNightStudyId: Long
+    ): Boolean {
+        return nightStudyQueryRepository.existsAllowedByUserIdAndPeriodOverlap(
+            userId, period, startAt, endAt, excludeNightStudyId
+        )
     }
 
     private fun hasPeriodOverlap(
