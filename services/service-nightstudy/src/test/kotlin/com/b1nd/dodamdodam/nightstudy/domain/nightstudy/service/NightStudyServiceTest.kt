@@ -102,6 +102,72 @@ class NightStudyServiceTest {
         verify(nightStudyRepository, never()).save(org.mockito.ArgumentMatchers.any())
     }
 
+    @Test
+    fun `프로젝트 재승인 시 연결된 자동 심자를 대기 상태로 재사용한다`() {
+        val publicId = UUID.randomUUID()
+        val memberId = UUID.randomUUID()
+        val project = projectNightStudy(period = 1)
+        val auto = autoNightStudy(project, NightStudyStatusType.REJECTED)
+        `when`(nightStudyRepository.findByPublicIdForUpdate(publicId)).thenReturn(project)
+        `when`(nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(project)).thenReturn(listOf(memberId))
+        `when`(nightStudyRepository.findAllBySourceProject(project)).thenReturn(listOf(auto))
+        `when`(nightStudyMemberQueryRepository.findAllMemberUserIdsByNightStudies(listOf(auto)))
+            .thenReturn(mapOf(auto.id!! to listOf(memberId)))
+
+        service.allow(publicId)
+
+        assertEquals(NightStudyStatusType.ALLOWED, project.status)
+        assertEquals(NightStudyStatusType.PENDING, auto.status)
+        verify(nightStudyRepository, never()).save(org.mockito.ArgumentMatchers.any())
+    }
+
+    @Test
+    fun `프로젝트 거절 시 연결된 자동 심자도 거절한다`() {
+        val publicId = UUID.randomUUID()
+        val project = projectNightStudy(period = 1).apply { allow() }
+        val auto = autoNightStudy(project, NightStudyStatusType.ALLOWED)
+        `when`(nightStudyRepository.findByPublicIdForUpdate(publicId)).thenReturn(project)
+        `when`(nightStudyRepository.findAllBySourceProject(project)).thenReturn(listOf(auto))
+
+        service.reject(publicId, "프로젝트 거절")
+
+        assertEquals(NightStudyStatusType.REJECTED, project.status)
+        assertEquals(NightStudyStatusType.REJECTED, auto.status)
+        assertEquals("프로젝트 심자 상태 변경으로 인한 자동 거절", auto.rejectionReason)
+    }
+
+    @Test
+    fun `프로젝트 대기 전환 시 연결된 자동 심자도 대기 상태로 변경한다`() {
+        val publicId = UUID.randomUUID()
+        val project = projectNightStudy(period = 1).apply { allow() }
+        val auto = autoNightStudy(project, NightStudyStatusType.ALLOWED)
+        `when`(nightStudyRepository.findByPublicIdForUpdate(publicId)).thenReturn(project)
+        `when`(nightStudyRepository.findAllBySourceProject(project)).thenReturn(listOf(auto))
+
+        service.pending(publicId)
+
+        assertEquals(NightStudyStatusType.PENDING, project.status)
+        assertEquals(NightStudyStatusType.PENDING, auto.status)
+    }
+
+    @Test
+    fun `프로젝트 삭제 시 연결된 자동 심자를 먼저 삭제한다`() {
+        val publicId = UUID.randomUUID()
+        val userId = UUID.randomUUID()
+        val project = projectNightStudy(period = 1)
+        val auto = autoNightStudy(project, NightStudyStatusType.PENDING)
+        `when`(nightStudyRepository.findByPublicIdForUpdate(publicId)).thenReturn(project)
+        `when`(nightStudyMemberRepository.existsByNightStudyAndUserId(project, userId)).thenReturn(true)
+        `when`(nightStudyMemberQueryRepository.findLeaderUserIdByNightStudy(project)).thenReturn(userId)
+        `when`(nightStudyRepository.findAllBySourceProject(project)).thenReturn(listOf(auto))
+
+        service.delete(userId, publicId)
+
+        verify(nightStudyMemberRepository).deleteAllByNightStudy(auto)
+        verify(nightStudyRepository).delete(auto)
+        verify(nightStudyRepository).delete(project)
+    }
+
     private fun projectNightStudy(period: Int): NightStudyEntity {
         val project = NightStudyEntity(
             name = "프로젝트",
@@ -117,5 +183,26 @@ class NightStudyServiceTest {
             set(project, 1L)
         }
         return project
+    }
+
+    private fun autoNightStudy(
+        sourceProject: NightStudyEntity,
+        status: NightStudyStatusType,
+    ): NightStudyEntity {
+        val auto = NightStudyEntity(
+            description = "자동 심자",
+            period = if (sourceProject.period == 1) 2 else 1,
+            startAt = sourceProject.startAt,
+            endAt = sourceProject.endAt,
+            needPhone = false,
+            status = status,
+            type = NightStudyType.AUTO,
+            sourceProject = sourceProject,
+        )
+        NightStudyEntity::class.java.getDeclaredField("id").apply {
+            isAccessible = true
+            set(auto, 2L)
+        }
+        return auto
     }
 }

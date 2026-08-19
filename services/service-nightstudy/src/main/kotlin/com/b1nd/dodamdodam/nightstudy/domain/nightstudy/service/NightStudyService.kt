@@ -100,7 +100,7 @@ class NightStudyService(
     }
 
     fun delete(userId: UUID, publicId: UUID) {
-        val nightStudy = getByPublicId(publicId)
+        val nightStudy = nightStudyRepository.findByPublicIdForUpdate(publicId) ?: throw NightStudyNotFoundException()
         val isMine = isMine(userId, nightStudy)
 
         if (!isMine) throw NotMyNightStudyException()
@@ -112,6 +112,9 @@ class NightStudyService(
         if (nightStudy.status == NightStudyStatusType.ALLOWED)
             throw AlreadyApprovedException()
 
+        if (nightStudy.type == NightStudyType.PROJECT) {
+            deleteSourceAutos(nightStudy)
+        }
         nightStudyMemberRepository.deleteAllByNightStudy(nightStudy)
         nightStudyRepository.delete(nightStudy)
     }
@@ -132,14 +135,23 @@ class NightStudyService(
         ns.allow()
         if (ns.type == NightStudyType.PROJECT && !wasAlreadyAllowed) {
             val autoPeriod = if (ns.period == 1) 2 else 1
+            val sourceAutosByUserId = getSourceAutosByUserId(ns)
             memberIds.forEach { memberId ->
                 val hasPersonal = nightStudyQueryRepository.existsByUserIdAndPeriodOverlap(
                     memberId, autoPeriod, NightStudyType.PERSONAL, ns.startAt, ns.endAt
                 )
+                if (hasPersonal) return@forEach
+
+                val sourceAutos = sourceAutosByUserId[memberId].orEmpty()
+                if (sourceAutos.isNotEmpty()) {
+                    sourceAutos.forEach { it.pending() }
+                    return@forEach
+                }
+
                 val hasAuto = nightStudyQueryRepository.existsByUserIdAndPeriodOverlap(
                     memberId, autoPeriod, NightStudyType.AUTO, ns.startAt, ns.endAt
                 )
-                if (hasPersonal || hasAuto) return@forEach
+                if (hasAuto) return@forEach
 
                 val nightStudy = NightStudyEntity(
                     description = ns.description,
@@ -148,7 +160,8 @@ class NightStudyService(
                     startAt = ns.startAt,
                     endAt = ns.endAt,
                     status = NightStudyStatusType.PENDING,
-                    needPhone = false
+                    needPhone = false,
+                    sourceProject = ns,
                 )
 
                 save(nightStudy, memberId, null)
@@ -157,11 +170,21 @@ class NightStudyService(
     }
 
     fun reject(publicId: UUID, rejectionReason: String) {
-        getByPublicId(publicId).reject(rejectionReason)
+        val nightStudy = nightStudyRepository.findByPublicIdForUpdate(publicId) ?: throw NightStudyNotFoundException()
+        nightStudy.reject(rejectionReason)
+        if (nightStudy.type == NightStudyType.PROJECT) {
+            nightStudyRepository.findAllBySourceProject(nightStudy).forEach {
+                it.reject(SOURCE_PROJECT_REJECTED_REASON)
+            }
+        }
     }
 
     fun pending(publicId: UUID) {
-        getByPublicId(publicId).pending()
+        val nightStudy = nightStudyRepository.findByPublicIdForUpdate(publicId) ?: throw NightStudyNotFoundException()
+        nightStudy.pending()
+        if (nightStudy.type == NightStudyType.PROJECT) {
+            nightStudyRepository.findAllBySourceProject(nightStudy).forEach { it.pending() }
+        }
     }
 
     fun assignRoom(publicId: UUID, room: ProjectRoomEntity) {
@@ -197,6 +220,23 @@ class NightStudyService(
         return nightStudyMemberRepository.existsByNightStudyAndUserId(nightStudy, userId)
     }
 
+    private fun getSourceAutosByUserId(sourceProject: NightStudyEntity): Map<UUID, List<NightStudyEntity>> {
+        val sourceAutos = nightStudyRepository.findAllBySourceProject(sourceProject)
+        if (sourceAutos.isEmpty()) return emptyMap()
+
+        val membersByNightStudy = nightStudyMemberQueryRepository.findAllMemberUserIdsByNightStudies(sourceAutos)
+        return sourceAutos
+            .flatMap { auto -> membersByNightStudy[auto.id].orEmpty().map { userId -> userId to auto } }
+            .groupBy({ it.first }, { it.second })
+    }
+
+    private fun deleteSourceAutos(sourceProject: NightStudyEntity) {
+        nightStudyRepository.findAllBySourceProject(sourceProject).forEach { auto ->
+            nightStudyMemberRepository.deleteAllByNightStudy(auto)
+            nightStudyRepository.delete(auto)
+        }
+    }
+
     private fun hasAllowedPeriodOverlap(
         userId: UUID,
         period: Int,
@@ -217,5 +257,9 @@ class NightStudyService(
         endAt: LocalDate
     ): Boolean {
         return nightStudyQueryRepository.existsByUserIdAndPeriodOverlap(userId, period, type, startAt, endAt)
+    }
+
+    companion object {
+        private const val SOURCE_PROJECT_REJECTED_REASON = "프로젝트 심자 상태 변경으로 인한 자동 거절"
     }
 }
