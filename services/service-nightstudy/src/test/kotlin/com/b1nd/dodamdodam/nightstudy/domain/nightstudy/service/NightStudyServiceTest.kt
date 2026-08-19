@@ -3,12 +3,14 @@ package com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.SourceProjectNotAllowedException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyBannedRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyQueryRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudyMember.NightStudyMemberQueryRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudyMember.NightStudyMemberRepository
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito.`when`
@@ -291,6 +293,20 @@ class NightStudyServiceTest {
             assertEquals(NightStudyStatusType.ALLOWED, it.status)
             assertEquals(project, it.sourceProject)
         }
+    }
+
+    @Test
+    fun `원본 프로젝트가 승인 상태가 아니면 연결된 자동 심자를 승인할 수 없다`() {
+        val publicId = UUID.randomUUID()
+        val project = projectNightStudy(period = 1)
+        val auto = autoNightStudy(project, NightStudyStatusType.PENDING)
+        `when`(nightStudyRepository.findByPublicIdForUpdate(publicId)).thenReturn(auto)
+
+        assertThrows(SourceProjectNotAllowedException::class.java) {
+            service.allow(publicId)
+        }
+
+        assertEquals(NightStudyStatusType.PENDING, auto.status)
     }
 
     private fun projectNightStudy(period: Int): NightStudyEntity {

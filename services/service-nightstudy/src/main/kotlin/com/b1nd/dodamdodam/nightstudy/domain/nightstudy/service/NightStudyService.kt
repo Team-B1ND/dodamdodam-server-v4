@@ -13,6 +13,7 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NotMyNightStud
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NotProjectNightStudyException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.PeriodOverlappedException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.RoomAlreadyAssignedException
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.SourceProjectNotAllowedException
 import com.b1nd.dodamdodam.nightstudy.domain.room.entity.ProjectRoomEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyBannedRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudyMember.NightStudyMemberQueryRepository
@@ -121,6 +122,11 @@ class NightStudyService(
 
     fun allow(publicId: UUID) {
         val ns = nightStudyRepository.findByPublicIdForUpdate(publicId) ?: throw NightStudyNotFoundException()
+        if (
+            ns.type == NightStudyType.AUTO &&
+            ns.sourceProject?.status?.let { it != NightStudyStatusType.ALLOWED } == true
+        ) throw SourceProjectNotAllowedException()
+
         val wasAlreadyAllowed = ns.status == NightStudyStatusType.ALLOWED
         val memberIds = nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(ns).distinct()
 

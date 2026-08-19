@@ -19,6 +19,7 @@ enum class NightStudyExceptionCode(
     NOT_APPLICATION_TIME(HttpStatus.BAD_REQUEST, "지금은 심자 신청 시간이 아니에요."),
     INVALID_START_AT(HttpStatus.BAD_REQUEST, "현재 시간보다 시작일이 과거에요."),
     ALREADY_APPROVED(HttpStatus.CONFLICT, "이미 승인된 심야 자습이에요."),
+    SOURCE_PROJECT_NOT_ALLOWED(HttpStatus.CONFLICT, "원본 프로젝트 심자가 승인 상태가 아니에요."),
     NOT_NIGHT_STUDY_MEMBER(HttpStatus.BAD_REQUEST, "해당 날짜와 교시에 승인된 심야 자습 인원이 아니에요."),
     INVALID_NIGHT_STUDY_TYPE(HttpStatus.BAD_REQUEST, "심야 자습 신청은 1교시 또는 2교시만 신청할 수 있어요."),
     TEAM_NOT_FOUND(HttpStatus.NOT_FOUND, "팀을 찾을 수 없어요."),
