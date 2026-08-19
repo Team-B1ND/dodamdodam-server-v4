@@ -18,6 +18,8 @@ import com.b1nd.dodamdodam.inapp.application.app.data.response.AppReleaseDetailR
 import com.b1nd.dodamdodam.inapp.application.app.data.response.AppResponse
 import com.b1nd.dodamdodam.inapp.application.app.data.response.AppSummaryResponse
 import com.b1nd.dodamdodam.core.github.client.GitHubClient
+import com.b1nd.dodamdodam.core.security.exception.AccessDeniedException
+import com.b1nd.dodamdodam.core.security.passport.enumerations.RoleType
 import com.b1nd.dodamdodam.inapp.application.app.data.response.GetAllAppsResponse
 import com.b1nd.dodamdodam.inapp.application.app.data.toActiveAppResponse
 import com.b1nd.dodamdodam.inapp.application.app.data.toCommand
@@ -124,11 +126,19 @@ class AppUseCase(
     }
 
     fun showApp(appId: UUID): Response<Any> {
+        if (RoleType.ADMIN in currentRoles()) {
+            appService.updateAdminVisibilty(appId, true)
+            return Response.ok("앱이 공개되었어요.")
+        }
         appService.updateVisibility(currentUserId(), appId, true)
         return Response.ok("앱이 공개되었어요.")
     }
 
     fun hideApp(appId: UUID): Response<Any> {
+        if (RoleType.ADMIN in currentRoles()) {
+            appService.updateAdminVisibilty(appId, false)
+            return Response.ok("앱이 비공개되었어요.")
+        }
         appService.updateVisibility(currentUserId(), appId, false)
         return Response.ok("앱이 비공개되었어요.")
     }
@@ -152,4 +162,5 @@ class AppUseCase(
     }
 
     private fun currentUserId() = PassportHolder.current().requireUserId()
+    private fun currentRoles() = PassportHolder.current().role.orEmpty()
 }
