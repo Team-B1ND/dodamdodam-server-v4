@@ -143,7 +143,12 @@ class AppService(
     }
 
     fun updateVisibility(userId: UUID, appId: UUID, isVisible: Boolean) {
-        val app = getAppWithMemberPermission(userId, appId)
+        val app = getAppWithOwnerPermission(userId, appId)
+        app.updateVisibility(isVisible)
+    }
+
+    fun updateAdminVisibilty(appId: UUID, isVisible: Boolean) {
+        val app = getApp(appId)
         app.updateVisibility(isVisible)
     }
 
