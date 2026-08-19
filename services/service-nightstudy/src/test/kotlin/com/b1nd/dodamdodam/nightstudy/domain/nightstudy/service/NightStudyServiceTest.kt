@@ -218,6 +218,81 @@ class NightStudyServiceTest {
         verify(nightStudyRepository).delete(project)
     }
 
+    @Test
+    fun `개인 심자 승인 시 완전히 겹치는 자동 심자를 제거한다`() {
+        val publicId = UUID.randomUUID()
+        val userId = UUID.randomUUID()
+        val project = projectNightStudy(period = 1).apply { allow() }
+        val auto = autoNightStudy(project, NightStudyStatusType.ALLOWED)
+        val personal = personalNightStudy(
+            period = 2,
+            startAt = auto.startAt,
+            endAt = auto.endAt,
+        )
+        `when`(nightStudyRepository.findByPublicIdForUpdate(publicId)).thenReturn(personal)
+        `when`(nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(personal)).thenReturn(listOf(userId))
+        `when`(
+            nightStudyQueryRepository.findActiveByUserIdAndPeriodAndTypesOverlap(
+                userId,
+                2,
+                setOf(NightStudyType.AUTO),
+                personal.startAt,
+                personal.endAt,
+                emptySet(),
+            )
+        ).thenReturn(listOf(auto))
+
+        service.allow(publicId)
+
+        assertEquals(NightStudyStatusType.ALLOWED, personal.status)
+        verify(nightStudyMemberRepository).deleteAllByNightStudy(auto)
+        verify(nightStudyRepository).delete(auto)
+        verify(nightStudyRepository, never()).save(org.mockito.ArgumentMatchers.any())
+    }
+
+    @Test
+    fun `개인 심자 승인 시 자동 심자의 겹치지 않는 기간은 보존한다`() {
+        val publicId = UUID.randomUUID()
+        val userId = UUID.randomUUID()
+        val project = projectNightStudy(period = 1).apply { allow() }
+        val auto = autoNightStudy(project, NightStudyStatusType.ALLOWED)
+        val personal = personalNightStudy(
+            period = 2,
+            startAt = LocalDate.of(2026, 8, 20),
+            endAt = LocalDate.of(2026, 8, 20),
+        )
+        `when`(nightStudyRepository.findByPublicIdForUpdate(publicId)).thenReturn(personal)
+        `when`(nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(personal)).thenReturn(listOf(userId))
+        `when`(
+            nightStudyQueryRepository.findActiveByUserIdAndPeriodAndTypesOverlap(
+                userId,
+                2,
+                setOf(NightStudyType.AUTO),
+                personal.startAt,
+                personal.endAt,
+                emptySet(),
+            )
+        ).thenReturn(listOf(auto))
+        `when`(nightStudyRepository.save(org.mockito.ArgumentMatchers.any(NightStudyEntity::class.java)))
+            .thenAnswer { it.getArgument(0) }
+
+        service.allow(publicId)
+
+        val captor = ArgumentCaptor.forClass(NightStudyEntity::class.java)
+        verify(nightStudyRepository, times(2)).save(captor.capture())
+        assertEquals(
+            listOf(
+                LocalDate.of(2026, 8, 18) to LocalDate.of(2026, 8, 19),
+                LocalDate.of(2026, 8, 21) to LocalDate.of(2026, 8, 21),
+            ),
+            captor.allValues.map { it.startAt to it.endAt },
+        )
+        captor.allValues.forEach {
+            assertEquals(NightStudyStatusType.ALLOWED, it.status)
+            assertEquals(project, it.sourceProject)
+        }
+    }
+
     private fun projectNightStudy(period: Int): NightStudyEntity {
         val project = NightStudyEntity(
             name = "프로젝트",
@@ -260,13 +335,20 @@ class NightStudyServiceTest {
         period: Int,
         startAt: LocalDate,
         endAt: LocalDate,
-    ) = NightStudyEntity(
-        description = "개인 심자",
-        period = period,
-        startAt = startAt,
-        endAt = endAt,
-        needPhone = false,
-        status = NightStudyStatusType.PENDING,
-        type = NightStudyType.PERSONAL,
-    )
+    ): NightStudyEntity {
+        val personal = NightStudyEntity(
+            description = "개인 심자",
+            period = period,
+            startAt = startAt,
+            endAt = endAt,
+            needPhone = false,
+            status = NightStudyStatusType.PENDING,
+            type = NightStudyType.PERSONAL,
+        )
+        NightStudyEntity::class.java.getDeclaredField("id").apply {
+            isAccessible = true
+            set(personal, 3L)
+        }
+        return personal
+    }
 }

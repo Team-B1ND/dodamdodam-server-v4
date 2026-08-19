@@ -125,6 +125,9 @@ class NightStudyService(
         val memberIds = nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(ns).distinct()
 
         if (!wasAlreadyAllowed) {
+            if (ns.type == NightStudyType.PERSONAL) {
+                replaceOverlappingAutosWithPersonal(ns, memberIds)
+            }
             memberIds.forEach { memberId ->
                 if (hasAllowedPeriodOverlap(memberId, ns.period, ns.startAt, ns.endAt, ns.id!!)) {
                     throw PeriodOverlappedException()
@@ -262,6 +265,47 @@ class NightStudyService(
     private fun deleteAuto(auto: NightStudyEntity) {
         nightStudyMemberRepository.deleteAllByNightStudy(auto)
         nightStudyRepository.delete(auto)
+    }
+
+    private fun replaceOverlappingAutosWithPersonal(
+        personal: NightStudyEntity,
+        userIds: List<UUID>,
+    ) {
+        userIds.forEach { userId ->
+            val overlappingAutos = nightStudyQueryRepository.findActiveByUserIdAndPeriodAndTypesOverlap(
+                userId = userId,
+                period = personal.period,
+                types = setOf(NightStudyType.AUTO),
+                startAt = personal.startAt,
+                endAt = personal.endAt,
+            )
+            overlappingAutos.forEach { auto ->
+                val remainingRanges = findUncoveredRanges(
+                    startAt = auto.startAt,
+                    endAt = auto.endAt,
+                    coveredRanges = listOf(DateRange(personal.startAt, personal.endAt)),
+                )
+                deleteAuto(auto)
+                remainingRanges.forEach { range ->
+                    save(
+                        NightStudyEntity(
+                            name = auto.name,
+                            description = auto.description,
+                            period = auto.period,
+                            startAt = range.startAt,
+                            endAt = range.endAt,
+                            needPhone = auto.needPhone,
+                            needPhoneReason = auto.needPhoneReason,
+                            status = auto.status,
+                            type = NightStudyType.AUTO,
+                            sourceProject = auto.sourceProject,
+                        ),
+                        userId,
+                        null,
+                    )
+                }
+            }
+        }
     }
 
     private fun findUncoveredRanges(
