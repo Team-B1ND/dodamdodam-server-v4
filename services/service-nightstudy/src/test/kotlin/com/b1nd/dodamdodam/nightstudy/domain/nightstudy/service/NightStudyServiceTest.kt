@@ -37,7 +37,7 @@ class NightStudyServiceTest {
         val publicId = UUID.randomUUID()
         val memberId = UUID.randomUUID()
         val project = projectNightStudy(period = 1)
-        `when`(nightStudyQueryRepository.findByPublicId(publicId)).thenReturn(project)
+        `when`(nightStudyRepository.findByPublicIdForUpdate(publicId)).thenReturn(project)
         `when`(nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(project))
             .thenReturn(listOf(memberId, memberId))
         `when`(
@@ -77,7 +77,7 @@ class NightStudyServiceTest {
         val publicId = UUID.randomUUID()
         val memberId = UUID.randomUUID()
         val project = projectNightStudy(period = 2)
-        `when`(nightStudyQueryRepository.findByPublicId(publicId)).thenReturn(project)
+        `when`(nightStudyRepository.findByPublicIdForUpdate(publicId)).thenReturn(project)
         `when`(nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(project)).thenReturn(listOf(memberId))
         `when`(
             nightStudyQueryRepository.existsByUserIdAndPeriodOverlap(
@@ -102,13 +102,20 @@ class NightStudyServiceTest {
         verify(nightStudyRepository, never()).save(org.mockito.ArgumentMatchers.any())
     }
 
-    private fun projectNightStudy(period: Int) = NightStudyEntity(
-        name = "프로젝트",
-        description = "프로젝트 심자",
-        period = period,
-        startAt = LocalDate.of(2026, 8, 18),
-        endAt = LocalDate.of(2026, 8, 21),
-        needPhone = false,
-        type = NightStudyType.PROJECT,
-    )
+    private fun projectNightStudy(period: Int): NightStudyEntity {
+        val project = NightStudyEntity(
+            name = "프로젝트",
+            description = "프로젝트 심자",
+            period = period,
+            startAt = LocalDate.of(2026, 8, 18),
+            endAt = LocalDate.of(2026, 8, 21),
+            needPhone = false,
+            type = NightStudyType.PROJECT,
+        )
+        NightStudyEntity::class.java.getDeclaredField("id").apply {
+            isAccessible = true
+            set(project, 1L)
+        }
+        return project
+    }
 }

@@ -117,7 +117,7 @@ class NightStudyService(
     }
 
     fun allow(publicId: UUID) {
-        val ns = getByPublicId(publicId)
+        val ns = nightStudyRepository.findByPublicIdForUpdate(publicId) ?: throw NightStudyNotFoundException()
         val wasAlreadyAllowed = ns.status == NightStudyStatusType.ALLOWED
         val memberIds = nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(ns).distinct()
 
