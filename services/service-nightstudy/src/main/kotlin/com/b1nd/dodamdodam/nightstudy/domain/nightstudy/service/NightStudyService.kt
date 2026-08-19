@@ -137,34 +137,22 @@ class NightStudyService(
             val autoPeriod = if (ns.period == 1) 2 else 1
             val sourceAutosByUserId = getSourceAutosByUserId(ns)
             memberIds.forEach { memberId ->
-                val hasPersonal = nightStudyQueryRepository.existsByUserIdAndPeriodOverlap(
-                    memberId, autoPeriod, NightStudyType.PERSONAL, ns.startAt, ns.endAt
-                )
-                if (hasPersonal) return@forEach
-
                 val sourceAutos = sourceAutosByUserId[memberId].orEmpty()
-                if (sourceAutos.isNotEmpty()) {
-                    sourceAutos.forEach { it.pending() }
-                    return@forEach
-                }
-
-                val hasAuto = nightStudyQueryRepository.existsByUserIdAndPeriodOverlap(
-                    memberId, autoPeriod, NightStudyType.AUTO, ns.startAt, ns.endAt
-                )
-                if (hasAuto) return@forEach
-
-                val nightStudy = NightStudyEntity(
-                    description = ns.description,
+                val sourceAutoIds = sourceAutos.mapNotNullTo(mutableSetOf()) { it.id }
+                val coveredNightStudies = nightStudyQueryRepository.findActiveByUserIdAndPeriodAndTypesOverlap(
+                    userId = memberId,
                     period = autoPeriod,
-                    type = NightStudyType.AUTO,
+                    types = AUTO_COVERAGE_TYPES,
                     startAt = ns.startAt,
                     endAt = ns.endAt,
-                    status = NightStudyStatusType.PENDING,
-                    needPhone = false,
-                    sourceProject = ns,
+                    excludeNightStudyIds = sourceAutoIds,
                 )
-
-                save(nightStudy, memberId, null)
+                val uncoveredRanges = findUncoveredRanges(
+                    startAt = ns.startAt,
+                    endAt = ns.endAt,
+                    coveredRanges = coveredNightStudies.map { DateRange(it.startAt, it.endAt) },
+                )
+                syncSourceAutos(ns, memberId, autoPeriod, sourceAutos, uncoveredRanges)
             }
         }
     }
@@ -231,10 +219,79 @@ class NightStudyService(
     }
 
     private fun deleteSourceAutos(sourceProject: NightStudyEntity) {
-        nightStudyRepository.findAllBySourceProject(sourceProject).forEach { auto ->
-            nightStudyMemberRepository.deleteAllByNightStudy(auto)
-            nightStudyRepository.delete(auto)
+        nightStudyRepository.findAllBySourceProject(sourceProject).forEach(::deleteAuto)
+    }
+
+    private fun syncSourceAutos(
+        sourceProject: NightStudyEntity,
+        userId: UUID,
+        period: Int,
+        sourceAutos: List<NightStudyEntity>,
+        desiredRanges: List<DateRange>,
+    ) {
+        val remainingAutos = sourceAutos.toMutableList()
+
+        desiredRanges.forEach { range ->
+            val existingAuto = remainingAutos.firstOrNull {
+                it.startAt == range.startAt && it.endAt == range.endAt
+            }
+            if (existingAuto != null) {
+                existingAuto.pending()
+                remainingAutos.remove(existingAuto)
+            } else {
+                save(
+                    NightStudyEntity(
+                        description = sourceProject.description,
+                        period = period,
+                        type = NightStudyType.AUTO,
+                        startAt = range.startAt,
+                        endAt = range.endAt,
+                        status = NightStudyStatusType.PENDING,
+                        needPhone = false,
+                        sourceProject = sourceProject,
+                    ),
+                    userId,
+                    null,
+                )
+            }
         }
+
+        remainingAutos.forEach(::deleteAuto)
+    }
+
+    private fun deleteAuto(auto: NightStudyEntity) {
+        nightStudyMemberRepository.deleteAllByNightStudy(auto)
+        nightStudyRepository.delete(auto)
+    }
+
+    private fun findUncoveredRanges(
+        startAt: LocalDate,
+        endAt: LocalDate,
+        coveredRanges: List<DateRange>,
+    ): List<DateRange> {
+        if (startAt.isAfter(endAt)) return emptyList()
+
+        val result = mutableListOf<DateRange>()
+        var cursor = startAt
+
+        coveredRanges.sortedBy { it.startAt }.forEach { covered ->
+            val coveredStart = maxOf(covered.startAt, startAt)
+            val coveredEnd = minOf(covered.endAt, endAt)
+            if (coveredEnd.isBefore(cursor) || coveredStart.isAfter(endAt)) return@forEach
+
+            if (coveredStart.isAfter(cursor)) {
+                result += DateRange(cursor, coveredStart.minusDays(1))
+            }
+
+            if (!coveredEnd.isBefore(cursor)) {
+                cursor = coveredEnd.plusDays(1)
+            }
+        }
+
+        if (!cursor.isAfter(endAt)) {
+            result += DateRange(cursor, endAt)
+        }
+        return result
     }
 
     private fun hasAllowedPeriodOverlap(
@@ -261,5 +318,8 @@ class NightStudyService(
 
     companion object {
         private const val SOURCE_PROJECT_REJECTED_REASON = "프로젝트 심자 상태 변경으로 인한 자동 거절"
+        private val AUTO_COVERAGE_TYPES = setOf(NightStudyType.PERSONAL, NightStudyType.AUTO)
     }
+
+    private data class DateRange(val startAt: LocalDate, val endAt: LocalDate)
 }

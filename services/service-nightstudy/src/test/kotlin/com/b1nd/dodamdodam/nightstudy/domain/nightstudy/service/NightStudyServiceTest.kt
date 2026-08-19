@@ -10,6 +10,7 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudyMem
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudyMember.NightStudyMemberRepository
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentCaptor
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
@@ -37,37 +38,31 @@ class NightStudyServiceTest {
         val publicId = UUID.randomUUID()
         val memberId = UUID.randomUUID()
         val project = projectNightStudy(period = 1)
+        val existingAuto = autoNightStudy(null, NightStudyStatusType.PENDING)
         `when`(nightStudyRepository.findByPublicIdForUpdate(publicId)).thenReturn(project)
         `when`(nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(project))
             .thenReturn(listOf(memberId, memberId))
         `when`(
-            nightStudyQueryRepository.existsByUserIdAndPeriodOverlap(
+            nightStudyQueryRepository.findActiveByUserIdAndPeriodAndTypesOverlap(
                 memberId,
                 2,
-                NightStudyType.PERSONAL,
+                setOf(NightStudyType.PERSONAL, NightStudyType.AUTO),
                 project.startAt,
                 project.endAt,
+                emptySet(),
             )
-        ).thenReturn(false)
-        `when`(
-            nightStudyQueryRepository.existsByUserIdAndPeriodOverlap(
-                memberId,
-                2,
-                NightStudyType.AUTO,
-                project.startAt,
-                project.endAt,
-            )
-        ).thenReturn(true)
+        ).thenReturn(listOf(existingAuto))
 
         service.allow(publicId)
 
         assertEquals(NightStudyStatusType.ALLOWED, project.status)
-        verify(nightStudyQueryRepository, times(1)).existsByUserIdAndPeriodOverlap(
+        verify(nightStudyQueryRepository, times(1)).findActiveByUserIdAndPeriodAndTypesOverlap(
             memberId,
             2,
-            NightStudyType.AUTO,
+            setOf(NightStudyType.PERSONAL, NightStudyType.AUTO),
             project.startAt,
             project.endAt,
+            emptySet(),
         )
         verify(nightStudyRepository, never()).save(org.mockito.ArgumentMatchers.any())
     }
@@ -77,27 +72,30 @@ class NightStudyServiceTest {
         val publicId = UUID.randomUUID()
         val memberId = UUID.randomUUID()
         val project = projectNightStudy(period = 2)
+        val personal = personalNightStudy(period = 1, startAt = project.startAt, endAt = project.endAt)
         `when`(nightStudyRepository.findByPublicIdForUpdate(publicId)).thenReturn(project)
         `when`(nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(project)).thenReturn(listOf(memberId))
         `when`(
-            nightStudyQueryRepository.existsByUserIdAndPeriodOverlap(
+            nightStudyQueryRepository.findActiveByUserIdAndPeriodAndTypesOverlap(
                 memberId,
                 1,
-                NightStudyType.PERSONAL,
+                setOf(NightStudyType.PERSONAL, NightStudyType.AUTO),
                 project.startAt,
                 project.endAt,
+                emptySet(),
             )
-        ).thenReturn(true)
+        ).thenReturn(listOf(personal))
 
         service.allow(publicId)
 
         assertEquals(NightStudyStatusType.ALLOWED, project.status)
-        verify(nightStudyQueryRepository).existsByUserIdAndPeriodOverlap(
+        verify(nightStudyQueryRepository).findActiveByUserIdAndPeriodAndTypesOverlap(
             memberId,
             1,
-            NightStudyType.PERSONAL,
+            setOf(NightStudyType.PERSONAL, NightStudyType.AUTO),
             project.startAt,
             project.endAt,
+            emptySet(),
         )
         verify(nightStudyRepository, never()).save(org.mockito.ArgumentMatchers.any())
     }
@@ -113,12 +111,64 @@ class NightStudyServiceTest {
         `when`(nightStudyRepository.findAllBySourceProject(project)).thenReturn(listOf(auto))
         `when`(nightStudyMemberQueryRepository.findAllMemberUserIdsByNightStudies(listOf(auto)))
             .thenReturn(mapOf(auto.id!! to listOf(memberId)))
+        `when`(
+            nightStudyQueryRepository.findActiveByUserIdAndPeriodAndTypesOverlap(
+                memberId,
+                2,
+                setOf(NightStudyType.PERSONAL, NightStudyType.AUTO),
+                project.startAt,
+                project.endAt,
+                setOf(auto.id!!),
+            )
+        ).thenReturn(emptyList())
 
         service.allow(publicId)
 
         assertEquals(NightStudyStatusType.ALLOWED, project.status)
         assertEquals(NightStudyStatusType.PENDING, auto.status)
         verify(nightStudyRepository, never()).save(org.mockito.ArgumentMatchers.any())
+    }
+
+    @Test
+    fun `개인 심자가 일부 날짜에만 있으면 비어 있는 기간별로 자동 심자를 생성한다`() {
+        val publicId = UUID.randomUUID()
+        val memberId = UUID.randomUUID()
+        val project = projectNightStudy(period = 1)
+        val personal = personalNightStudy(
+            period = 2,
+            startAt = LocalDate.of(2026, 8, 20),
+            endAt = LocalDate.of(2026, 8, 20),
+        )
+        `when`(nightStudyRepository.findByPublicIdForUpdate(publicId)).thenReturn(project)
+        `when`(nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(project)).thenReturn(listOf(memberId))
+        `when`(
+            nightStudyQueryRepository.findActiveByUserIdAndPeriodAndTypesOverlap(
+                memberId,
+                2,
+                setOf(NightStudyType.PERSONAL, NightStudyType.AUTO),
+                project.startAt,
+                project.endAt,
+                emptySet(),
+            )
+        ).thenReturn(listOf(personal))
+        `when`(nightStudyRepository.save(org.mockito.ArgumentMatchers.any(NightStudyEntity::class.java)))
+            .thenAnswer { it.getArgument(0) }
+
+        service.allow(publicId)
+
+        val captor = ArgumentCaptor.forClass(NightStudyEntity::class.java)
+        verify(nightStudyRepository, times(2)).save(captor.capture())
+        assertEquals(
+            listOf(
+                LocalDate.of(2026, 8, 18) to LocalDate.of(2026, 8, 19),
+                LocalDate.of(2026, 8, 21) to LocalDate.of(2026, 8, 21),
+            ),
+            captor.allValues.map { it.startAt to it.endAt },
+        )
+        captor.allValues.forEach {
+            assertEquals(NightStudyType.AUTO, it.type)
+            assertEquals(project, it.sourceProject)
+        }
     }
 
     @Test
@@ -186,14 +236,14 @@ class NightStudyServiceTest {
     }
 
     private fun autoNightStudy(
-        sourceProject: NightStudyEntity,
+        sourceProject: NightStudyEntity?,
         status: NightStudyStatusType,
     ): NightStudyEntity {
         val auto = NightStudyEntity(
             description = "자동 심자",
-            period = if (sourceProject.period == 1) 2 else 1,
-            startAt = sourceProject.startAt,
-            endAt = sourceProject.endAt,
+            period = if (sourceProject?.period == 2) 1 else 2,
+            startAt = sourceProject?.startAt ?: LocalDate.of(2026, 8, 18),
+            endAt = sourceProject?.endAt ?: LocalDate.of(2026, 8, 21),
             needPhone = false,
             status = status,
             type = NightStudyType.AUTO,
@@ -205,4 +255,18 @@ class NightStudyServiceTest {
         }
         return auto
     }
+
+    private fun personalNightStudy(
+        period: Int,
+        startAt: LocalDate,
+        endAt: LocalDate,
+    ) = NightStudyEntity(
+        description = "개인 심자",
+        period = period,
+        startAt = startAt,
+        endAt = endAt,
+        needPhone = false,
+        status = NightStudyStatusType.PENDING,
+        type = NightStudyType.PERSONAL,
+    )
 }
