@@ -1,5 +1,7 @@
 package com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response
 
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
+
 data class NightStudyTotalCountResponse(
     val floors: List<FloorCount>,
     val grades: List<GradeCount>,
@@ -16,37 +18,32 @@ data class NightStudyTotalCountResponse(
     )
 
     data class PeriodCount(
-        val period1: GenderCount,
-        val period2: GenderCount,
+        val period1: TypeCount,
+        val period2: TypeCount,
     )
 
-    data class GenderCount(
-        val male: Int,
-        val female: Int,
+    data class TypeCount(
+        val personal: Int,
+        val project: Int,
     )
 
     data class MemberCount(
         val floor: Int,
         val grade: Int,
         val period: Int,
-        val gender: Gender,
+        val type: NightStudyType,
     )
-
-    enum class Gender {
-        MALE,
-        FEMALE,
-    }
 
     companion object {
         fun of(members: List<MemberCount>): NightStudyTotalCountResponse {
-            fun genderCount(filtered: List<MemberCount>, period: Int) = GenderCount(
-                male = filtered.count { it.period == period && it.gender == Gender.MALE },
-                female = filtered.count { it.period == period && it.gender == Gender.FEMALE },
+            fun typeCount(filtered: List<MemberCount>, period: Int) = TypeCount(
+                personal = filtered.count { it.period == period && it.type == NightStudyType.PERSONAL },
+                project = filtered.count { it.period == period && it.type == NightStudyType.PROJECT },
             )
 
             fun periodCount(filtered: List<MemberCount>) = PeriodCount(
-                period1 = genderCount(filtered, 1),
-                period2 = genderCount(filtered, 2),
+                period1 = typeCount(filtered, 1),
+                period2 = typeCount(filtered, 2),
             )
 
             val floors = listOf(2, 3).map { floor ->

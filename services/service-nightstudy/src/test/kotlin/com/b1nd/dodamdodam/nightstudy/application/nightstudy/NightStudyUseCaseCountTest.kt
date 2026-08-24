@@ -52,14 +52,14 @@ class NightStudyUseCaseCountTest {
 
         val result = useCase.countTotalMembers().data!!
 
-        assertEquals(1, result.total.period1.male)
-        assertEquals(1, result.total.period2.male)
-        assertEquals(0, result.total.period1.female)
-        assertEquals(0, result.total.period2.female)
-        assertEquals(1, result.floors.single { it.floor == 3 }.count.period1.male)
-        assertEquals(1, result.floors.single { it.floor == 2 }.count.period2.male)
-        assertEquals(1, result.grades.single { it.grade == 1 }.count.period1.male)
-        assertEquals(1, result.grades.single { it.grade == 1 }.count.period2.male)
+        assertEquals(1, result.total.period1.project)
+        assertEquals(0, result.total.period1.personal)
+        assertEquals(0, result.total.period2.project)
+        assertEquals(1, result.total.period2.personal)
+        assertEquals(1, result.floors.single { it.floor == 3 }.count.period1.project)
+        assertEquals(1, result.floors.single { it.floor == 2 }.count.period2.personal)
+        assertEquals(1, result.grades.single { it.grade == 1 }.count.period1.project)
+        assertEquals(1, result.grades.single { it.grade == 1 }.count.period2.personal)
     }
 
     private fun nightStudy(

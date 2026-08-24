@@ -214,7 +214,7 @@ class NightStudyUseCase(
                     floor = resolveFloor(selected.nightStudy, user),
                     grade = grade,
                     period = selected.period,
-                    gender = NightStudyTotalCountResponse.Gender.MALE,
+                    type = selected.nightStudy.type,
                 )
             }
 
