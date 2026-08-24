@@ -145,6 +145,32 @@ class NightStudyQueryRepositoryImpl(
             .fetchFirst() != null
     }
 
+    override fun findActiveByUserIdAndPeriodAndTypesOverlap(
+        userId: UUID,
+        period: Int,
+        types: Set<NightStudyType>,
+        startAt: LocalDate,
+        endAt: LocalDate,
+        excludeNightStudyIds: Set<Long>,
+    ): List<NightStudyEntity> {
+        if (types.isEmpty()) return emptyList()
+
+        return queryFactory.select(nightStudyEntity)
+            .from(nightStudyMemberEntity)
+            .join(nightStudyMemberEntity.nightStudy, nightStudyEntity)
+            .where(
+                nightStudyMemberEntity.userId.eq(userId),
+                nightStudyEntity.period.eq(period),
+                nightStudyEntity.type.`in`(types),
+                nightStudyEntity.startAt.loe(endAt),
+                nightStudyEntity.endAt.goe(startAt),
+                nightStudyEntity.status.`in`(NightStudyStatusType.PENDING, NightStudyStatusType.ALLOWED),
+                excludeNightStudyIds.takeIf { it.isNotEmpty() }?.let { nightStudyEntity.id.notIn(it) },
+            )
+            .distinct()
+            .fetch()
+    }
+
     override fun existsAllowedByUserIdAndPeriodOverlap(
         userId: UUID,
         period: Int,
