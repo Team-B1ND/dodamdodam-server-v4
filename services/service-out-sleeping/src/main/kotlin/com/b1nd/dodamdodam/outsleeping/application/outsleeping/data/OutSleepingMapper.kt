@@ -39,6 +39,7 @@ fun OutSleepingEntity.toResponse(userInfo: UserResponse?) = OutSleepingResponse(
     publicId = publicId!!,
     reason = reason,
     status = status,
+    statusType = statusType,
     student = userInfo?.student?.toStudentResponse(userInfo.name),
     startAt = startAt,
     endAt = endAt,
@@ -48,6 +49,7 @@ fun OutSleepingEntity.toMyResponse() = MyOutSleepingResponse(
     publicId = publicId!!,
     reason = reason,
     status = status,
+    statusType = statusType,
     startAt = startAt,
     endAt = endAt,
 )
