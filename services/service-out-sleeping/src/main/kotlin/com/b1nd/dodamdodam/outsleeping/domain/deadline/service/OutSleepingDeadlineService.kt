@@ -2,6 +2,7 @@ package com.b1nd.dodamdodam.outsleeping.domain.deadline.service
 
 import com.b1nd.dodamdodam.outsleeping.domain.deadline.entity.OutSleepingDeadlineEntity
 import com.b1nd.dodamdodam.outsleeping.domain.deadline.repository.OutSleepingDeadlineRepository
+import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.enumeration.OutSleepingStatusType
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingDeadlineExceededException
 import org.springframework.stereotype.Service
 import java.time.DayOfWeek
@@ -32,13 +33,14 @@ class OutSleepingDeadlineService(
         )
     }
 
-    fun validateDeadline() {
-        val deadline = deadlineRepository.findAll().firstOrNull() ?: return
+    fun validateDeadline(): OutSleepingStatusType {
+        val deadline = deadlineRepository.findAll().firstOrNull() ?: return OutSleepingStatusType.NORMAL
 
         val now = LocalDateTime.now()
         if (!isWithinRange(now.dayOfWeek, now.toLocalTime(), deadline)) {
-            throw OutSleepingDeadlineExceededException()
+            return OutSleepingStatusType.LATE
         }
+        return OutSleepingStatusType.NORMAL
     }
 
     private fun isWithinRange(

@@ -10,6 +10,7 @@ import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.response.Out
 import com.b1nd.dodamdodam.outsleeping.application.outsleeping.data.response.StudentResponse
 import com.b1nd.dodamdodam.outsleeping.domain.deadline.entity.OutSleepingDeadlineEntity
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.entity.OutSleepingEntity
+import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.enumeration.OutSleepingStatusType
 import java.util.UUID
 
 
@@ -26,11 +27,12 @@ fun List<OutSleepingEntity>.toGetOutSleepings(): GetOutSleepingResponse =
         .addAllOutSleepings(map { it.toGrpcResponse() })
         .build()
 
-fun ApplyOutSleepingRequest.toEntity(userId: UUID) = OutSleepingEntity(
+fun ApplyOutSleepingRequest.toEntity(userId: UUID, type: OutSleepingStatusType) = OutSleepingEntity(
     userId = userId,
     reason = reason,
     startAt = startAt,
     endAt = endAt,
+    statusType = type
 )
 
 fun OutSleepingEntity.toResponse(userInfo: UserResponse?) = OutSleepingResponse(
