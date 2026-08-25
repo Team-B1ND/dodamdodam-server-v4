@@ -214,7 +214,7 @@ class NightStudyUseCase(
                     floor = resolveFloor(selected.nightStudy, user),
                     grade = grade,
                     period = selected.period,
-                    gender = NightStudyTotalCountResponse.Gender.MALE,
+                    type = selected.nightStudy.type,
                 )
             }
 
@@ -333,8 +333,9 @@ class NightStudyUseCase(
     }
 
     private fun validateApplicationAvailability(stratAt: LocalDate, period: Int) {
-        val now = LocalDateTime.now()
-        val deadline = LocalDate.now(ZoneId.of("Asia/Seoul")).atTime(20, 30)
+        val zone = ZoneId.of("Asia/Seoul")
+        val now = LocalDateTime.now(zone)
+        val deadline = LocalDate.now(zone).atTime(20, 30)
         if (now.isAfter(deadline))
             throw BasicException(NightStudyExceptionCode.NOT_APPLICATION_TIME)
         if (stratAt.isBefore(now.toLocalDate()))

@@ -50,6 +50,10 @@ class NightStudyEntity (
     var type: NightStudyType,
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fk_source_project_id")
+    var sourceProject: NightStudyEntity? = null,
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_wish_room_id")
     var wishRoom: ProjectRoomEntity? = null,
 ): BaseTimeEntity() {
