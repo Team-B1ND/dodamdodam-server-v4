@@ -16,7 +16,7 @@ permissions:
 
 concurrency:
   group: develop-deployment
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   detect:
