@@ -42,6 +42,10 @@ class NightStudyUseCase(
     private val outSleepingClient: OutSleepingClient
 ) {
 
+    companion object {
+        private const val DEFAULT_FLOOR = 2
+    }
+
     fun applyPersonalNightStudy(request: PersonalNightStudyApplyRequest): Response<Any> {
         val userId = PassportHolder.current().requireUserId()
         validateApplicationAvailability(request.startAt, request.period)
@@ -235,11 +239,11 @@ class NightStudyUseCase(
 
     private fun resolveFloor(nightStudy: NightStudyEntity, user: UserResponse?): Int =
         if (nightStudy.type == NightStudyType.PROJECT) {
-            if (nightStudy.room?.name == "LAB13") 3 else 2
+            nightStudy.room?.floor ?: DEFAULT_FLOOR
         } else {
             val grade = user?.student?.grade
             val classNo = user?.student?.room
-            if (grade == 2 || (grade == 1 && classNo == 4)) 3 else 2
+            if (grade == 2 || (grade == 1 && classNo == 4)) 3 else DEFAULT_FLOOR
         }
 
     fun unassignRoom(id: UUID): Response<Any> {

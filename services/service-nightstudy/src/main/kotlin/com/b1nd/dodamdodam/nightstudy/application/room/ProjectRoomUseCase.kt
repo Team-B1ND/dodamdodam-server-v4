@@ -77,7 +77,7 @@ class ProjectRoomUseCase(
     }
 
     fun update(id: Long, request: SaveProjectRoomRequest): Response<Any> {
-        projectRoomService.update(id, request.name)
+        projectRoomService.update(id, request.name, request.floor)
         return Response.ok("방 정보를 수정했어요.")
     }
 

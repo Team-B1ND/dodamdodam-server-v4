@@ -13,12 +13,16 @@ import jakarta.persistence.Table
 class ProjectRoomEntity(
     @Column(length = 100, nullable = false, unique = true)
     var name: String,
+
+    @Column(nullable = false)
+    var floor: Int,
 ) : BaseTimeEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null
 
-    fun update(name: String) {
+    fun update(name: String, floor: Int) {
         this.name = name
+        this.floor = floor
     }
 }
