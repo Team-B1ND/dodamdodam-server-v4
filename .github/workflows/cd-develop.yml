@@ -23,7 +23,10 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       services: ${{ steps.changes.outputs.services }}
+      spring_services: ${{ steps.changes.outputs.spring_services }}
       has_services: ${{ steps.changes.outputs.has_services }}
+      has_spring: ${{ steps.changes.outputs.has_spring }}
+      has_notification: ${{ steps.changes.outputs.has_notification }}
       should_deploy: ${{ steps.changes.outputs.should_deploy }}
     steps:
       - name: Checkout full history
@@ -39,31 +42,21 @@ jobs:
           FORCE_ALL: ${{ github.event_name == 'workflow_dispatch' && inputs.build_all || false }}
         run: bash .github/scripts/develop/detect-changes.sh
 
-  build-and-publish:
+  build-spring:
     needs: detect
-    if: needs.detect.outputs.has_services == 'true'
-    environment: development
+    if: needs.detect.outputs.has_spring == 'true'
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      max-parallel: 2
-      matrix:
-        service: ${{ fromJSON(needs.detect.outputs.services) }}
-    env:
-      IMAGE_PREFIX: ${{ secrets.DOCKERHUB_USERNAME }}/dodam
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up JDK 21
-        if: matrix.service != 'notification'
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: temurin
 
       - name: Cache Gradle
-        if: matrix.service != 'notification'
         uses: actions/cache@v4
         with:
           path: |
@@ -72,31 +65,54 @@ jobs:
           key: ${{ runner.os }}-gradle-develop-${{ hashFiles('**/*.gradle.kts', 'gradle/libs.versions.toml') }}
           restore-keys: ${{ runner.os }}-gradle-
 
-      - name: Build Spring service
-        if: matrix.service != 'notification'
+      - name: Build Spring services once
         env:
-          SERVICE: ${{ matrix.service }}
-        run: bash .github/scripts/production/build/spring.sh
+          SERVICES_JSON: ${{ needs.detect.outputs.spring_services }}
+        run: bash .github/scripts/develop/build-spring.sh
 
-      - name: Set up Node.js
-        if: matrix.service == 'notification'
-        uses: actions/setup-node@v4
+      - name: Upload Spring JARs
+        uses: actions/upload-artifact@v4
         with:
-          node-version: '20'
-          cache: npm
-          cache-dependency-path: services/service-notification/package-lock.json
+          name: develop-spring-jars-${{ github.sha }}
+          path: build/develop-spring-jars/
+          retention-days: 1
+          if-no-files-found: error
 
-      - name: Build notification service
-        if: matrix.service == 'notification'
-        run: bash .github/scripts/production/build/notification.sh
+  publish-spring:
+    needs: [detect, build-spring]
+    if: needs.detect.outputs.has_spring == 'true'
+    environment: development
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        service: ${{ fromJSON(needs.detect.outputs.spring_services) }}
+    env:
+      IMAGE_PREFIX: ${{ secrets.DOCKERHUB_USERNAME }}/dodam
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Download Spring JARs
+        uses: actions/download-artifact@v4
+        with:
+          name: develop-spring-jars-${{ github.sha }}
+          path: build/develop-spring-jars
+
+      - name: Prepare Docker build context
+        run: |
+          mkdir -p "services/service-${{ matrix.service }}/build/libs"
+          cp "build/develop-spring-jars/service-${{ matrix.service }}.jar" \
+            "services/service-${{ matrix.service }}/build/libs/service-${{ matrix.service }}.jar"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
           platforms: linux/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -106,13 +122,11 @@ jobs:
 
       - name: Resolve Spring Dockerfile
         id: dockerfile
-        if: matrix.service != 'notification'
         env:
           SERVICE: ${{ matrix.service }}
         run: bash .github/scripts/production/build/resolve-dockerfile.sh
 
       - name: Build and publish Spring image
-        if: matrix.service != 'notification'
         uses: docker/build-push-action@v6
         with:
           context: services/service-${{ matrix.service }}/build/libs
@@ -124,8 +138,42 @@ jobs:
             ${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:dev-${{ github.sha }}
           build-args: JAR_FILE=service-${{ matrix.service }}.jar
 
+  publish-notification:
+    needs: detect
+    if: needs.detect.outputs.has_notification == 'true'
+    environment: development
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_PREFIX: ${{ secrets.DOCKERHUB_USERNAME }}/dodam
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: services/service-notification/package-lock.json
+
+      - name: Build notification service
+        run: bash .github/scripts/production/build/notification.sh
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Build and publish notification image
-        if: matrix.service == 'notification'
         uses: docker/build-push-action@v6
         with:
           context: services/service-notification
@@ -137,8 +185,13 @@ jobs:
             ${{ env.IMAGE_PREFIX }}-notification:dev-${{ github.sha }}
 
   deploy:
-    needs: [detect, build-and-publish]
-    if: always() && needs.detect.outputs.should_deploy == 'true' && (needs.build-and-publish.result == 'success' || needs.build-and-publish.result == 'skipped')
+    needs: [detect, build-spring, publish-spring, publish-notification]
+    if: >-
+      always() &&
+      needs.detect.outputs.should_deploy == 'true' &&
+      (needs.build-spring.result == 'success' || needs.build-spring.result == 'skipped') &&
+      (needs.publish-spring.result == 'success' || needs.publish-spring.result == 'skipped') &&
+      (needs.publish-notification.result == 'success' || needs.publish-notification.result == 'skipped')
     environment: development
     runs-on: ubuntu-latest
     steps:
