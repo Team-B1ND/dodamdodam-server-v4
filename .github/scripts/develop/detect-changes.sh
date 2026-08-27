@@ -38,13 +38,33 @@ if [ "${#services[@]}" -gt 0 ]; then
   has_services=true
 fi
 
+spring_services=()
+has_notification=false
+for service in "${services[@]}"; do
+  if [ "${service}" = notification ]; then
+    has_notification=true
+  else
+    spring_services+=("${service}")
+  fi
+done
+
+spring_services_json='[]'
+has_spring=false
+if [ "${#spring_services[@]}" -gt 0 ]; then
+  spring_services_json=$(printf '%s\n' "${spring_services[@]}" | jq -Rsc 'split("\n") | map(select(length > 0))')
+  has_spring=true
+fi
+
 should_deploy=$has_services
 if printf '%s\n' "$changed_files" | grep -Eq '^builds/develop/'; then
   should_deploy=true
 fi
 
 echo "services=$services_json" >> "$GITHUB_OUTPUT"
+echo "spring_services=$spring_services_json" >> "$GITHUB_OUTPUT"
 echo "has_services=$has_services" >> "$GITHUB_OUTPUT"
+echo "has_spring=$has_spring" >> "$GITHUB_OUTPUT"
+echo "has_notification=$has_notification" >> "$GITHUB_OUTPUT"
 echo "should_deploy=$should_deploy" >> "$GITHUB_OUTPUT"
 echo "Changed services: ${services[*]:-none}"
 echo "Deploy required: $should_deploy"
