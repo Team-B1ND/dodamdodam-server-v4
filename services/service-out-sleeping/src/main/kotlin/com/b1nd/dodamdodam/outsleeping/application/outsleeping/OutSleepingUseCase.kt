@@ -47,7 +47,7 @@ class OutSleepingUseCase(
         val outSleeping = outSleepingService.getByPublicId(publicId)
         outSleepingService.validateOwner(outSleeping, userId)
         outSleepingService.validateDate(request.startAt, request.endAt)
-        outSleeping.update(request.reason, request.startAt, request.endAt, type)
+        outSleeping.update(request.reason, request.startAt, request.endAt, type, request.reasonType)
         return Response.ok("외박 신청이 수정되었어요.")
     }
 

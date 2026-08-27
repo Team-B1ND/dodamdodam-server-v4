@@ -2,6 +2,7 @@ package com.b1nd.dodamdodam.outsleeping.domain.outsleeping.entity
 
 import com.b1nd.dodamdodam.core.common.uuid.UuidV7
 import com.b1nd.dodamdodam.core.jpa.entity.BaseTimeEntity
+import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.enumeration.OutSleepingReasonType
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.enumeration.OutSleepingStatus
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.enumeration.OutSleepingStatusType
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingAlreadyProcessedException
@@ -26,8 +27,8 @@ class OutSleepingEntity(
     @Column(name = "fk_user_id", nullable = false, columnDefinition = "BINARY(16)")
     val userId: UUID,
 
-    @Column(nullable = false)
-    var reason: String,
+    @Column
+    var reason: String?,
 
     @Column(nullable = false)
     var startAt: LocalDate,
@@ -45,6 +46,10 @@ class OutSleepingEntity(
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     var statusType: OutSleepingStatusType,
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    var reasonType: OutSleepingReasonType,
 ) : BaseTimeEntity() {
 
     @Id
@@ -79,12 +84,13 @@ class OutSleepingEntity(
         this.denyReason = null
     }
 
-    fun update(reason: String, startAt: LocalDate, endAt: LocalDate, type: OutSleepingStatusType) {
+    fun update(reason: String?, startAt: LocalDate, endAt: LocalDate, type: OutSleepingStatusType, reasonType: OutSleepingReasonType) {
         validatePending()
         this.reason = reason
         this.startAt = startAt
         this.endAt = endAt
         this.statusType = type
+        this.reasonType = reasonType
     }
 
     private fun validatePending() {
