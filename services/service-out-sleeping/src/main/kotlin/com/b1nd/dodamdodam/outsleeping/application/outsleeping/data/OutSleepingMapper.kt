@@ -32,7 +32,8 @@ fun ApplyOutSleepingRequest.toEntity(userId: UUID, type: OutSleepingStatusType) 
     reason = reason,
     startAt = startAt,
     endAt = endAt,
-    statusType = type
+    statusType = type,
+    reasonType = reasonType
 )
 
 fun OutSleepingEntity.toResponse(userInfo: UserResponse?) = OutSleepingResponse(
@@ -43,6 +44,7 @@ fun OutSleepingEntity.toResponse(userInfo: UserResponse?) = OutSleepingResponse(
     student = userInfo?.student?.toStudentResponse(userInfo.name),
     startAt = startAt,
     endAt = endAt,
+    reasonType = reasonType,
 )
 
 fun OutSleepingEntity.toMyResponse() = MyOutSleepingResponse(
@@ -52,6 +54,7 @@ fun OutSleepingEntity.toMyResponse() = MyOutSleepingResponse(
     statusType = statusType,
     startAt = startAt,
     endAt = endAt,
+    reasonType = reasonType,
 )
 
 fun com.b1nd.dodamdodam.grpc.user.StudentInfo.toStudentResponse(name: String) = StudentResponse(
