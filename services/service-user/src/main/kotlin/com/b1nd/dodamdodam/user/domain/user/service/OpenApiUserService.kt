@@ -78,6 +78,7 @@ class OpenApiUserService(
                 username = user.username,
                 name = user.name,
                 phone = user.phone,
+                gender = user.gender,
                 profileImage = user.profileImage,
                 status = user.status,
                 roles = roles[userId] ?: emptySet(),

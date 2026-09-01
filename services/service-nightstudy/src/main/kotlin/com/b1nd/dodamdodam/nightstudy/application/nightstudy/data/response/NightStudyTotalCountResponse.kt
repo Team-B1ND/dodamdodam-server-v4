@@ -5,6 +5,7 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyTy
 data class NightStudyTotalCountResponse(
     val floors: List<FloorCount>,
     val grades: List<GradeCount>,
+    val genders: List<GenderCount>,
     val total: PeriodCount,
 ) {
     data class FloorCount(
@@ -14,6 +15,11 @@ data class NightStudyTotalCountResponse(
 
     data class GradeCount(
         val grade: Int,
+        val count: PeriodCount,
+    )
+
+    data class GenderCount(
+        val gender: String,
         val count: PeriodCount,
     )
 
@@ -30,6 +36,7 @@ data class NightStudyTotalCountResponse(
     data class MemberCount(
         val floor: Int,
         val grade: Int,
+        val gender: String,
         val period: Int,
         val type: NightStudyType,
     )
@@ -59,9 +66,17 @@ data class NightStudyTotalCountResponse(
                 )
             }
 
+            val genders = listOf("MALE", "FEMALE").map { gender ->
+                GenderCount(
+                    gender = gender,
+                    count = periodCount(members.filter { it.gender == gender }),
+                )
+            }
+
             return NightStudyTotalCountResponse(
                 floors = floors,
                 grades = grades,
+                genders = genders,
                 total = periodCount(members),
             )
         }

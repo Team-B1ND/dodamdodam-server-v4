@@ -1,5 +1,6 @@
 package com.b1nd.dodamdodam.user.application.user.data.request
 
+import com.b1nd.dodamdodam.user.domain.user.enumeration.Gender
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 
@@ -17,5 +18,7 @@ data class StudentRegisterRequest(
     @NotEmpty
     val room: Int,
     @NotEmpty
-    val number: Int
+    val number: Int,
+    @NotEmpty
+    val gender: Gender,
 )

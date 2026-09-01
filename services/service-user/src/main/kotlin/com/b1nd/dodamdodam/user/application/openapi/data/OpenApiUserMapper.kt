@@ -14,6 +14,7 @@ fun UserWithDetails.toUserInfoResponse() = UserInfoResponse(
     username = username,
     name = name,
     phone = phone,
+    gender = gender,
     profileImage = profileImage,
     status = status,
     roles = roles,
@@ -27,6 +28,7 @@ fun UserWithDetails.toGrpcResponse(): UserResponse {
         .setPublicId(publicId.toString())
         .setUsername(username)
         .setName(name)
+        .setGender(gender.name)
         .setStatus(status.name)
         .addAllRoles(roles.map { it.name })
         .setCreatedAt(createdAt.toString())
