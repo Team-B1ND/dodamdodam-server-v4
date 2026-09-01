@@ -44,6 +44,9 @@ class NightStudyUseCase(
 
     companion object {
         private const val DEFAULT_FLOOR = 2
+        private const val MAX_PERIOD = 2
+        private const val MIN_GRADE = 1
+        private const val MAX_GRADE = 3
     }
 
     fun applyPersonalNightStudy(request: PersonalNightStudyApplyRequest): Response<Any> {
@@ -93,7 +96,8 @@ class NightStudyUseCase(
         val allNightStudies = nightStudyService.searchByType(type, userIds, status)
         val nightStudiesWithMembers = getNightStudiesWithMembersAndLeaders(allNightStudies)
 
-        val outSleepingUserIds = fetchOngoingOutSleepingUserIds(nightStudiesWithMembers)
+        val leaderIds = nightStudiesWithMembers.mapNotNull { it.leaderId }.distinct()
+        val outSleepingUserIds = fetchOngoingOutSleepingUserIds(leaderIds)
         val visibleNightStudies = nightStudiesWithMembers.filter { it.leaderId !in outSleepingUserIds }
 
         val usersMap = fetchUsersMap(visibleNightStudies)
@@ -183,59 +187,63 @@ class NightStudyUseCase(
 
     fun countTotalMembers(): Response<NightStudyTotalCountResponse> {
         val nightStudies = nightStudyService.getAllAllowed()
+        val allMembersByNightStudy = nightStudyService.getMembersByNightStudies(nightStudies)
+        val userIds = allMembersByNightStudy.values.flatten().distinct()
 
-        val membersByNightStudy = nightStudyService.getMembersByNightStudies(nightStudies)
-        val userIds = membersByNightStudy.values.flatten()
-            .map { it.toString() }
-            .distinct()
+        val outSleepingUserIds = fetchOngoingOutSleepingUserIds(userIds)
+        val membersByNightStudy = allMembersByNightStudy
+            .mapValues { (_, memberIds) -> memberIds.filterNot { it in outSleepingUserIds } }
+        val userById = fetchUsersById(userIds - outSleepingUserIds)
 
-        val userById = runBlocking { userQueryClient.getUsers(userIds) }.usersList
-            .associateBy { it.publicId }
-
-        val members = nightStudies.flatMap { nightStudy ->
-            val memberIds = membersByNightStudy[nightStudy.id] ?: emptyList()
-
-            memberIds.flatMap { memberId ->
-                periodsIncludedBy(nightStudy.period).map { period ->
-                    CountCandidate(memberId, period, nightStudy)
-                }
-            }
-        }.groupBy { it.userId to it.period }
-            .mapNotNull { (_, candidates) ->
-                val selected = candidates.maxWithOrNull(
-                    compareBy<CountCandidate>(
-                        { it.nightStudy.type == NightStudyType.PROJECT },
-                        { it.nightStudy.period == it.period },
-                    )
-                ) ?: return@mapNotNull null
-                val user = userById[selected.userId.toString()]
-                    ?.takeIf { it.hasStudent() }
-                    ?: return@mapNotNull null
-                val grade = user.student.grade.takeIf { it in 1..3 }
-                    ?: return@mapNotNull null
-
-                NightStudyTotalCountResponse.MemberCount(
-                    floor = resolveFloor(selected.nightStudy, user),
-                    grade = grade,
-                    period = selected.period,
-                    type = selected.nightStudy.type,
-                )
-            }
+        val members = (1..MAX_PERIOD).flatMap { period ->
+            representativesByUser(nightStudies, membersByNightStudy, period)
+                .mapNotNull { (userId, nightStudy) -> resolveMemberCount(userById[userId], nightStudy, period) }
+        }
 
         return Response.ok("심자 인원수를 조회했어요.", NightStudyTotalCountResponse.of(members))
     }
 
-    private fun periodsIncludedBy(period: Int): List<Int> = when (period) {
-        1 -> listOf(1)
-        2 -> listOf(1, 2)
-        else -> emptyList()
+    private fun representativesByUser(
+        nightStudies: List<NightStudyEntity>,
+        membersByNightStudy: Map<Long, List<UUID>>,
+        period: Int
+    ): Map<UUID, NightStudyEntity> {
+        return nightStudies
+            .filter { it.period in period..MAX_PERIOD }
+            .flatMap { nightStudy ->
+                membersByNightStudy[nightStudy.id].orEmpty().map { userId -> userId to nightStudy }
+            }
+            .groupBy({ it.first }, { it.second })
+            .mapValues { (_, covering) -> covering.maxBy { priorityOf(it, period) } }
     }
 
-    private data class CountCandidate(
-        val userId: UUID,
-        val period: Int,
-        val nightStudy: NightStudyEntity,
-    )
+    private fun priorityOf(nightStudy: NightStudyEntity, period: Int): Int =
+        (if (nightStudy.type == NightStudyType.PROJECT) 2 else 0) +
+            (if (nightStudy.period == period) 1 else 0)
+
+    private fun resolveMemberCount(
+        user: UserResponse?,
+        nightStudy: NightStudyEntity,
+        period: Int
+    ): NightStudyTotalCountResponse.MemberCount? {
+        if (user == null || !user.hasStudent()) return null
+        val grade = user.student.grade.takeIf { it in MIN_GRADE..MAX_GRADE } ?: return null
+
+        return NightStudyTotalCountResponse.MemberCount(
+            floor = resolveFloor(nightStudy, user),
+            grade = grade,
+            gender = user.gender,
+            period = period,
+            type = nightStudy.type,
+        )
+    }
+
+    private fun fetchUsersById(userIds: List<UUID>): Map<UUID, UserResponse> {
+        if (userIds.isEmpty()) return emptyMap()
+
+        return runBlocking { userQueryClient.getUsers(userIds.map(UUID::toString)) }
+            .usersList.associateBy { UUID.fromString(it.publicId) }
+    }
 
     private fun resolveFloor(nightStudy: NightStudyEntity, user: UserResponse?): Int =
         if (nightStudy.type == NightStudyType.PROJECT) {
@@ -293,14 +301,11 @@ class NightStudyUseCase(
         }
     }
 
-    private fun fetchOngoingOutSleepingUserIds(
-        nightStudiesWithMembers: List<NightStudyWithMembersCommand>
-    ): Set<UUID> {
-        val leaderIds = nightStudiesWithMembers.mapNotNull { it.leaderId }.distinct()
-        if (leaderIds.isEmpty()) return emptySet()
+    private fun fetchOngoingOutSleepingUserIds(userIds: List<UUID>): Set<UUID> {
+        if (userIds.isEmpty()) return emptySet()
 
         val today = LocalDate.now()
-        return runBlocking { outSleepingClient.getOutSleeping(leaderIds) }
+        return runBlocking { outSleepingClient.getOutSleeping(userIds) }
             .outSleepingsList
             .filter { outSleeping ->
                 outSleeping.status == "ALLOWED" &&
