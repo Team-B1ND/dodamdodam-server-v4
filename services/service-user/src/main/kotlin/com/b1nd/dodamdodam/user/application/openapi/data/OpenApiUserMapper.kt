@@ -14,6 +14,7 @@ fun UserWithDetails.toUserInfoResponse() = UserInfoResponse(
     username = username,
     name = name,
     phone = phone,
+    gender = gender,
     profileImage = profileImage,
     status = status,
     roles = roles,

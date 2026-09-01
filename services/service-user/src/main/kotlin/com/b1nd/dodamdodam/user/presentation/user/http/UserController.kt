@@ -3,29 +3,10 @@ package com.b1nd.dodamdodam.user.presentation.user.http
 import com.b1nd.dodamdodam.core.security.annotation.authentication.UserAccess
 import com.b1nd.dodamdodam.core.security.passport.enumerations.RoleType
 import com.b1nd.dodamdodam.user.application.user.UserUseCase
-import com.b1nd.dodamdodam.user.application.user.data.request.ChangePasswordRequest
-import com.b1nd.dodamdodam.user.application.user.data.request.ConfirmPhoneVerificationRequest
-import com.b1nd.dodamdodam.user.application.user.data.request.EnableUserRequest
-import com.b1nd.dodamdodam.user.application.user.data.request.GraduateStudentRequest
-import com.b1nd.dodamdodam.user.application.user.data.request.GrantAdminRequest
-import com.b1nd.dodamdodam.user.application.user.data.request.DeactivateUserRequest
-import com.b1nd.dodamdodam.user.application.user.data.request.GrantDormitoryManagerRequest
-import com.b1nd.dodamdodam.user.application.user.data.request.RequestPhoneVerificationRequest
-import com.b1nd.dodamdodam.user.application.user.data.request.ResetPasswordRequest
-import com.b1nd.dodamdodam.user.application.user.data.request.StudentRegisterRequest
-import com.b1nd.dodamdodam.user.application.user.data.request.TeacherRegisterRequest
-import com.b1nd.dodamdodam.user.application.user.data.request.UpdateStudentInfoRequest
-import com.b1nd.dodamdodam.user.application.user.data.request.UpdateTeacherInfoRequest
-import com.b1nd.dodamdodam.user.application.user.data.request.UpdateUserInfoRequest
+import com.b1nd.dodamdodam.user.application.user.data.request.*
 import com.b1nd.dodamdodam.user.domain.user.enumeration.StatusType
 import org.springframework.data.domain.Pageable
-import org.springframework.web.bind.annotation.DeleteMapping
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PatchMapping
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 @RestController
 class UserController(
