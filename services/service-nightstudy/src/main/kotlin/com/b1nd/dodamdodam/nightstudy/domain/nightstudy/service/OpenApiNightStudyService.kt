@@ -1,10 +1,12 @@
 package com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service
 
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyAssignmentCommand
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand.Assignment
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand.Attendance
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand.Participation
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand.Participations
-import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand.ProjectRoom
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand.PeriodAssignment
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyAttendanceStatus
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyQueryRepository
@@ -43,27 +45,40 @@ class OpenApiNightStudyService(
         val attended1 = attendedByPeriod[1].orEmpty()
         val attended2 = attendedByPeriod[2].orEmpty()
 
-        val applied1 = nightStudyQueryRepository.findAllowedUserIdsByDateAndPeriod(date, 1).toSet()
-        val applied2 = nightStudyQueryRepository.findAllowedUserIdsByDateAndPeriod(date, 2).toSet()
+        val assigned1 = resolveAssignments(date, 1)
+        val assigned2 = resolveAssignments(date, 2)
 
-        val projectRoom1 = nightStudyQueryRepository.findProjectRoomNamesByDateAndPeriod(date, 1)
-        val projectRoom2 = nightStudyQueryRepository.findProjectRoomNamesByDateAndPeriod(date, 2)
-
-        val values = (applied1 + applied2 + attended1 + attended2).associateWith { userId ->
+        val values = (assigned1.keys + assigned2.keys + attended1 + attended2).associateWith { userId ->
             Participation(
                 attendance = Attendance(
-                    period1 = statusOf(userId, attended1, applied1),
-                    period2 = statusOf(userId, attended2, applied2),
+                    period1 = statusOf(userId, attended1, assigned1.keys),
+                    period2 = statusOf(userId, attended2, assigned2.keys),
                 ),
-                projectRoom = ProjectRoom(
-                    period1 = projectRoom1[userId],
-                    period2 = projectRoom2[userId],
+                assignment = Assignment(
+                    period1 = assigned1[userId],
+                    period2 = assigned2[userId],
                 ),
             )
         }
 
         return Participations(values)
     }
+
+    private fun resolveAssignments(date: LocalDate, period: Int): Map<UUID, PeriodAssignment> =
+        nightStudyQueryRepository.findAllowedAssignmentsByDateAndPeriod(date, period)
+            .groupBy { it.userId }
+            .mapValues { (_, commands) -> select(commands).toPeriodAssignment() }
+
+    private fun select(commands: List<NightStudyAssignmentCommand>): NightStudyAssignmentCommand =
+        commands.firstOrNull { it.type == NightStudyType.PROJECT && it.projectRoomName != null }
+            ?: commands.firstOrNull { it.type == NightStudyType.PERSONAL }
+            ?: commands.first()
+
+    private fun NightStudyAssignmentCommand.toPeriodAssignment() = PeriodAssignment(
+        type = type,
+        projectRoomName = projectRoomName,
+        projectRoomFloor = projectRoomFloor,
+    )
 
     private fun statusOf(userId: UUID, attended: Set<UUID>, applied: Set<UUID>) = when {
         userId in attended -> NightStudyAttendanceStatus.ATTENDANCE

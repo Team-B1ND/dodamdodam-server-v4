@@ -1,9 +1,13 @@
 package com.b1nd.dodamdodam.nightstudy.application.openapi.data
 
+import com.b1nd.dodamdodam.grpc.user.StudentInfo
 import com.b1nd.dodamdodam.grpc.user.UserResponse
 import com.b1nd.dodamdodam.nightstudy.application.openapi.data.response.OpenApiNightStudyResponse
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand.Participation
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand.PeriodAssignment
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
+import com.b1nd.dodamdodam.nightstudy.domain.room.policy.StudyRoomPolicy
 
 fun UserResponse.toStudent(participation: Participation): OpenApiNightStudyResponse.Student? {
     val student = student ?: return null
@@ -16,9 +20,9 @@ fun UserResponse.toStudent(participation: Participation): OpenApiNightStudyRespo
             period1 = participation.attendance.period1,
             period2 = participation.attendance.period2,
         ),
-        projectRoom = OpenApiNightStudyResponse.ProjectRoom(
-            period1 = participation.projectRoom.period1,
-            period2 = participation.projectRoom.period2,
+        studyRoom = OpenApiNightStudyResponse.StudyRoom(
+            period1 = participation.assignment.period1.toRoom(student),
+            period2 = participation.assignment.period2.toRoom(student),
         ),
     )
 }
@@ -49,4 +53,20 @@ fun List<NightStudyWithMembersCommand>.toOpenApiNightStudyResponse(
             )
         }
     }
+}
+
+private fun PeriodAssignment?.toRoom(student: StudentInfo): OpenApiNightStudyResponse.Room? {
+    if (this == null) return null
+
+    if (type == NightStudyType.PROJECT) {
+        val name = projectRoomName ?: return null
+        val floor = projectRoomFloor ?: return null
+        return OpenApiNightStudyResponse.Room(name = name, floor = floor)
+    }
+
+    val name = StudyRoomPolicy.classRoomName(student.grade, student.room) ?: return null
+    return OpenApiNightStudyResponse.Room(
+        name = name,
+        floor = StudyRoomPolicy.classRoomFloor(student.grade, student.room),
+    )
 }

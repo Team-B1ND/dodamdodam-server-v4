@@ -1,8 +1,9 @@
 package com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service
 
-import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand.Participation
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyAssignmentCommand
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand.Attendance
-import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand.ProjectRoom
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand.Participation
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand.PeriodAssignment
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyAttendanceStatus.ABSENT
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyAttendanceStatus.ATTENDANCE
@@ -31,164 +32,106 @@ class OpenApiNightStudyServiceTest {
 
     @Test
     fun `출석 기록이 있으면 해당 차수는 ATTENDANCE다`() {
-        val period1User = UUID.randomUUID()
-        val period2User = UUID.randomUUID()
+        val user = UUID.randomUUID()
         stub(
-            nightStudies = listOf(nightStudy(id = 1L, period = 2)),
-            leaders = mapOf(1L to period1User),
-            members = mapOf(1L to listOf(period1User, period2User)),
-            applied1 = listOf(period1User, period2User),
-            applied2 = listOf(period1User, period2User),
-            attendances = mapOf(1 to setOf(period1User), 2 to setOf(period2User)),
+            assigned1 = listOf(personal(user)),
+            assigned2 = listOf(personal(user)),
+            attendances = mapOf(1 to setOf(user)),
         )
 
-        val participations = service.getActiveNightStudiesByType(NightStudyType.PROJECT, date).single().participations
+        val participations = participations()
 
-        assertEquals(Attendance(ATTENDANCE, ABSENT), participations[period1User].attendance)
-        assertEquals(Attendance(ABSENT, ATTENDANCE), participations[period2User].attendance)
+        assertEquals(Attendance(ATTENDANCE, ABSENT), participations[user].attendance)
     }
 
     @Test
     fun `신청했지만 출석 기록이 없으면 ABSENT다`() {
-        val userId = UUID.randomUUID()
-        stub(
-            nightStudies = listOf(nightStudy(id = 1L, period = 2)),
-            leaders = mapOf(1L to userId),
-            members = mapOf(1L to listOf(userId)),
-            applied1 = listOf(userId),
-            applied2 = listOf(userId),
-            attendances = emptyMap(),
-        )
+        val user = UUID.randomUUID()
+        stub(assigned1 = listOf(personal(user)), assigned2 = listOf(personal(user)))
 
-        val participations = service.getActiveNightStudiesByType(NightStudyType.PROJECT, date).single().participations
-
-        assertEquals(Attendance(ABSENT, ABSENT), participations[userId].attendance)
+        assertEquals(Attendance(ABSENT, ABSENT), participations()[user].attendance)
     }
 
     @Test
     fun `1차만 신청한 학생의 2차는 NOT_APPLIED다`() {
-        val userId = UUID.randomUUID()
-        stub(
-            nightStudies = listOf(nightStudy(id = 1L, period = 1)),
-            leaders = mapOf(1L to userId),
-            members = mapOf(1L to listOf(userId)),
-            applied1 = listOf(userId),
-            applied2 = emptyList(),
-            attendances = mapOf(1 to setOf(userId)),
-        )
+        val user = UUID.randomUUID()
+        stub(assigned1 = listOf(personal(user)), attendances = mapOf(1 to setOf(user)))
 
-        val participations = service.getActiveNightStudiesByType(NightStudyType.PROJECT, date).single().participations
-
-        assertEquals(Attendance(ATTENDANCE, NOT_APPLIED), participations[userId].attendance)
+        assertEquals(Attendance(ATTENDANCE, NOT_APPLIED), participations()[user].attendance)
     }
 
     @Test
     fun `신청하지 않은 학생은 빈 참여 정보를 돌려준다`() {
         val applicant = UUID.randomUUID()
         val outsider = UUID.randomUUID()
-        stub(
-            nightStudies = listOf(nightStudy(id = 1L, period = 1)),
-            leaders = mapOf(1L to applicant),
-            members = mapOf(1L to listOf(applicant)),
-            applied1 = listOf(applicant),
-            applied2 = emptyList(),
-            attendances = emptyMap(),
-        )
+        stub(assigned1 = listOf(personal(applicant)))
 
-        val participations = service.getActiveNightStudiesByType(NightStudyType.PROJECT, date).single().participations
-
-        assertEquals(Participation.NONE, participations[outsider])
+        assertEquals(Participation.NONE, participations()[outsider])
     }
 
     @Test
     fun `신청 기록 없이 출석만 찍힌 학생도 ATTENDANCE로 담는다`() {
         val ghost = UUID.randomUUID()
-        stub(
-            nightStudies = listOf(nightStudy(id = 1L, period = 1)),
-            leaders = emptyMap(),
-            members = emptyMap(),
-            applied1 = emptyList(),
-            applied2 = emptyList(),
-            attendances = mapOf(1 to setOf(ghost)),
-        )
+        stub(attendances = mapOf(1 to setOf(ghost)))
 
-        val participations = service.getActiveNightStudiesByType(NightStudyType.PROJECT, date).single().participations
+        val participation = participations()[ghost]
 
-        assertEquals(Attendance(ATTENDANCE, NOT_APPLIED), participations[ghost].attendance)
+        assertEquals(Attendance(ATTENDANCE, NOT_APPLIED), participation.attendance)
+        assertNull(participation.assignment.period1)
     }
 
     @Test
     fun `1차 2차가 아닌 차수의 출석 기록은 버린다`() {
-        val userId = UUID.randomUUID()
-        stub(
-            nightStudies = listOf(nightStudy(id = 1L, period = 1)),
-            leaders = mapOf(1L to userId),
-            members = mapOf(1L to listOf(userId)),
-            applied1 = listOf(userId),
-            applied2 = emptyList(),
-            attendances = mapOf(3 to setOf(userId)),
-        )
+        val user = UUID.randomUUID()
+        stub(assigned1 = listOf(personal(user)), attendances = mapOf(3 to setOf(user)))
 
-        val participations = service.getActiveNightStudiesByType(NightStudyType.PROJECT, date).single().participations
-
-        assertEquals(Attendance(ABSENT, NOT_APPLIED), participations[userId].attendance)
+        assertEquals(Attendance(ABSENT, NOT_APPLIED), participations()[user].attendance)
     }
 
     @Test
-    fun `배정된 프로젝트실을 차수별로 담는다`() {
-        val userId = UUID.randomUUID()
+    fun `프로젝트실 이름과 층을 차수별로 담는다`() {
+        val user = UUID.randomUUID()
         stub(
-            nightStudies = listOf(nightStudy(id = 1L, period = 2)),
-            leaders = mapOf(1L to userId),
-            members = mapOf(1L to listOf(userId)),
-            applied1 = listOf(userId),
-            applied2 = listOf(userId),
-            attendances = emptyMap(),
-            projectRoom1 = mapOf(userId to "정보관 301"),
-            projectRoom2 = mapOf(userId to "정보관 302"),
+            assigned1 = listOf(project(user, "정보관 301", 3)),
+            assigned2 = listOf(project(user, "정보관 302", 2)),
         )
 
-        val participations = service.getActiveNightStudiesByType(NightStudyType.PROJECT, date).single().participations
+        val assignment = participations()[user].assignment
 
-        assertEquals(ProjectRoom("정보관 301", "정보관 302"), participations[userId].projectRoom)
+        assertEquals(PeriodAssignment(NightStudyType.PROJECT, "정보관 301", 3), assignment.period1)
+        assertEquals(PeriodAssignment(NightStudyType.PROJECT, "정보관 302", 2), assignment.period2)
     }
 
     @Test
-    fun `프로젝트 심자를 1차만 하면 2차 방은 null이다`() {
-        val userId = UUID.randomUUID()
-        stub(
-            nightStudies = listOf(nightStudy(id = 1L, period = 1)),
-            leaders = mapOf(1L to userId),
-            members = mapOf(1L to listOf(userId)),
-            applied1 = listOf(userId),
-            applied2 = emptyList(),
-            attendances = emptyMap(),
-            projectRoom1 = mapOf(userId to "정보관 301"),
-            projectRoom2 = emptyMap(),
-        )
+    fun `1차만 신청하면 2차 배정은 null이다`() {
+        val user = UUID.randomUUID()
+        stub(assigned1 = listOf(project(user, "정보관 301", 3)))
 
-        val participations = service.getActiveNightStudiesByType(NightStudyType.PROJECT, date).single().participations
-
-        assertEquals(ProjectRoom("정보관 301", null), participations[userId].projectRoom)
+        assertNull(participations()[user].assignment.period2)
     }
 
     @Test
-    fun `personal 심자만 있으면 두 차수 모두 방이 null이다`() {
-        val userId = UUID.randomUUID()
-        stub(
-            nightStudies = listOf(nightStudy(id = 1L, period = 2)),
-            leaders = mapOf(1L to userId),
-            members = mapOf(1L to listOf(userId)),
-            applied1 = listOf(userId),
-            applied2 = listOf(userId),
-            attendances = emptyMap(),
-            projectRoom1 = emptyMap(),
-            projectRoom2 = emptyMap(),
-        )
+    fun `개인 심자는 방 정보 없이 타입만 담는다`() {
+        val user = UUID.randomUUID()
+        stub(assigned1 = listOf(personal(user)))
 
-        val participations = service.getActiveNightStudiesByType(NightStudyType.PERSONAL, date).single().participations
+        assertEquals(PeriodAssignment(NightStudyType.PERSONAL, null, null), participations()[user].assignment.period1)
+    }
 
-        assertEquals(ProjectRoom(null, null), participations[userId].projectRoom)
+    @Test
+    fun `같은 차수에 프로젝트와 개인 심자가 겹치면 프로젝트실을 택한다`() {
+        val user = UUID.randomUUID()
+        stub(assigned1 = listOf(personal(user), project(user, "정보관 301", 3)))
+
+        assertEquals(PeriodAssignment(NightStudyType.PROJECT, "정보관 301", 3), participations()[user].assignment.period1)
+    }
+
+    @Test
+    fun `방이 배정되지 않은 프로젝트 심자보다 개인 심자를 먼저 택한다`() {
+        val user = UUID.randomUUID()
+        stub(assigned1 = listOf(project(user, null, null), personal(user)))
+
+        assertEquals(PeriodAssignment(NightStudyType.PERSONAL, null, null), participations()[user].assignment.period1)
     }
 
     @Test
@@ -201,8 +144,8 @@ class OpenApiNightStudyServiceTest {
             nightStudies = listOf(first, second),
             leaders = mapOf(1L to leader1, 2L to leader2),
             members = mapOf(1L to listOf(leader1), 2L to listOf(leader2)),
-            applied1 = listOf(leader1, leader2),
-            applied2 = listOf(leader2),
+            assigned1 = listOf(personal(leader1), personal(leader2)),
+            assigned2 = listOf(personal(leader2)),
             attendances = mapOf(1 to setOf(leader1), 2 to setOf(leader2)),
         )
 
@@ -216,14 +159,7 @@ class OpenApiNightStudyServiceTest {
 
     @Test
     fun `멤버가 없는 심자도 빈 참여 정보와 함께 반환한다`() {
-        stub(
-            nightStudies = listOf(nightStudy(id = 1L, period = 1)),
-            leaders = emptyMap(),
-            members = emptyMap(),
-            applied1 = emptyList(),
-            applied2 = emptyList(),
-            attendances = emptyMap(),
-        )
+        stub(leaders = emptyMap(), members = emptyMap())
 
         val command = service.getActiveNightStudiesByType(NightStudyType.PROJECT, date).single()
 
@@ -232,31 +168,32 @@ class OpenApiNightStudyServiceTest {
         assertTrue(command.participations.isEmpty())
     }
 
+    private fun participations() =
+        service.getActiveNightStudiesByType(NightStudyType.PROJECT, date).single().participations
+
+    private fun personal(userId: UUID) =
+        NightStudyAssignmentCommand(userId, NightStudyType.PERSONAL, null, null)
+
+    private fun project(userId: UUID, name: String?, floor: Int?) =
+        NightStudyAssignmentCommand(userId, NightStudyType.PROJECT, name, floor)
+
     private fun stub(
-        nightStudies: List<NightStudyEntity>,
-        leaders: Map<Long, UUID>,
-        members: Map<Long, List<UUID>>,
-        applied1: List<UUID>,
-        applied2: List<UUID>,
-        attendances: Map<Int, Set<UUID>>,
-        projectRoom1: Map<UUID, String> = emptyMap(),
-        projectRoom2: Map<UUID, String> = emptyMap(),
+        nightStudies: List<NightStudyEntity> = listOf(nightStudy(id = 1L, period = 1)),
+        leaders: Map<Long, UUID> = emptyMap(),
+        members: Map<Long, List<UUID>> = emptyMap(),
+        assigned1: List<NightStudyAssignmentCommand> = emptyList(),
+        assigned2: List<NightStudyAssignmentCommand> = emptyList(),
+        attendances: Map<Int, Set<UUID>> = emptyMap(),
     ) {
         `when`(
             nightStudyQueryRepository
                 .findAllByTypeAndStartAtLessThanEqualAndEndAtGreaterThanEqual(NightStudyType.PROJECT, date, date)
         ).thenReturn(nightStudies)
-        `when`(
-            nightStudyQueryRepository
-                .findAllByTypeAndStartAtLessThanEqualAndEndAtGreaterThanEqual(NightStudyType.PERSONAL, date, date)
-        ).thenReturn(nightStudies)
         `when`(nightStudyMemberQueryRepository.findLeaderUserIdsByNightStudies(nightStudies)).thenReturn(leaders)
         `when`(nightStudyMemberQueryRepository.findAllMemberUserIdsByNightStudies(nightStudies)).thenReturn(members)
-        `when`(nightStudyQueryRepository.findAllowedUserIdsByDateAndPeriod(date, 1)).thenReturn(applied1)
-        `when`(nightStudyQueryRepository.findAllowedUserIdsByDateAndPeriod(date, 2)).thenReturn(applied2)
+        `when`(nightStudyQueryRepository.findAllowedAssignmentsByDateAndPeriod(date, 1)).thenReturn(assigned1)
+        `when`(nightStudyQueryRepository.findAllowedAssignmentsByDateAndPeriod(date, 2)).thenReturn(assigned2)
         `when`(nightStudyQueryRepository.findAttendedUserIdsByDate(date)).thenReturn(attendances)
-        `when`(nightStudyQueryRepository.findProjectRoomNamesByDateAndPeriod(date, 1)).thenReturn(projectRoom1)
-        `when`(nightStudyQueryRepository.findProjectRoomNamesByDateAndPeriod(date, 2)).thenReturn(projectRoom2)
     }
 
     private fun nightStudy(id: Long, period: Int): NightStudyEntity =

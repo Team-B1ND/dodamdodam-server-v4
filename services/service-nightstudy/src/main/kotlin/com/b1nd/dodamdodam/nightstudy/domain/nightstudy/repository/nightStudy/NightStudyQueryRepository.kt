@@ -1,6 +1,7 @@
 package com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy
 
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyAssignmentCommand
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyRoomMemberCommand
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
@@ -33,7 +34,7 @@ interface NightStudyQueryRepository {
     fun findAllowedRoomMembersByDateAndPeriod(date: LocalDate, period: Int): List<NightStudyRoomMemberCommand>
     fun countAttendedUserIdsByDateAndPeriod(date: LocalDate, period: Int, userIds: List<UUID>): Long
     fun findAttendedUserIdsByDate(date: LocalDate): Map<Int, Set<UUID>>
-    fun findProjectRoomNamesByDateAndPeriod(date: LocalDate, period: Int): Map<UUID, String>
+    fun findAllowedAssignmentsByDateAndPeriod(date: LocalDate, period: Int): List<NightStudyAssignmentCommand>
     fun existsByRoomAndPeriodOverlap(roomId: Long, period: Int, startAt: LocalDate, endAt: LocalDate, excludeNightStudyId: Long): Boolean
     fun findActivePersonalsByUserIdsAndPeriodOverlap(userIds: List<UUID>, period: Int, startAt: LocalDate, endAt: LocalDate): List<NightStudyEntity>
     fun findProjectMemberNightStudyIds(nightStudies: List<NightStudyEntity>): Set<Long>

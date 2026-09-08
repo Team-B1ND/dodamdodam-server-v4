@@ -12,6 +12,7 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyTy
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyExceptionCode
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service.NightStudyAttendanceService
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service.NightStudyService
+import com.b1nd.dodamdodam.nightstudy.domain.room.policy.StudyRoomPolicy
 import com.b1nd.dodamdodam.nightstudy.domain.room.service.ProjectRoomService
 import com.b1nd.dodamdodam.nightstudy.infrastructure.outSleeping.client.OutSleepingClient
 import com.b1nd.dodamdodam.nightstudy.infrastructure.user.client.UserQueryClient
@@ -245,14 +246,14 @@ class NightStudyUseCase(
             .usersList.associateBy { UUID.fromString(it.publicId) }
     }
 
-    private fun resolveFloor(nightStudy: NightStudyEntity, user: UserResponse?): Int =
+    private fun resolveFloor(nightStudy: NightStudyEntity, user: UserResponse?): Int {
         if (nightStudy.type == NightStudyType.PROJECT) {
-            nightStudy.room?.floor ?: DEFAULT_FLOOR
-        } else {
-            val grade = user?.student?.grade
-            val classNo = user?.student?.room
-            if (grade == 2 || (grade == 1 && classNo == 4)) 3 else DEFAULT_FLOOR
+            return nightStudy.room?.floor ?: DEFAULT_FLOOR
         }
+
+        val student = user?.student ?: return DEFAULT_FLOOR
+        return StudyRoomPolicy.classRoomFloor(student.grade, student.room)
+    }
 
     fun unassignRoom(id: UUID): Response<Any> {
         nightStudyService.unassignRoom(id)

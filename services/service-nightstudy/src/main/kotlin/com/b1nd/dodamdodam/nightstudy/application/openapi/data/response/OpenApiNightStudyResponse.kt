@@ -22,7 +22,7 @@ data class OpenApiNightStudyResponse(
         val room: Int,
         val number: Int,
         val attended: Attendance,
-        val projectRoom: ProjectRoom,
+        val studyRoom: StudyRoom,
     )
 
     data class Attendance(
@@ -30,8 +30,13 @@ data class OpenApiNightStudyResponse(
         val period2: NightStudyAttendanceStatus,
     )
 
-    data class ProjectRoom(
-        val period1: String?,
-        val period2: String?,
+    data class StudyRoom(
+        val period1: Room?,
+        val period2: Room?,
+    )
+
+    data class Room(
+        val name: String,
+        val floor: Int,
     )
 }

@@ -2,6 +2,7 @@ package com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command
 
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyAttendanceStatus
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
 import java.util.UUID
 
 data class NightStudyWithMembersCommand(
@@ -24,10 +25,10 @@ data class NightStudyWithMembersCommand(
 
     data class Participation(
         val attendance: Attendance,
-        val projectRoom: ProjectRoom,
+        val assignment: Assignment,
     ) {
         companion object {
-            val NONE = Participation(Attendance.NOT_APPLIED, ProjectRoom.NONE)
+            val NONE = Participation(Attendance.NOT_APPLIED, Assignment.NONE)
         }
     }
 
@@ -43,12 +44,18 @@ data class NightStudyWithMembersCommand(
         }
     }
 
-    data class ProjectRoom(
-        val period1: String?,
-        val period2: String?,
+    data class Assignment(
+        val period1: PeriodAssignment?,
+        val period2: PeriodAssignment?,
     ) {
         companion object {
-            val NONE = ProjectRoom(period1 = null, period2 = null)
+            val NONE = Assignment(period1 = null, period2 = null)
         }
     }
+
+    data class PeriodAssignment(
+        val type: NightStudyType,
+        val projectRoomName: String?,
+        val projectRoomFloor: Int?,
+    )
 }

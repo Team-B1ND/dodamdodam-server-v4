@@ -1,5 +1,6 @@
 package com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy
 
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyAssignmentCommand
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyRoomMemberCommand
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyAttendanceEntity.nightStudyAttendanceEntity
@@ -284,16 +285,23 @@ class NightStudyQueryRepositoryImpl(
             .mapValues { (_, userIds) -> userIds.toSet() }
     }
 
-    override fun findProjectRoomNamesByDateAndPeriod(date: LocalDate, period: Int): Map<UUID, String> {
-        val projectRoom = QProjectRoomEntity("roomForProjectName")
+    override fun findAllowedAssignmentsByDateAndPeriod(
+        date: LocalDate,
+        period: Int,
+    ): List<NightStudyAssignmentCommand> {
+        val projectRoom = QProjectRoomEntity("roomForAssignment")
 
         return queryFactory
-            .select(nightStudyMemberEntity.userId, projectRoom.name)
+            .select(
+                nightStudyMemberEntity.userId,
+                nightStudyEntity.type,
+                projectRoom.name,
+                projectRoom.floor,
+            )
             .from(nightStudyMemberEntity)
             .join(nightStudyMemberEntity.nightStudy, nightStudyEntity)
-            .join(nightStudyEntity.room, projectRoom)
+            .leftJoin(nightStudyEntity.room, projectRoom)
             .where(
-                nightStudyEntity.type.eq(NightStudyType.PROJECT),
                 nightStudyEntity.status.eq(NightStudyStatusType.ALLOWED),
                 nightStudyEntity.period.goe(period),
                 nightStudyEntity.startAt.loe(date),
@@ -301,8 +309,13 @@ class NightStudyQueryRepositoryImpl(
             )
             .distinct()
             .fetch()
-            .associate { tuple ->
-                tuple.get(0, UUID::class.java)!! to tuple.get(1, String::class.java)!!
+            .map { tuple ->
+                NightStudyAssignmentCommand(
+                    userId = tuple.get(nightStudyMemberEntity.userId)!!,
+                    type = tuple.get(nightStudyEntity.type)!!,
+                    projectRoomName = tuple.get(projectRoom.name),
+                    projectRoomFloor = tuple.get(projectRoom.floor),
+                )
             }
     }
 
