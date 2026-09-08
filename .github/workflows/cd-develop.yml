@@ -1,0 +1,248 @@
+name: CD Develop
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+    inputs:
+      build_all:
+        description: Build and publish every service before deployment
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: develop-deployment
+  cancel-in-progress: true
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.changes.outputs.services }}
+      spring_services: ${{ steps.changes.outputs.spring_services }}
+      has_services: ${{ steps.changes.outputs.has_services }}
+      has_spring: ${{ steps.changes.outputs.has_spring }}
+      has_notification: ${{ steps.changes.outputs.has_notification }}
+      should_deploy: ${{ steps.changes.outputs.should_deploy }}
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed services
+        id: changes
+        env:
+          BASE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+          FORCE_ALL: ${{ github.event_name == 'workflow_dispatch' && inputs.build_all || false }}
+        run: bash .github/scripts/develop/detect-changes.sh
+
+  build-spring:
+    needs: detect
+    if: needs.detect.outputs.has_spring == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-develop-${{ hashFiles('**/*.gradle.kts', 'gradle/libs.versions.toml') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
+      - name: Build Spring services once
+        env:
+          SERVICES_JSON: ${{ needs.detect.outputs.spring_services }}
+        run: bash .github/scripts/develop/build-spring.sh
+
+      - name: Upload Spring JARs
+        uses: actions/upload-artifact@v4
+        with:
+          name: develop-spring-jars-${{ github.sha }}
+          path: build/develop-spring-jars/
+          retention-days: 1
+          if-no-files-found: error
+
+  publish-spring:
+    needs: [detect, build-spring]
+    if: needs.detect.outputs.has_spring == 'true'
+    environment: development
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        service: ${{ fromJSON(needs.detect.outputs.spring_services) }}
+    env:
+      IMAGE_PREFIX: ${{ secrets.DOCKERHUB_USERNAME }}/dodam
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Spring JARs
+        uses: actions/download-artifact@v4
+        with:
+          name: develop-spring-jars-${{ github.sha }}
+          path: build/develop-spring-jars
+
+      - name: Prepare Docker build context
+        run: |
+          mkdir -p "services/service-${{ matrix.service }}/build/libs"
+          cp "build/develop-spring-jars/service-${{ matrix.service }}.jar" \
+            "services/service-${{ matrix.service }}/build/libs/service-${{ matrix.service }}.jar"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Resolve Spring Dockerfile
+        id: dockerfile
+        env:
+          SERVICE: ${{ matrix.service }}
+        run: bash .github/scripts/production/build/resolve-dockerfile.sh
+
+      - name: Build and publish Spring image
+        uses: docker/build-push-action@v6
+        with:
+          context: services/service-${{ matrix.service }}/build/libs
+          file: ${{ steps.dockerfile.outputs.file }}
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:dev
+            ${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:dev-${{ github.sha }}
+          build-args: JAR_FILE=service-${{ matrix.service }}.jar
+
+  publish-notification:
+    needs: detect
+    if: needs.detect.outputs.has_notification == 'true'
+    environment: development
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_PREFIX: ${{ secrets.DOCKERHUB_USERNAME }}/dodam
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: services/service-notification/package-lock.json
+
+      - name: Build notification service
+        run: bash .github/scripts/production/build/notification.sh
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and publish notification image
+        uses: docker/build-push-action@v6
+        with:
+          context: services/service-notification
+          file: services/service-notification/Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-notification:dev
+            ${{ env.IMAGE_PREFIX }}-notification:dev-${{ github.sha }}
+
+  deploy:
+    needs: [detect, build-spring, publish-spring, publish-notification]
+    if: >-
+      always() &&
+      needs.detect.outputs.should_deploy == 'true' &&
+      (needs.build-spring.result == 'success' || needs.build-spring.result == 'skipped') &&
+      (needs.publish-spring.result == 'success' || needs.publish-spring.result == 'skipped') &&
+      (needs.publish-notification.result == 'success' || needs.publish-notification.result == 'skipped')
+    environment: development
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Upload deployment files
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.DEV_SERVER_HOST }}
+          username: ${{ secrets.DEV_SERVER_USER }}
+          key: ${{ secrets.DEV_SERVER_SSH_KEY }}
+          source: builds/develop/docker-compose.yml,builds/develop/mysql-init.sh,builds/develop/bootstrap-server.sh
+          target: ~/dodamdodam
+          strip_components: 2
+
+      - name: Deploy to development server
+        uses: appleboy/ssh-action@v1
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          DEV_PUBLIC_BASE_URL: ${{ vars.DEV_PUBLIC_BASE_URL }}
+          DEV_SERVER_HOST: ${{ secrets.DEV_SERVER_HOST }}
+        with:
+          host: ${{ secrets.DEV_SERVER_HOST }}
+          username: ${{ secrets.DEV_SERVER_USER }}
+          key: ${{ secrets.DEV_SERVER_SSH_KEY }}
+          envs: DOCKERHUB_USERNAME,DOCKERHUB_TOKEN,DEV_PUBLIC_BASE_URL,DEV_SERVER_HOST
+          script_stop: true
+          script: |
+            set -e
+            cd ~/dodamdodam
+            chmod +x bootstrap-server.sh mysql-init.sh
+            public_url="${DEV_PUBLIC_BASE_URL:-http://${DEV_SERVER_HOST}}"
+            ./bootstrap-server.sh "${DOCKERHUB_USERNAME}" "${public_url}"
+            printf '%s' "${DOCKERHUB_TOKEN}" | sudo docker login -u "${DOCKERHUB_USERNAME}" --password-stdin
+            sudo docker compose --env-file .env -f docker-compose.yml pull
+            sudo docker compose --env-file .env -f docker-compose.yml up -d --remove-orphans
+            sudo docker image prune -f
+
+            healthy=false
+            for attempt in $(seq 1 30); do
+              if curl --fail --silent http://localhost/actuator/health >/dev/null; then
+                healthy=true
+                break
+              fi
+              sleep 10
+            done
+
+            sudo docker compose --env-file .env -f docker-compose.yml ps
+            if [ "$healthy" != true ]; then
+              sudo docker compose --env-file .env -f docker-compose.yml logs --tail=100 service-gateway
+              exit 1
+            fi

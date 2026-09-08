@@ -1,5 +1,6 @@
 package com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy
 
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyAssignmentCommand
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyRoomMemberCommand
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.QNightStudyAttendanceEntity.nightStudyAttendanceEntity
@@ -266,6 +267,56 @@ class NightStudyQueryRepositoryImpl(
                 nightStudyAttendanceEntity.userId.`in`(userIds),
             )
             .fetchOne() ?: 0
+    }
+
+    override fun findAttendedUserIdsByDate(date: LocalDate): Map<Int, Set<UUID>> {
+        return queryFactory
+            .select(nightStudyAttendanceEntity.period, nightStudyAttendanceEntity.userId)
+            .from(nightStudyAttendanceEntity)
+            .where(
+                nightStudyAttendanceEntity.date.eq(date),
+                nightStudyAttendanceEntity.attended.eq(true),
+            )
+            .fetch()
+            .groupBy(
+                { tuple -> tuple.get(0, Int::class.java)!! },
+                { tuple -> tuple.get(1, UUID::class.java)!! }
+            )
+            .mapValues { (_, userIds) -> userIds.toSet() }
+    }
+
+    override fun findAllowedAssignmentsByDateAndPeriod(
+        date: LocalDate,
+        period: Int,
+    ): List<NightStudyAssignmentCommand> {
+        val projectRoom = QProjectRoomEntity("roomForAssignment")
+
+        return queryFactory
+            .select(
+                nightStudyMemberEntity.userId,
+                nightStudyEntity.type,
+                projectRoom.name,
+                projectRoom.floor,
+            )
+            .from(nightStudyMemberEntity)
+            .join(nightStudyMemberEntity.nightStudy, nightStudyEntity)
+            .leftJoin(nightStudyEntity.room, projectRoom)
+            .where(
+                nightStudyEntity.status.eq(NightStudyStatusType.ALLOWED),
+                nightStudyEntity.period.goe(period),
+                nightStudyEntity.startAt.loe(date),
+                nightStudyEntity.endAt.goe(date),
+            )
+            .distinct()
+            .fetch()
+            .map { tuple ->
+                NightStudyAssignmentCommand(
+                    userId = tuple.get(nightStudyMemberEntity.userId)!!,
+                    type = tuple.get(nightStudyEntity.type)!!,
+                    projectRoomName = tuple.get(projectRoom.name),
+                    projectRoomFloor = tuple.get(projectRoom.floor),
+                )
+            }
     }
 
     override fun existsByRoomAndPeriodOverlap(

@@ -28,9 +28,9 @@ class ProjectRoomService(
     fun getById(id: Long): ProjectRoomEntity =
         projectRoomRepository.findById(id).orElseThrow { ProjectRoomNotFoundException() }
 
-    fun update(id: Long, name: String) {
+    fun update(id: Long, name: String, floor: Int) {
         checkNameExists(name)
-        getById(id).update(name)
+        getById(id).update(name, floor)
     }
 
     fun delete(id: Long) {

@@ -175,7 +175,7 @@ class UserUseCase(
         val passport = PassportHolder.current()
         val userId = passport.requireUserId()
         if(request.phone != null) phoneVerificationStore.ensureActive(request.phone)
-        val updatedUser = userService.update(userId, request.name, request.phone, request.profileImage)
+        val updatedUser = userService.update(userId, request.name, request.phone, request.profileImage, request.gender)
         val roles = userService.getRoles(updatedUser)
         kafkaMessageProducer.send(
             KafkaTopics.USER_UPDATED,

@@ -1,6 +1,7 @@
 package com.b1nd.dodamdodam.user.domain.user.data
 
 import com.b1nd.dodamdodam.core.security.passport.enumerations.RoleType
+import com.b1nd.dodamdodam.user.domain.user.enumeration.Gender
 import com.b1nd.dodamdodam.user.domain.user.enumeration.StatusType
 import java.time.LocalDateTime
 import java.util.UUID
@@ -10,6 +11,7 @@ data class UserWithDetails(
     val username: String,
     val name: String,
     val phone: String?,
+    val gender: Gender,
     val profileImage: String?,
     val status: StatusType,
     val roles: Set<RoleType>,

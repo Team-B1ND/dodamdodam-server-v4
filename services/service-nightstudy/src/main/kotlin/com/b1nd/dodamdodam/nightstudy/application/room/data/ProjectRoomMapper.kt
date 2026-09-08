@@ -5,13 +5,14 @@ import com.b1nd.dodamdodam.nightstudy.application.room.data.response.ProjectRoom
 import com.b1nd.dodamdodam.nightstudy.domain.room.command.RoomPeriodCommand
 import com.b1nd.dodamdodam.nightstudy.domain.room.entity.ProjectRoomEntity
 
-fun SaveProjectRoomRequest.toEntity() = ProjectRoomEntity(name = name)
+fun SaveProjectRoomRequest.toEntity() = ProjectRoomEntity(name = name, floor = floor)
 
 fun ProjectRoomEntity.toResponse(inUsePeriods: Set<Pair<Long, Int>>): ProjectRoomResponse {
     val roomId = id!!
     return ProjectRoomResponse(
         id = roomId,
         name = name,
+        floor = floor,
         inUse = ProjectRoomResponse.InUse(
             period1 = (roomId to 1) in inUsePeriods,
             period2 = (roomId to 2) in inUsePeriods,

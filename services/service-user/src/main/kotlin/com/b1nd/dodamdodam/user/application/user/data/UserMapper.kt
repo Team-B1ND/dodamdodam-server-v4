@@ -22,6 +22,7 @@ fun StudentRegisterRequest.toUserEntity(): UserEntity {
         name = name,
         phone = phone,
         status = StatusType.PENDING,
+        gender = gender,
     )
 }
 
@@ -41,6 +42,7 @@ fun TeacherRegisterRequest.toUserEntity(): UserEntity {
         name = name,
         phone = phone,
         status = StatusType.PENDING,
+        gender = gender,
     )
 }
 

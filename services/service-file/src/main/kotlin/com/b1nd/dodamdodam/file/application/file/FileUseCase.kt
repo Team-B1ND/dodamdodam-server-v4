@@ -14,8 +14,8 @@ class FileUseCase(
     private val s3FileStorageClient: S3FileStorageClient,
 ) {
     fun upload(file: MultipartFile, allowType: FileType?, width: Int?, height: Int?): Response<FileUploadResponse> {
-        fileValidationService.validate(file, allowType, width, height)
-        val url = s3FileStorageClient.upload(file)
+        val metadata = fileValidationService.validate(file, allowType, width, height)
+        val url = s3FileStorageClient.upload(file, metadata)
 
         return Response.created(
             "파일이 업로드되었어요.",

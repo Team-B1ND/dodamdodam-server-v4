@@ -3,6 +3,7 @@ package com.b1nd.dodamdodam.user.domain.user.service
 import com.b1nd.dodamdodam.core.security.passport.enumerations.RoleType
 import com.b1nd.dodamdodam.user.domain.user.entity.UserEntity
 import com.b1nd.dodamdodam.user.domain.user.entity.UserRoleEntity
+import com.b1nd.dodamdodam.user.domain.user.enumeration.Gender
 import com.b1nd.dodamdodam.user.domain.user.enumeration.StatusType
 import com.b1nd.dodamdodam.user.domain.user.exception.PhoneAlreadyExistsException
 import com.b1nd.dodamdodam.user.domain.user.exception.UserAlreadyExistsException
@@ -36,13 +37,13 @@ class UserService(
         return savedUser
     }
 
-    fun update(publicId: UUID, name: String?, phone: String?, profileImage: String?): UserEntity {
+    fun update(publicId: UUID, name: String?, phone: String?, profileImage: String?, gender: Gender?): UserEntity {
         val user = userRepository.findByPublicId(publicId)
             ?: throw UserNotFoundException()
 
         phone?.let{checkDuplicatePhone(it)}
 
-        user.updateInfo(name, phone, profileImage)
+        user.updateInfo(name, phone, profileImage, gender)
         return userRepository.save(user)
     }
 

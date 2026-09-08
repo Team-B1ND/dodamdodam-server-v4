@@ -9,31 +9,42 @@ import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import javax.imageio.ImageIO
 
+data class ValidatedFileMetadata(
+    val extension: String,
+    val contentType: String,
+)
+
 @Service
 class FileValidationService {
 
-    fun validate(file: MultipartFile, allowType: FileType?, width: Int?, height: Int?) {
+    fun validate(file: MultipartFile, allowType: FileType?, width: Int?, height: Int?): ValidatedFileMetadata {
         if (file.isEmpty) throw FileEmptyException()
 
-        val detectedType = file.detectType()
+        val extension = file.extractExtension()
+        val detectedType = FileType.fromExtension(extension)
+            ?: throw FileTypeNotAllowedException()
 
         if (allowType != null && detectedType != allowType) {
             throw FileTypeNotAllowedException()
         }
 
-        if (width != null && height != null && detectedType?.supportsDimensionCheck == true) {
+        if (width != null && height != null && detectedType.supportsDimensionCheck) {
             validateDimension(file, width, height)
         }
+
+        return ValidatedFileMetadata(
+            extension = extension,
+            contentType = FileType.contentTypeFromExtension(extension)
+                ?: throw FileTypeNotAllowedException(),
+        )
     }
 
-    private fun MultipartFile.detectType(): FileType? {
-        val extension = originalFilename
+    private fun MultipartFile.extractExtension(): String =
+        originalFilename
             ?.substringAfterLast('.', "")
             ?.lowercase()
             ?.takeIf { it.isNotBlank() }
             ?: throw FileTypeNotAllowedException()
-        return FileType.fromExtension(extension)
-    }
 
     private fun validateDimension(file: MultipartFile, requiredWidth: Int, requiredHeight: Int) {
         val iis = ImageIO.createImageInputStream(file.inputStream)

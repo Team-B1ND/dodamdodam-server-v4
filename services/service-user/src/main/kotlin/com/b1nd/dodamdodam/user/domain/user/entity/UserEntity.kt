@@ -2,6 +2,7 @@ package com.b1nd.dodamdodam.user.domain.user.entity
 
 import com.b1nd.dodamdodam.core.common.uuid.UuidV7
 import com.b1nd.dodamdodam.core.jpa.entity.BaseTimeEntity
+import com.b1nd.dodamdodam.user.domain.user.enumeration.Gender
 import com.b1nd.dodamdodam.user.domain.user.enumeration.StatusType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -32,7 +33,11 @@ class UserEntity (
     var phone: String? = null,
 
     @Enumerated(EnumType.STRING)
-    var status: StatusType = StatusType.PENDING
+    var status: StatusType = StatusType.PENDING,
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    var gender: Gender,
 ): BaseTimeEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -51,9 +56,10 @@ class UserEntity (
         this.password = newPassword
     }
 
-    fun updateInfo(name: String?, phone: String?, profileImage: String?) {
+    fun updateInfo(name: String?, phone: String?, profileImage: String?, gender: Gender?) {
         name?.let { this.name = name }
         phone?.let { this.phone = phone }
         profileImage?.let { this.profileImage = profileImage }
+        gender?.let { this.gender = gender }
     }
 }

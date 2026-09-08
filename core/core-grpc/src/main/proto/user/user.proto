@@ -59,6 +59,7 @@ message UserResponse {
   optional StudentInfo student = 8;
   optional TeacherInfo teacher = 9;
   string created_at = 10;
+  string gender = 11;
 }
 
 message StudentInfo {
