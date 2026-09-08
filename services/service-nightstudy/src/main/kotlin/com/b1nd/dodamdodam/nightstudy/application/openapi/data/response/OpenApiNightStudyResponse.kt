@@ -1,5 +1,6 @@
 package com.b1nd.dodamdodam.nightstudy.application.openapi.data.response
 
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyAttendanceStatus
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
 import java.time.LocalDate
@@ -20,6 +21,17 @@ data class OpenApiNightStudyResponse(
         val grade: Int,
         val room: Int,
         val number: Int,
-        val attended: Boolean,
+        val attended: Attendance,
+        val projectRoom: ProjectRoom,
+    )
+
+    data class Attendance(
+        val period1: NightStudyAttendanceStatus,
+        val period2: NightStudyAttendanceStatus,
+    )
+
+    data class ProjectRoom(
+        val period1: String?,
+        val period2: String?,
     )
 }

@@ -1,18 +1,25 @@
 package com.b1nd.dodamdodam.nightstudy.application.openapi.data
 
 import com.b1nd.dodamdodam.grpc.user.UserResponse
-import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyApplicantResponse
 import com.b1nd.dodamdodam.nightstudy.application.openapi.data.response.OpenApiNightStudyResponse
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand.Participation
 
-fun UserResponse.toStudent(attended: Boolean): OpenApiNightStudyResponse.Student? {
+fun UserResponse.toStudent(participation: Participation): OpenApiNightStudyResponse.Student? {
     val student = student ?: return null
     return OpenApiNightStudyResponse.Student(
         name = name,
         grade = student.grade,
         room = student.room,
         number = student.number,
-        attended = attended
+        attended = OpenApiNightStudyResponse.Attendance(
+            period1 = participation.attendance.period1,
+            period2 = participation.attendance.period2,
+        ),
+        projectRoom = OpenApiNightStudyResponse.ProjectRoom(
+            period1 = participation.projectRoom.period1,
+            period2 = participation.projectRoom.period2,
+        ),
     )
 }
 
@@ -21,11 +28,11 @@ fun List<NightStudyWithMembersCommand>.toOpenApiNightStudyResponse(
 ): List<OpenApiNightStudyResponse> {
     return mapNotNull { command ->
         val leader = command.leaderId
-            ?.let { id -> userMap[id.toString()]?.toStudent(id in command.attendedUserIds) }
+            ?.let { id -> userMap[id.toString()]?.toStudent(command.participations[id]) }
             ?: return@mapNotNull null
 
         val members = command.memberIds.mapNotNull { id ->
-            userMap[id.toString()]?.toStudent(id in command.attendedUserIds)
+            userMap[id.toString()]?.toStudent(command.participations[id])
         }
 
         with(command.nightStudy) {

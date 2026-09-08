@@ -268,6 +268,44 @@ class NightStudyQueryRepositoryImpl(
             .fetchOne() ?: 0
     }
 
+    override fun findAttendedUserIdsByDate(date: LocalDate): Map<Int, Set<UUID>> {
+        return queryFactory
+            .select(nightStudyAttendanceEntity.period, nightStudyAttendanceEntity.userId)
+            .from(nightStudyAttendanceEntity)
+            .where(
+                nightStudyAttendanceEntity.date.eq(date),
+                nightStudyAttendanceEntity.attended.eq(true),
+            )
+            .fetch()
+            .groupBy(
+                { tuple -> tuple.get(0, Int::class.java)!! },
+                { tuple -> tuple.get(1, UUID::class.java)!! }
+            )
+            .mapValues { (_, userIds) -> userIds.toSet() }
+    }
+
+    override fun findProjectRoomNamesByDateAndPeriod(date: LocalDate, period: Int): Map<UUID, String> {
+        val projectRoom = QProjectRoomEntity("roomForProjectName")
+
+        return queryFactory
+            .select(nightStudyMemberEntity.userId, projectRoom.name)
+            .from(nightStudyMemberEntity)
+            .join(nightStudyMemberEntity.nightStudy, nightStudyEntity)
+            .join(nightStudyEntity.room, projectRoom)
+            .where(
+                nightStudyEntity.type.eq(NightStudyType.PROJECT),
+                nightStudyEntity.status.eq(NightStudyStatusType.ALLOWED),
+                nightStudyEntity.period.goe(period),
+                nightStudyEntity.startAt.loe(date),
+                nightStudyEntity.endAt.goe(date),
+            )
+            .distinct()
+            .fetch()
+            .associate { tuple ->
+                tuple.get(0, UUID::class.java)!! to tuple.get(1, String::class.java)!!
+            }
+    }
+
     override fun existsByRoomAndPeriodOverlap(
         roomId: Long,
         period: Int,

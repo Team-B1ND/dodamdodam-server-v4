@@ -296,7 +296,7 @@ class NightStudyUseCase(
                 nightStudy = nightStudy,
                 leaderId = leaderMap[nightStudy.id],
                 memberIds = membersMap[nightStudy.id] ?: emptyList(),
-                attendedUserIds = emptySet(),
+                participations = NightStudyWithMembersCommand.Participations.EMPTY,
             )
         }
     }
