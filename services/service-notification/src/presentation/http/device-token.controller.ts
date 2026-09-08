@@ -5,7 +5,6 @@ import { DeviceTokenRepository } from '../../domain/device-token/device-token.re
 import { BaseResponse } from '../../common/response/base.response';
 import { RegisterDeviceTokenDto, DeleteDeviceTokenDto } from './dto/device-token.dto';
 
-
 @ApiTags('Device Token')
 @Controller('device-tokens')
 @UseGuards(PassportGuard)
