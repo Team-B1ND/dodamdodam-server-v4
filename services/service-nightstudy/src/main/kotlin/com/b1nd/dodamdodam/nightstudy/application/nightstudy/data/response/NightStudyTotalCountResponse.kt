@@ -3,34 +3,29 @@ package com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
 
 data class NightStudyTotalCountResponse(
-    val floors: List<FloorCount>,
-    val grades: List<GradeCount>,
-    val genders: List<GenderCount>,
-    val total: PeriodCount,
+    val personal: PeriodCount,
+    val project: PeriodCount,
 ) {
-    data class FloorCount(
-        val floor: Int,
-        val count: PeriodCount,
+    data class PeriodCount(
+        val period1: CategoryCount,
+        val period2: CategoryCount,
+    )
+
+    data class CategoryCount(
+        val grades: List<GradeCount>,
+        val floors: List<FloorCount>,
     )
 
     data class GradeCount(
         val grade: Int,
-        val count: PeriodCount,
+        val male: Int,
+        val female: Int,
     )
 
-    data class GenderCount(
-        val gender: String,
-        val count: PeriodCount,
-    )
-
-    data class PeriodCount(
-        val period1: TypeCount,
-        val period2: TypeCount,
-    )
-
-    data class TypeCount(
-        val personal: Int,
-        val project: Int,
+    data class FloorCount(
+        val floor: Int,
+        val male: Int,
+        val female: Int,
     )
 
     data class MemberCount(
@@ -43,41 +38,36 @@ data class NightStudyTotalCountResponse(
 
     companion object {
         fun of(members: List<MemberCount>): NightStudyTotalCountResponse {
-            fun typeCount(filtered: List<MemberCount>, period: Int) = TypeCount(
-                personal = filtered.count { it.period == period && it.type == NightStudyType.PERSONAL },
-                project = filtered.count { it.period == period && it.type == NightStudyType.PROJECT },
+            fun categoryCount(type: NightStudyType, period: Int): CategoryCount {
+                val filtered = members.filter { it.type == type && it.period == period }
+                val grades = (1..3).map { grade ->
+                    val gradeMembers = filtered.filter { it.grade == grade }
+                    GradeCount(
+                        grade = grade,
+                        male = gradeMembers.count { it.gender == "MALE" },
+                        female = gradeMembers.count { it.gender == "FEMALE" },
+                    )
+                }
+                val floors = listOf(2, 3).map { floor ->
+                    val floorMembers = filtered.filter { it.floor == floor }
+                    FloorCount(
+                        floor = floor,
+                        male = floorMembers.count { it.gender == "MALE" },
+                        female = floorMembers.count { it.gender == "FEMALE" },
+                    )
+                }
+
+                return CategoryCount(grades = grades, floors = floors)
+            }
+
+            fun periodCount(type: NightStudyType) = PeriodCount(
+                period1 = categoryCount(type, 1),
+                period2 = categoryCount(type, 2),
             )
-
-            fun periodCount(filtered: List<MemberCount>) = PeriodCount(
-                period1 = typeCount(filtered, 1),
-                period2 = typeCount(filtered, 2),
-            )
-
-            val floors = listOf(2, 3).map { floor ->
-                FloorCount(
-                    floor = floor,
-                    count = periodCount(members.filter { it.floor == floor }),
-                )
-            }
-            val grades = (1..3).map { grade ->
-                GradeCount(
-                    grade = grade,
-                    count = periodCount(members.filter { it.grade == grade }),
-                )
-            }
-
-            val genders = listOf("MALE", "FEMALE").map { gender ->
-                GenderCount(
-                    gender = gender,
-                    count = periodCount(members.filter { it.gender == gender }),
-                )
-            }
 
             return NightStudyTotalCountResponse(
-                floors = floors,
-                grades = grades,
-                genders = genders,
-                total = periodCount(members),
+                personal = periodCount(NightStudyType.PERSONAL),
+                project = periodCount(NightStudyType.PROJECT),
             )
         }
     }

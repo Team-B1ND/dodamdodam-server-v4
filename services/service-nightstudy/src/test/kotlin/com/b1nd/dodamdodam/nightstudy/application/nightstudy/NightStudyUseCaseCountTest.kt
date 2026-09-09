@@ -56,14 +56,12 @@ class NightStudyUseCaseCountTest {
 
         val result = useCase.countTotalMembers().data!!
 
-        assertEquals(1, result.total.period1.project)
-        assertEquals(0, result.total.period1.personal)
-        assertEquals(0, result.total.period2.project)
-        assertEquals(1, result.total.period2.personal)
-        assertEquals(1, result.floors.single { it.floor == 3 }.count.period1.project)
-        assertEquals(1, result.floors.single { it.floor == 2 }.count.period2.personal)
-        assertEquals(1, result.grades.single { it.grade == 1 }.count.period1.project)
-        assertEquals(1, result.grades.single { it.grade == 1 }.count.period2.personal)
+        assertEquals(1, result.project.period1.grades.single { it.grade == 1 }.male)
+        assertEquals(1, result.project.period1.floors.single { it.floor == 3 }.male)
+        assertEquals(0, result.personal.period1.grades.single { it.grade == 1 }.male)
+        assertEquals(0, result.project.period2.grades.single { it.grade == 1 }.male)
+        assertEquals(1, result.personal.period2.grades.single { it.grade == 1 }.male)
+        assertEquals(1, result.personal.period2.floors.single { it.floor == 2 }.male)
     }
 
     @Test
@@ -84,9 +82,8 @@ class NightStudyUseCaseCountTest {
 
         val result = useCase.countTotalMembers().data!!
 
-        assertEquals(1, result.total.period1.personal)
-        assertEquals(1, result.total.period2.personal)
-        assertEquals(1, result.grades.single { it.grade == 1 }.count.period1.personal)
+        assertEquals(1, result.personal.period1.grades.single { it.grade == 1 }.male)
+        assertEquals(1, result.personal.period2.grades.single { it.grade == 1 }.male)
     }
 
     @Test
@@ -105,7 +102,7 @@ class NightStudyUseCaseCountTest {
 
         val result = useCase.countTotalMembers().data!!
 
-        assertEquals(1, result.total.period1.personal)
+        assertEquals(1, result.personal.period1.grades.single { it.grade == 1 }.male)
     }
 
     @Test
@@ -122,11 +119,11 @@ class NightStudyUseCaseCountTest {
 
         val result = useCase.countTotalMembers().data!!
 
-        assertEquals(1, result.total.period1.personal)
+        assertEquals(1, result.personal.period1.grades.single { it.grade == 1 }.male)
     }
 
     @Test
-    fun `성별별로 인원수를 집계한다`() {
+    fun `학년과 층별로 성별 인원수를 집계한다`() {
         val maleUserId = UUID.randomUUID()
         val femaleUserId = UUID.randomUUID()
         val personal = nightStudy(id = 1L, type = NightStudyType.PERSONAL, period = 1)
@@ -143,10 +140,15 @@ class NightStudyUseCaseCountTest {
 
         val result = useCase.countTotalMembers().data!!
 
-        assertEquals(1, result.genders.single { it.gender == "MALE" }.count.period1.personal)
-        assertEquals(1, result.genders.single { it.gender == "FEMALE" }.count.period1.personal)
-        assertEquals(0, result.genders.single { it.gender == "MALE" }.count.period2.personal)
-        assertEquals(2, result.total.period1.personal)
+        assertEquals(1, result.personal.period1.grades.single { it.grade == 1 }.male)
+        assertEquals(0, result.personal.period1.grades.single { it.grade == 1 }.female)
+        assertEquals(0, result.personal.period1.grades.single { it.grade == 2 }.male)
+        assertEquals(1, result.personal.period1.grades.single { it.grade == 2 }.female)
+        assertEquals(1, result.personal.period1.floors.single { it.floor == 2 }.male)
+        assertEquals(1, result.personal.period1.floors.single { it.floor == 3 }.female)
+        assertEquals(0, result.personal.period1.grades.single { it.grade == 3 }.male)
+        assertEquals(0, result.personal.period2.floors.single { it.floor == 3 }.female)
+        assertEquals(0, result.personal.period2.grades.single { it.grade == 1 }.male)
     }
 
     private fun nightStudy(
