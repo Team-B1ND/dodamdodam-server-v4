@@ -9,7 +9,7 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMe
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
-import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyExceptionCode
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.policy.NightStudyApplicationPolicy
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service.NightStudyAttendanceService
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service.NightStudyService
 import com.b1nd.dodamdodam.nightstudy.domain.room.policy.StudyRoomPolicy
@@ -19,18 +19,16 @@ import com.b1nd.dodamdodam.nightstudy.infrastructure.user.client.UserQueryClient
 import com.b1nd.dodamdodam.grpc.user.UserResponse
 import com.b1nd.dodamdodam.core.common.data.InfinityScrollPageResponse
 import com.b1nd.dodamdodam.core.common.data.Response
-import com.b1nd.dodamdodam.core.common.exception.BasicException
 import com.b1nd.dodamdodam.core.security.passport.holder.PassportHolder
 import com.b1nd.dodamdodam.core.security.passport.requireUserId
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyTotalCountResponse
-import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.InvalidNightStudyTypeException
 import kotlinx.coroutines.runBlocking
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.ZoneId
 import java.util.*
 
 @Component
@@ -40,7 +38,9 @@ class NightStudyUseCase(
     private val nightStudyAttendanceService: NightStudyAttendanceService,
     private val projectRoomService: ProjectRoomService,
     private val userQueryClient: UserQueryClient,
-    private val outSleepingClient: OutSleepingClient
+    private val outSleepingClient: OutSleepingClient,
+    @Value("\${app.night-study.application-deadline-enabled:true}")
+    private val applicationDeadlineEnabled: Boolean = true,
 ) {
 
     companion object {
@@ -52,14 +52,14 @@ class NightStudyUseCase(
 
     fun applyPersonalNightStudy(request: PersonalNightStudyApplyRequest): Response<Any> {
         val userId = PassportHolder.current().requireUserId()
-        validateApplicationAvailability(request.startAt, request.period)
+        NightStudyApplicationPolicy.validate(request.startAt, request.period, applicationDeadlineEnabled)
         nightStudyService.save(request.toEntity(), userId, null)
         return Response.created("개인 심자 신청이 완료됐어요.")
     }
 
     fun applyProjectNightStudy(request: ProjectNightStudyApplyRequest): Response<Any> {
         val userId = PassportHolder.current().requireUserId()
-        validateApplicationAvailability(request.startAt, request.period)
+        NightStudyApplicationPolicy.validate(request.startAt, request.period, applicationDeadlineEnabled)
         val wishRoom = request.wishRoomId?.let { projectRoomService.getById(it) }
         nightStudyService.save(request.toEntity(wishRoom), userId, request.members)
         return Response.created("프로젝트 심자 신청이 완료됐어요.")
@@ -342,15 +342,4 @@ class NightStudyUseCase(
             .associate { it.publicId to it.toOpenApiUserInfoResponse() }
     }
 
-    private fun validateApplicationAvailability(stratAt: LocalDate, period: Int) {
-        val zone = ZoneId.of("Asia/Seoul")
-        val now = LocalDateTime.now(zone)
-        val deadline = LocalDate.now(zone).atTime(20, 30)
-        if (now.isAfter(deadline))
-            throw BasicException(NightStudyExceptionCode.NOT_APPLICATION_TIME)
-        if (stratAt.isBefore(now.toLocalDate()))
-            throw BasicException(NightStudyExceptionCode.INVALID_START_AT)
-        if (period > 2 || period < 1)
-            throw InvalidNightStudyTypeException()
-    }
 }
