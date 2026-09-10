@@ -78,8 +78,8 @@ class ComciganClient(
 
     fun fetchWeeklyTimeTables(mondayDate: LocalDate): List<ParsedTimeTable> {
         val base = fetchTimetable()
-        val r = resoloveWeek(base, mondayDate)
-        val json = if (r==0) base else fetchTimetable(r)
+        val week = resolveWeek(base, mondayDate)
+        val json = if (week == DEFAULT_WEEK) base else fetchTimetable(week)
         val subjects = json["자료$sbNum"]
         val teachers = json["자료$thNum"]
         val timetableData = json["자료$dayNum"]
@@ -113,8 +113,8 @@ class ComciganClient(
 
         val dayIdx = dayOfWeek.value
         val base = fetchTimetable()
-        val r = resoloveWeek(base, date)
-        val json = if (r == 0) base else fetchTimetable(r)
+        val week = resolveWeek(base, date)
+        val json = if (week == DEFAULT_WEEK) base else fetchTimetable(week)
         val subjects = json["자료$sbNum"]
         val teachers = json["자료$thNum"]
         val timetableData = json["자료$dayNum"]
@@ -167,8 +167,8 @@ class ComciganClient(
         }
     }
 
-    private fun fetchTimetable(r: Int = 0): JsonNode {
-        val param = "$prefix${schoolCode}_${r}_1"
+    private fun fetchTimetable(week: Int = DEFAULT_WEEK): JsonNode {
+        val param = buildTimetableParameter(prefix, schoolCode, week)
         val encoded = Base64.getEncoder().encodeToString(param.toByteArray(Charsets.UTF_8))
         val body = fetchAsUtf8("$baseUrl?$encoded")
         return objectMapper.readTree(body.replace("\u0000", ""))
@@ -196,15 +196,23 @@ class ComciganClient(
         return node[index].asText("")
     }
 
-    private fun resoloveWeek(json: JsonNode, mondayDate: LocalDate): Int {
-        val weeks = json["일자자료"]
-        for (w in weeks) {
-            val label = w[1].asText()
-            val start = LocalDate.parse("20" + label.substringBefore(" ~ ").trim(), DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-            val end = LocalDate.parse("20" + label.substringAfter("~ ").trim(), DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-
-            if (!mondayDate.isBefore(start) && !mondayDate.isAfter(end)) return w[0].asInt() -1
-        }
-        return json["오늘r"].asInt()
+    companion object {
+        private const val DEFAULT_WEEK = 1
     }
+}
+
+internal fun buildTimetableParameter(prefix: String, schoolCode: Int, week: Int): String =
+    "${prefix}${schoolCode}_0_$week"
+
+internal fun resolveWeek(json: JsonNode, date: LocalDate): Int {
+    val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    val weeks = json["일자자료"]
+    for (week in weeks) {
+        val label = week[1].asText()
+        val start = LocalDate.parse("20" + label.substringBefore(" ~ ").trim(), dateFormatter)
+        val end = LocalDate.parse("20" + label.substringAfter("~ ").trim(), dateFormatter)
+
+        if (!date.isBefore(start) && !date.isAfter(end)) return week[0].asInt()
+    }
+    return json["오늘r"].asInt()
 }
