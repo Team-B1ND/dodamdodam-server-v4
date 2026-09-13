@@ -27,3 +27,5 @@ app:
   swagger:
     enabled: true
     gateway-prefix: /nightstudy
+  night-study:
+    application-deadline-enabled: true

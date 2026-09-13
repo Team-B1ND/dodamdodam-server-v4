@@ -29,3 +29,7 @@ grpc:
     service-out-sleeping:
       address: 'static://service-out-sleeping:9090'
       negotiation-type: plaintext
+
+app:
+  night-study:
+    application-deadline-enabled: false
