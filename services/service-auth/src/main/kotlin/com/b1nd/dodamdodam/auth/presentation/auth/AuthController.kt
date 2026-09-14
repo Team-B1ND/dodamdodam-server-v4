@@ -18,6 +18,7 @@ class AuthController(
     private val useCase: AuthUseCase,
     private val cookieProperties: CookieProperties,
 ) {
+
     @PostMapping("/login")
     fun login(@RequestBody request: LoginRequest): Response<LoginResponse> =
         useCase.login(request)
