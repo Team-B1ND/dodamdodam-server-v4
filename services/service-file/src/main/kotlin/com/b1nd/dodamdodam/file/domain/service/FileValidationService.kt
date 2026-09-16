@@ -20,6 +20,8 @@ class FileValidationService {
     fun validate(file: MultipartFile, allowType: FileType?, width: Int?, height: Int?): ValidatedFileMetadata {
         if (file.isEmpty) throw FileEmptyException()
 
+        file.rejectBlockedSignature()
+
         val extension = file.extractExtension()
         val detectedType = FileType.fromExtension(extension)
             ?: throw FileTypeNotAllowedException()
@@ -46,6 +48,17 @@ class FileValidationService {
             ?.takeIf { it.isNotBlank() }
             ?: throw FileTypeNotAllowedException()
 
+    private fun MultipartFile.rejectBlockedSignature() {
+        val header = ByteArray(SIGNATURE_SIZE)
+        val read = inputStream.use { it.readNBytes(header, 0, SIGNATURE_SIZE) }
+
+        val blocked = BLOCKED_SIGNATURES.any { signature ->
+            read >= signature.size && signature.indices.all { header[it] == signature[it] }
+        }
+
+        if (blocked) throw FileTypeNotAllowedException()
+    }
+
     private fun validateDimension(file: MultipartFile, requiredWidth: Int, requiredHeight: Int) {
         val iis = ImageIO.createImageInputStream(file.inputStream)
             ?: throw FileDimensionReadFailedException()
@@ -67,5 +80,12 @@ class FileValidationService {
             reader.dispose()
             iis.close()
         }
+    }
+
+    companion object {
+        private val BLOCKED_SIGNATURES = listOf("GIF87a", "GIF89a")
+            .map { it.toByteArray(Charsets.US_ASCII) }
+
+        private val SIGNATURE_SIZE = BLOCKED_SIGNATURES.maxOf { it.size }
     }
 }
