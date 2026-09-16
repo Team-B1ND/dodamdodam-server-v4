@@ -10,11 +10,6 @@ enum class FileType(
         mimePrefix = "image/",
         supportsDimensionCheck = true,
     ),
-    GIF(
-        extensions = setOf("gif"),
-        mimePrefix = "image/gif",
-        supportsDimensionCheck = true,
-    ),
     VIDEO(
         extensions = setOf("mp4", "avi", "mov", "mkv", "webm", "wmv", "flv"),
         mimePrefix = "video/",
@@ -39,7 +34,6 @@ enum class FileType(
             "bmp" to "image/bmp",
             "webp" to "image/webp",
             "tiff" to "image/tiff",
-            "gif" to "image/gif",
             "mp4" to "video/mp4",
             "avi" to "video/x-msvideo",
             "mov" to "video/quicktime",
