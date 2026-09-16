@@ -3,7 +3,6 @@ package com.b1nd.dodamdodam.inapp.presentation.team
 import com.b1nd.dodamdodam.core.security.annotation.authentication.UserAccess
 import com.b1nd.dodamdodam.inapp.application.team.TeamUseCase
 import com.b1nd.dodamdodam.inapp.application.team.data.request.AcceptTeamInviteRequest
-import com.b1nd.dodamdodam.inapp.application.team.data.request.AddTeamMemberRequest
 import com.b1nd.dodamdodam.inapp.application.team.data.request.CreateTeamInviteRequest
 import com.b1nd.dodamdodam.inapp.application.team.data.request.CreateTeamRequest
 import com.b1nd.dodamdodam.inapp.application.team.data.request.EditTeamInfoRequest
@@ -63,11 +62,6 @@ class TeamController(
     @PostMapping("/invite/accept")
     fun acceptInvite(@RequestBody request: AcceptTeamInviteRequest) =
         teamUseCase.acceptInvite(request)
-
-    @UserAccess
-    @PostMapping("/member")
-    fun addMembers(request: AddTeamMemberRequest) =
-        teamUseCase.addTeamMembers(request)
 
     @UserAccess
     @GetMapping("/{teamId}/member")

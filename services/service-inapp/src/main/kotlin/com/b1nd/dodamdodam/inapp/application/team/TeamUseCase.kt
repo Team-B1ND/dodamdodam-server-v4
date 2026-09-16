@@ -5,7 +5,6 @@ import com.b1nd.dodamdodam.core.redis.service.RedisService
 import com.b1nd.dodamdodam.core.security.passport.holder.PassportHolder
 import com.b1nd.dodamdodam.core.security.passport.requireUserId
 import com.b1nd.dodamdodam.inapp.application.team.data.request.AcceptTeamInviteRequest
-import com.b1nd.dodamdodam.inapp.application.team.data.request.AddTeamMemberRequest
 import com.b1nd.dodamdodam.inapp.application.team.data.request.CreateTeamInviteRequest
 import com.b1nd.dodamdodam.inapp.application.team.data.request.CreateTeamRequest
 import com.b1nd.dodamdodam.inapp.application.team.data.request.EditTeamInfoRequest
@@ -55,12 +54,6 @@ class TeamUseCase(
         val team = teamService.getById(teamId)
         val isOwner = teamService.existsOwner(PassportHolder.current().requireUserId(), team)
         return Response.ok("팀을 조회했어요.", team.toTeamDetailResponse(isOwner))
-    }
-
-    fun addTeamMembers(request: AddTeamMemberRequest): Response<Any> {
-        val team = teamService.getById(request.teamId)
-        teamService.addMember(team, request.users)
-        return Response.ok("팀 멤버가 추가되었어요.")
     }
 
     fun deleteTeamMembers(teamId: UUID, users: List<UUID>): Response<Any> {
