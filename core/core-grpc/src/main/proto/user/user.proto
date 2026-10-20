@@ -23,6 +23,12 @@ service UserQueryService {
       returns (GetUsersResponse);
 }
 
+service UserSmsService {
+
+  rpc SendParentSms (SendParentSmsRequest)
+      returns (SendParentSmsResponse);
+}
+
 message VerifyPasswordRequest {
   string username = 1;
   string raw_password = 2;
@@ -70,4 +76,13 @@ message StudentInfo {
 
 message TeacherInfo {
   string position = 1;
+}
+
+message SendParentSmsRequest {
+  string student_public_id = 1;
+  string message = 2;
+}
+
+message SendParentSmsResponse {
+  bool accepted = 1;
 }
