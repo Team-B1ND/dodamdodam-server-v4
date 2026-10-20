@@ -68,5 +68,9 @@ class OutSleepingService(
         outSleepingRepository.delete(outSleeping)
 
     suspend fun sendParentNotification(outSleeping: OutSleepingEntity) =
-        userSmsClient.sendParentSms(outSleeping.userId, "테스트로 보내는 문자입니다.")
+        userSmsClient.sendParentSms(outSleeping.userId,
+            """
+                이 문자를 받으신 학부모님의 자녀는 오늘 기숙사 미입소를 승인했습니다. 
+                가족들과 행복한 시간 보내게 해 주시고 월요일에 등교하게 해 주십시오.
+                - 대구 소마고에서 알려드립니다.""")
 }
