@@ -8,6 +8,7 @@ import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingI
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingNotFoundException
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingNotOwnerException
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.repository.OutSleepingRepository
+import com.b1nd.dodamdodam.outsleeping.infrastructure.user.client.UserSmsClient
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -16,7 +17,8 @@ import java.util.UUID
 
 @Service
 class OutSleepingService(
-    private val outSleepingRepository: OutSleepingRepository
+    private val outSleepingRepository: OutSleepingRepository,
+    private val userSmsClient: UserSmsClient
 ) {
 
     fun create(outSleeping: OutSleepingEntity): OutSleepingEntity =
@@ -64,4 +66,7 @@ class OutSleepingService(
 
     fun delete(outSleeping: OutSleepingEntity) =
         outSleepingRepository.delete(outSleeping)
+
+    suspend fun sendParentNotification(outSleeping: OutSleepingEntity) =
+        userSmsClient.sendParentSms(outSleeping.userId, "테스트로 보내는 문자입니다.")
 }
