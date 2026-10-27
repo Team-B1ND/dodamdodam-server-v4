@@ -92,6 +92,7 @@ class ProjectRoomUseCase(
         val rooms = getRooms()
         val validRoomIds = rooms.map { it.id }.toSet()
         val assignments = nightStudyService.getAllowedRoomMembers(date, period)
+            .filter { it.type != NightStudyType.PROJECT || it.period == period }
             .groupBy { it.userId }
             .mapValues { (_, values) -> selectAssignment(values, period) }
         val attendedUserIds = nightStudyAttendanceService.getAttendedUserIds(assignments.keys, date, period)
