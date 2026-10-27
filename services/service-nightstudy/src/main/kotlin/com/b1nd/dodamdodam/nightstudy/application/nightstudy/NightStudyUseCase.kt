@@ -326,7 +326,7 @@ class NightStudyUseCase(
             .filter { outSleeping ->
                 outSleeping.status == "ALLOWED" &&
                     !today.isBefore(LocalDate.parse(outSleeping.startAt)) &&
-                    !today.isAfter(LocalDate.parse(outSleeping.endAt))
+                    today.isBefore(LocalDate.parse(outSleeping.endAt))
             }
             .map { UUID.fromString(it.userId) }
             .toSet()
