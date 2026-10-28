@@ -136,6 +136,55 @@ class ProjectRoomUseCaseTest {
         assertEquals(0, secondPeriodProject.memberCount)
     }
 
+    @Test
+    fun `심2 프로젝트 심자 인원은 심1 프로젝트실 인원에 포함하지 않는다`() {
+        val date = LocalDate.of(2026, 8, 13)
+        val userId = UUID.randomUUID()
+        val projectRoom = mock(ProjectRoomEntity::class.java)
+        val assignments = listOf(projectAssignment(userId, period = 2, projectRoomId = 13L))
+
+        `when`(projectRoom.id).thenReturn(13L)
+        `when`(projectRoom.name).thenReturn("LAB 13")
+        `when`(projectRoomService.getAll()).thenReturn(listOf(projectRoom))
+        `when`(nightStudyService.getAllowedRoomMembers(date, 1)).thenReturn(assignments)
+        `when`(nightStudyService.getAllowedRoomMembers(date, 2)).thenReturn(assignments)
+        `when`(attendanceService.getAttendedUserIds(setOf(userId), date, 2)).thenReturn(emptySet())
+        stubUsers(student(userId, "프로젝트 학생", grade = 1, room = 1, number = 1))
+
+        val firstPeriod = useCase.getByRoomId("PROJECT_13", date, 1)
+        val secondPeriod = useCase.getByRoomId("PROJECT_13", date, 2)
+
+        assertEquals(0, firstPeriod.data!!.roomMember.size)
+        assertEquals(1, secondPeriod.data!!.roomMember.size)
+    }
+
+    @Test
+    fun `반 심자실은 심1에 심1과 심2 인원을 함께 보여주고 심2에는 심2 인원만 보여준다`() {
+        val date = LocalDate.of(2026, 8, 13)
+        val firstPeriodUserId = UUID.randomUUID()
+        val secondPeriodUserId = UUID.randomUUID()
+        val firstPeriodAssignment = personalAssignment(firstPeriodUserId, period = 1)
+        val secondPeriodAssignment = personalAssignment(secondPeriodUserId, period = 2)
+
+        `when`(projectRoomService.getAll()).thenReturn(emptyList())
+        `when`(nightStudyService.getAllowedRoomMembers(date, 1))
+            .thenReturn(listOf(firstPeriodAssignment, secondPeriodAssignment))
+        `when`(nightStudyService.getAllowedRoomMembers(date, 2)).thenReturn(listOf(secondPeriodAssignment))
+        `when`(attendanceService.getAttendedUserIds(setOf(firstPeriodUserId, secondPeriodUserId), date, 1))
+            .thenReturn(emptySet())
+        `when`(attendanceService.getAttendedUserIds(setOf(secondPeriodUserId), date, 2)).thenReturn(emptySet())
+        stubUsers(
+            student(firstPeriodUserId, "심1 학생", grade = 1, room = 1, number = 1),
+            student(secondPeriodUserId, "심2 학생", grade = 1, room = 1, number = 2),
+        )
+
+        val firstPeriod = useCase.getByRoomId("CLASS_1_1", date, 1)
+        val secondPeriod = useCase.getByRoomId("CLASS_1_1", date, 2)
+
+        assertEquals(listOf("심1 학생", "심2 학생"), firstPeriod.data!!.roomMember.map { it.name })
+        assertEquals(listOf("심2 학생"), secondPeriod.data!!.roomMember.map { it.name })
+    }
+
     private fun personalAssignment(userId: UUID, period: Int) = NightStudyRoomMemberCommand(
         userId = userId,
         type = NightStudyType.PERSONAL,

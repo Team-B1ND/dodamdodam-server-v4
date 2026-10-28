@@ -78,7 +78,7 @@ class NightStudyUseCaseCountTest {
             student(outSleepingUserId, grade = 1, room = 1, number = 1),
             student(attendingUserId, grade = 1, room = 1, number = 2),
         )
-        stubOutSleeping(outSleeping(outSleepingUserId))
+        stubOutSleeping(outSleeping(outSleepingUserId, endAt = LocalDate.now().plusDays(1)))
 
         val result = useCase.countTotalMembers().data!!
 
@@ -98,6 +98,25 @@ class NightStudyUseCaseCountTest {
         stubUsers(student(userId, grade = 1, room = 1, number = 1))
         stubOutSleeping(
             outSleeping(userId, startAt = LocalDate.now().minusDays(3), endAt = LocalDate.now().minusDays(1))
+        )
+
+        val result = useCase.countTotalMembers().data!!
+
+        assertEquals(1, result.personal.period1.grades.single { it.grade == 1 }.male)
+    }
+
+    @Test
+    fun `외박 마지막 날에는 인원수에 포함한다`() {
+        val userId = UUID.randomUUID()
+        val personal = nightStudy(id = 1L, type = NightStudyType.PERSONAL, period = 1)
+
+        `when`(nightStudyService.getAllAllowed()).thenReturn(listOf(personal))
+        `when`(nightStudyService.getMembersByNightStudies(listOf(personal))).thenReturn(
+            mapOf(1L to listOf(userId))
+        )
+        stubUsers(student(userId, grade = 1, room = 1, number = 1))
+        stubOutSleeping(
+            outSleeping(userId, startAt = LocalDate.now().minusDays(2), endAt = LocalDate.now())
         )
 
         val result = useCase.countTotalMembers().data!!
