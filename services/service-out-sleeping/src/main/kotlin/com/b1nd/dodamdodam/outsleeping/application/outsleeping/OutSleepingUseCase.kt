@@ -99,6 +99,7 @@ class OutSleepingUseCase(
     fun allow(publicId: UUID): Response<Any> {
         val outSleeping = outSleepingService.getByPublicId(publicId)
         outSleeping.allow()
+        outSleepingService.sendParentNotification(outSleeping)
         return Response.ok("외박 신청을 승인했어요.")
     }
 

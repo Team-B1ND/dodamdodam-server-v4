@@ -1,0 +1,1 @@
+ALTER TABLE students ADD COLUMN parent_phone VARCHAR(255) NULL
