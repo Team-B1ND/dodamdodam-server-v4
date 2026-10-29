@@ -28,7 +28,9 @@ class StudentEntity(
 
     var number: Int,
 
-    var isGraduated: Boolean = false
+    var isGraduated: Boolean = false,
+
+    var parentPhone: String? = null
 ): BaseTimeEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
