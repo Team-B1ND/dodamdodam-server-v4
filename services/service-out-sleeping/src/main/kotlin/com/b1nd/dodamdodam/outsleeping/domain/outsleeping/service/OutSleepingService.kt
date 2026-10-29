@@ -9,6 +9,9 @@ import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingN
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingNotOwnerException
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.repository.OutSleepingRepository
 import com.b1nd.dodamdodam.outsleeping.infrastructure.user.client.UserSmsClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -18,8 +21,10 @@ import java.util.UUID
 @Service
 class OutSleepingService(
     private val outSleepingRepository: OutSleepingRepository,
-    private val userSmsClient: UserSmsClient
+    private val userSmsClient: UserSmsClient,
+    private val smsScope: CoroutineScope
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
 
     fun create(outSleeping: OutSleepingEntity): OutSleepingEntity =
         outSleepingRepository.save(outSleeping)
@@ -67,10 +72,24 @@ class OutSleepingService(
     fun delete(outSleeping: OutSleepingEntity) =
         outSleepingRepository.delete(outSleeping)
 
-    suspend fun sendParentNotification(outSleeping: OutSleepingEntity) =
-        userSmsClient.sendParentSms(outSleeping.userId,
-            """
-                이 문자를 받으신 학부모님의 자녀는 오늘 기숙사 미입소를 승인했습니다. 
-                가족들과 행복한 시간 보내게 해 주시고 월요일에 등교하게 해 주십시오.
-                - 대구 소마고에서 알려드립니다.""")
+    fun sendParentNotification(outSleeping: OutSleepingEntity) {
+        val outSleepingId = outSleeping.publicId
+        val studentId = outSleeping.userId
+        smsScope.launch {
+            val accepted = userSmsClient.sendParentSms(studentId, PARENT_NOTIFICATION_MESSAGE)
+            if (accepted) {
+                log.info("외박 승인 보호자 문자 발송 완료: outSleepingId={}, studentId={}", outSleepingId, studentId)
+            } else {
+                log.warn("외박 승인 보호자 문자 미발송: outSleepingId={}, studentId={}", outSleepingId, studentId)
+            }
+        }
+    }
+
+    companion object {
+        private val PARENT_NOTIFICATION_MESSAGE = """
+            이 문자를 받으신 학부모님의 자녀는 오늘 기숙사 미입소를 승인했습니다. 
+            가족들과 행복한 시간 보내게 해 주시고 월요일에 등교하게 해 주십시오.
+            - 대구 소마고에서 알려드립니다.
+        """.trimIndent()
+    }
 }
