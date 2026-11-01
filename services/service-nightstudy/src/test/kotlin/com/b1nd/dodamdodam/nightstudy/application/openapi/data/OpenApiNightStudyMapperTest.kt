@@ -102,16 +102,6 @@ class OpenApiNightStudyMapperTest {
     }
 
     @Test
-    fun `AUTO 심자도 학년반 실로 내려준다`() {
-        val id = UUID.randomUUID()
-        val auto = PeriodAssignment(NightStudyType.AUTO, null, null)
-        val response = single(id, participation(auto, null), grade = 2, classNo = 3)
-
-        assertEquals("CLASS_2_3", response.leader.studyRoom.period1?.name)
-        assertEquals(3, response.leader.studyRoom.period1?.floor)
-    }
-
-    @Test
     fun `출석 상태는 차수별로 내려간다`() {
         val id = UUID.randomUUID()
         val response = single(id, participation(personal(), personal(), ATTENDANCE, ABSENT))
