@@ -31,5 +31,8 @@ grpc:
       negotiation-type: plaintext
 
 app:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    consumer-group-id: service-nightstudy
   night-study:
     application-deadline-enabled: false

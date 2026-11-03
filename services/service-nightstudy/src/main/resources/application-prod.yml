@@ -30,3 +30,8 @@ grpc:
     service-out-sleeping:
       address: 'static://out-sleeping.dodam.svc.cluster.local:9090'
       negotiation-type: plaintext
+
+app:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    consumer-group-id: service-nightstudy

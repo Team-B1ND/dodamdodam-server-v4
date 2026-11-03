@@ -31,3 +31,8 @@ grpc:
     service-out-sleeping:
       address: 'static://localhost:9097'
       negotiation-type: plaintext
+
+app:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    consumer-group-id: service-nightstudy
