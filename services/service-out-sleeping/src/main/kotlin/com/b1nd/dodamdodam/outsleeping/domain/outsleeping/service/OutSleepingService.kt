@@ -35,8 +35,8 @@ class OutSleepingService(
     fun getByUserId(userId: UUID): List<OutSleepingEntity> =
         outSleepingRepository.findAllByUserId(userId)
 
-    fun getByDate(date: LocalDate, pageable: Pageable): Page<OutSleepingEntity> =
-        outSleepingRepository.findAllByStartAtLessThanEqualAndEndAtGreaterThanEqual(date, date, pageable)
+    fun getByDate(date: LocalDate): List<OutSleepingEntity> =
+        outSleepingRepository.findAllByStartAtLessThanEqualAndEndAtGreaterThanEqual(date, date)
 
     fun getAllowedByDate(date: LocalDate, pageable: Pageable): Page<OutSleepingEntity> =
         outSleepingRepository.findAllByStatusAndStartAtLessThanEqualAndEndAtGreaterThanEqual(

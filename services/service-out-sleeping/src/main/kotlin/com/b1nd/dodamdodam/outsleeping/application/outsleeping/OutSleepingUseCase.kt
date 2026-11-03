@@ -72,13 +72,22 @@ class OutSleepingUseCase(
 
     @Transactional(readOnly = true)
     fun getByDate(date: LocalDate, pageable: Pageable): Response<InfinityScrollPageResponse<OutSleepingResponse>> {
-        val outSleepings = outSleepingService.getByDate(date, pageable)
-        val userInfoMap = getUserInfoMap(outSleepings.content.map { it.userId })
+        val outSleepings = outSleepingService.getByDate(date)
+        val userInfoMap = getUserInfoMap(outSleepings.map { it.userId })
+        val sorted = outSleepings.sortedWith(
+            compareBy(
+                { userInfoMap[it.userId]?.student?.grade ?: Int.MAX_VALUE },
+                { userInfoMap[it.userId]?.student?.room ?: Int.MAX_VALUE },
+                { userInfoMap[it.userId]?.student?.number ?: Int.MAX_VALUE },
+            )
+        )
+        val offset = pageable.offset.toInt()
+        val pageSize = pageable.pageSize
         return Response.ok(
             "외박 신청 목록을 조회했어요.",
             InfinityScrollPageResponse(
-                content = outSleepings.content.map { it.toResponse(userInfoMap[it.userId]) },
-                hasNext = outSleepings.hasNext(),
+                content = sorted.drop(offset).take(pageSize).map { it.toResponse(userInfoMap[it.userId]) },
+                hasNext = offset + pageSize < sorted.size,
             )
         )
     }
