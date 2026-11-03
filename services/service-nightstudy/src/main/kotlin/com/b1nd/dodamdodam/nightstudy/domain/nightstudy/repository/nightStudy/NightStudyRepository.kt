@@ -11,7 +11,6 @@ import java.util.UUID
 
 interface NightStudyRepository: JpaRepository<NightStudyEntity, Long> {
     fun findAllByStatus(status: NightStudyStatusType): List<NightStudyEntity>
-    fun findAllBySourceProject(sourceProject: NightStudyEntity): List<NightStudyEntity>
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT nightStudy FROM NightStudyEntity nightStudy WHERE nightStudy.publicId = :publicId")
