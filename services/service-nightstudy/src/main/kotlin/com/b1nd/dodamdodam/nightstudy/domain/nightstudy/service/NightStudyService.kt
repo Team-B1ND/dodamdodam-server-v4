@@ -122,7 +122,7 @@ class NightStudyService(
         if (ns.status != NightStudyStatusType.ALLOWED) {
             val memberIds = nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(ns).distinct()
             memberIds.forEach { memberId ->
-                if (hasAllowedPeriodOverlap(memberId, ns.period, ns.startAt, ns.endAt, ns.id!!)) {
+                if (hasAllowedPeriodOverlap(memberId, ns.period, ns.startAt, ns.endAt, ns.id!!, ns.type)) {
                     throw PeriodOverlappedException()
                 }
             }
@@ -179,10 +179,11 @@ class NightStudyService(
         period: Int,
         startAt: LocalDate,
         endAt: LocalDate,
-        excludeNightStudyId: Long
+        excludeNightStudyId: Long,
+        type: NightStudyType
     ): Boolean {
         return nightStudyQueryRepository.existsAllowedByUserIdAndPeriodOverlap(
-            userId, period, startAt, endAt, excludeNightStudyId
+            userId, period, startAt, endAt, excludeNightStudyId, type
         )
     }
 

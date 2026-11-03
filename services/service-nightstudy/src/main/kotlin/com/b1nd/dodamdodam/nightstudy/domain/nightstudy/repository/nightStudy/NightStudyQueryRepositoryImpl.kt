@@ -151,7 +151,8 @@ class NightStudyQueryRepositoryImpl(
         period: Int,
         startAt: LocalDate,
         endAt: LocalDate,
-        excludeNightStudyId: Long
+        excludeNightStudyId: Long,
+        type: NightStudyType
     ): Boolean {
         return queryFactory.selectOne()
             .from(nightStudyMemberEntity)
@@ -162,7 +163,8 @@ class NightStudyQueryRepositoryImpl(
                 nightStudyEntity.startAt.loe(endAt),
                 nightStudyEntity.endAt.goe(startAt),
                 nightStudyEntity.id.ne(excludeNightStudyId),
-                nightStudyEntity.status.eq(NightStudyStatusType.ALLOWED)
+                nightStudyEntity.status.eq(NightStudyStatusType.ALLOWED),
+                nightStudyEntity.type.eq(type)
             )
             .fetchFirst() != null
     }

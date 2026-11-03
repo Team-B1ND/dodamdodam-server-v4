@@ -75,6 +75,7 @@ class NightStudyServiceTest {
                 project.startAt,
                 project.endAt,
                 project.id!!,
+                NightStudyType.PROJECT,
             )
         ).thenReturn(true)
 
@@ -83,6 +84,93 @@ class NightStudyServiceTest {
         }
 
         assertEquals(NightStudyStatusType.PENDING, project.status)
+    }
+
+    @Test
+    fun `프로젝트 승인 시 승인된 개인 심자는 겹침으로 보지 않는다`() {
+        val publicId = UUID.randomUUID()
+        val memberId = UUID.randomUUID()
+        val project = nightStudy(NightStudyType.PROJECT)
+        `when`(nightStudyRepository.findByPublicIdForUpdate(publicId)).thenReturn(project)
+        `when`(nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(project)).thenReturn(listOf(memberId))
+        `when`(
+            nightStudyQueryRepository.existsAllowedByUserIdAndPeriodOverlap(
+                memberId,
+                project.period,
+                project.startAt,
+                project.endAt,
+                project.id!!,
+                NightStudyType.PERSONAL,
+            )
+        ).thenReturn(true)
+
+        service.allow(publicId)
+
+        assertEquals(NightStudyStatusType.ALLOWED, project.status)
+        verify(nightStudyQueryRepository).existsAllowedByUserIdAndPeriodOverlap(
+            memberId,
+            project.period,
+            project.startAt,
+            project.endAt,
+            project.id!!,
+            NightStudyType.PROJECT,
+        )
+    }
+
+    @Test
+    fun `개인 심자 승인 시 승인된 프로젝트 심자는 겹침으로 보지 않는다`() {
+        val publicId = UUID.randomUUID()
+        val userId = UUID.randomUUID()
+        val personal = nightStudy(NightStudyType.PERSONAL)
+        `when`(nightStudyRepository.findByPublicIdForUpdate(publicId)).thenReturn(personal)
+        `when`(nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(personal)).thenReturn(listOf(userId))
+        `when`(
+            nightStudyQueryRepository.existsAllowedByUserIdAndPeriodOverlap(
+                userId,
+                personal.period,
+                personal.startAt,
+                personal.endAt,
+                personal.id!!,
+                NightStudyType.PROJECT,
+            )
+        ).thenReturn(true)
+
+        service.allow(publicId)
+
+        assertEquals(NightStudyStatusType.ALLOWED, personal.status)
+        verify(nightStudyQueryRepository).existsAllowedByUserIdAndPeriodOverlap(
+            userId,
+            personal.period,
+            personal.startAt,
+            personal.endAt,
+            personal.id!!,
+            NightStudyType.PERSONAL,
+        )
+    }
+
+    @Test
+    fun `개인 심자끼리 겹치는 멤버가 있으면 승인할 수 없다`() {
+        val publicId = UUID.randomUUID()
+        val userId = UUID.randomUUID()
+        val personal = nightStudy(NightStudyType.PERSONAL)
+        `when`(nightStudyRepository.findByPublicIdForUpdate(publicId)).thenReturn(personal)
+        `when`(nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(personal)).thenReturn(listOf(userId))
+        `when`(
+            nightStudyQueryRepository.existsAllowedByUserIdAndPeriodOverlap(
+                userId,
+                personal.period,
+                personal.startAt,
+                personal.endAt,
+                personal.id!!,
+                NightStudyType.PERSONAL,
+            )
+        ).thenReturn(true)
+
+        assertThrows(PeriodOverlappedException::class.java) {
+            service.allow(publicId)
+        }
+
+        assertEquals(NightStudyStatusType.PENDING, personal.status)
     }
 
     @Test
