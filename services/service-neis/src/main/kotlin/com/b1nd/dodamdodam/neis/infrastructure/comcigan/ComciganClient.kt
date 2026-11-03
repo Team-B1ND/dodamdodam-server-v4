@@ -3,7 +3,9 @@ package com.b1nd.dodamdodam.neis.infrastructure.comcigan
 import com.b1nd.dodamdodam.neis.infrastructure.comcigan.data.ParsedTimeTable
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import jakarta.annotation.PostConstruct
+import org.slf4j.LoggerFactory
+import org.springframework.boot.context.event.ApplicationReadyEvent
+import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import java.net.URI
 import java.net.http.HttpClient
@@ -20,6 +22,7 @@ class ComciganClient(
     private val comciganProperties: ComciganProperties,
     private val objectMapper: ObjectMapper,
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
     private val eucKr = Charset.forName("EUC-KR")
     private val httpClient = HttpClient.newHttpClient()
 
@@ -32,14 +35,40 @@ class ComciganClient(
     private var sbNum: Int = 0
     private var schoolCode: Int = 0
 
-    @PostConstruct
-    fun init() {
+    @Volatile
+    private var initialized = false
+
+    @EventListener(ApplicationReadyEvent::class)
+    fun warmUp() {
+        try {
+            ensureInitialized()
+        } catch (e: Exception) {
+            log.error("컴시간 초기화 실패 - 시간표 동기화 시 다시 시도합니다.", e)
+        }
+    }
+
+    @Synchronized
+    private fun ensureInitialized() {
+        if (initialized) return
         bootstrap()
         resolveSchool()
+        initialized = true
+    }
+
+    private fun <T> withInitialized(action: () -> T): T {
+        ensureInitialized()
+        return try {
+            action()
+        } catch (e: Exception) {
+            log.warn("컴시간 시간표 조회 실패 - 다시 초기화한 뒤 재시도합니다.", e)
+            initialized = false
+            ensureInitialized()
+            action()
+        }
     }
 
     private fun bootstrap() {
-        val html = fetchAsEucKr("http://comci.net:4082/st")
+        val html = deobfuscateScripts(fetchAsEucKr("http://comci.net:4082/st"), objectMapper)
 
         val route = Regex("\\./\\d+\\?\\d+l").find(html)?.value
             ?: throw IllegalStateException("컴시간 라우트 추출 실패")
@@ -76,7 +105,17 @@ class ComciganClient(
         schoolCode = schools[0][3].asInt()
     }
 
-    fun fetchWeeklyTimeTables(mondayDate: LocalDate): List<ParsedTimeTable> {
+    fun fetchWeeklyTimeTables(mondayDate: LocalDate): List<ParsedTimeTable> = withInitialized {
+        parseWeeklyTimeTables(mondayDate)
+    }
+
+    fun fetchDailyTimeTables(date: LocalDate): List<ParsedTimeTable> {
+        val dayOfWeek = date.dayOfWeek
+        if (dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY) return emptyList()
+        return withInitialized { parseDailyTimeTables(date) }
+    }
+
+    private fun parseWeeklyTimeTables(mondayDate: LocalDate): List<ParsedTimeTable> {
         val base = fetchTimetable()
         val week = resolveWeek(base, mondayDate)
         val json = if (week == DEFAULT_WEEK) base else fetchTimetable(week)
@@ -107,11 +146,8 @@ class ComciganClient(
         return result
     }
 
-    fun fetchDailyTimeTables(date: LocalDate): List<ParsedTimeTable> {
-        val dayOfWeek = date.dayOfWeek
-        if (dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY) return emptyList()
-
-        val dayIdx = dayOfWeek.value
+    private fun parseDailyTimeTables(date: LocalDate): List<ParsedTimeTable> {
+        val dayIdx = date.dayOfWeek.value
         val base = fetchTimetable()
         val week = resolveWeek(base, date)
         val json = if (week == DEFAULT_WEEK) base else fetchTimetable(week)
@@ -199,6 +235,28 @@ class ComciganClient(
     companion object {
         private const val DEFAULT_WEEK = 1
     }
+}
+
+internal fun deobfuscateScripts(html: String, objectMapper: ObjectMapper): String {
+    val scripts = Regex("\\(0,eval\\)\\(s\\);\\}\\)\\((\\[\\[.*?]]),(\\d+)\\);", RegexOption.DOT_MATCHES_ALL).findAll(html)
+    val decoded = scripts.joinToString("\n") { match ->
+        val chunks = objectMapper.readTree(match.groupValues[1])
+        val key = match.groupValues[2].toInt()
+        buildString {
+            for (chunk in chunks) {
+                val text = chunk[1].asText()
+                if (chunk[0].asInt() != 0) {
+                    append(text)
+                    continue
+                }
+                for (j in text.indices step 4) {
+                    val code = text.substring(j, j + 4).toInt(16)
+                    append((code xor ((key + (j / 4) * 13) and 255)).toChar())
+                }
+            }
+        }
+    }
+    return "$html\n$decoded"
 }
 
 internal fun buildTimetableParameter(prefix: String, schoolCode: Int, week: Int): String =

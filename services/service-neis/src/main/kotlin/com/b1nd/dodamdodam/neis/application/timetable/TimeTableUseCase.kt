@@ -9,6 +9,7 @@ import com.b1nd.dodamdodam.neis.domain.timetable.service.TimeTableService
 import com.b1nd.dodamdodam.neis.infrastructure.comcigan.ComciganClient
 import com.b1nd.dodamdodam.neis.infrastructure.user.UserQueryClient
 import kotlinx.coroutines.runBlocking
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.DayOfWeek
@@ -21,6 +22,8 @@ class TimeTableUseCase(
     private val comciganClient: ComciganClient,
     private val userQueryClient: UserQueryClient,
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     @Transactional(readOnly = true)
     fun getMyWeeklyTimeTables(): Response<List<TimeTableResponse>> {
         val userId = PassportHolder.current().requireUserId()
@@ -48,7 +51,12 @@ class TimeTableUseCase(
     }
 
     fun syncWeeklyTimeTables(mondayDate: LocalDate): Response<Any> {
-        val timeTables = comciganClient.fetchWeeklyTimeTables(mondayDate)
+        val timeTables = try {
+            comciganClient.fetchWeeklyTimeTables(mondayDate)
+        } catch (e: Exception) {
+            log.error("주간 시간표 동기화 실패: {}", mondayDate, e)
+            throw e
+        }
         timeTables.forEach {
             timeTableService.saveOrUpdate(it.date, it.grade, it.room, it.period, it.subject, it.teacher, it.isReplaced)
         }
@@ -56,7 +64,12 @@ class TimeTableUseCase(
     }
 
     fun syncDailyTimeTables(date: LocalDate): Response<Any> {
-        val timeTables = comciganClient.fetchDailyTimeTables(date)
+        val timeTables = try {
+            comciganClient.fetchDailyTimeTables(date)
+        } catch (e: Exception) {
+            log.error("당일 시간표 동기화 실패: {}", date, e)
+            throw e
+        }
         timeTables.forEach {
             timeTableService.saveOrUpdate(it.date, it.grade, it.room, it.period, it.subject, it.teacher, it.isReplaced)
         }
