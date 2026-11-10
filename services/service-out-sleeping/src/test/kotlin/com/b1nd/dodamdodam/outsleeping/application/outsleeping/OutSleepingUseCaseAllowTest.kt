@@ -1,5 +1,6 @@
 package com.b1nd.dodamdodam.outsleeping.application.outsleeping
 
+import com.b1nd.dodamdodam.grpc.user.UserResponse
 import com.b1nd.dodamdodam.outsleeping.domain.deadline.service.OutSleepingDeadlineService
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.entity.OutSleepingEntity
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.enumeration.OutSleepingReasonType
@@ -79,7 +80,12 @@ class OutSleepingUseCaseAllowTest {
     }
 
     private fun useCase(userSmsClient: UserSmsClient) = OutSleepingUseCase(
-        outSleepingService = OutSleepingService(outSleepingRepository, userSmsClient, smsScope),
+        outSleepingService = OutSleepingService(
+            outSleepingRepository,
+            mock(UserQueryClient::class.java) { UserResponse.newBuilder().setName("홍길동").setPhone("010-0000-0000").build() },
+            userSmsClient,
+            smsScope,
+        ),
         userQueryClient = userQueryClient,
         deadlineService = deadlineService,
     )
