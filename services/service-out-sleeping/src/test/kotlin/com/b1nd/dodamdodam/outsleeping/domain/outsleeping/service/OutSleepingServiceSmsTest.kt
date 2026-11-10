@@ -1,9 +1,11 @@
 package com.b1nd.dodamdodam.outsleeping.domain.outsleeping.service
 
+import com.b1nd.dodamdodam.grpc.user.UserResponse
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.entity.OutSleepingEntity
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.enumeration.OutSleepingReasonType
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.enumeration.OutSleepingStatusType
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.repository.OutSleepingRepository
+import com.b1nd.dodamdodam.outsleeping.infrastructure.user.client.UserQueryClient
 import com.b1nd.dodamdodam.outsleeping.infrastructure.user.client.UserSmsClient
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -20,12 +22,13 @@ import java.util.UUID
 
 class OutSleepingServiceSmsTest {
     private val outSleepingRepository = mock(OutSleepingRepository::class.java)
+    private val userQueryClient = mock(UserQueryClient::class.java) { UserResponse.newBuilder().setName("홍길동").setPhone("010-0000-0000").build() }
     private val smsScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined + CoroutineExceptionHandler { _, _ -> })
 
     @Test
     fun `학생 userId로 보호자 문자 발송을 요청한다`() {
         val userSmsClient = mock(UserSmsClient::class.java) { true }
-        val service = OutSleepingService(outSleepingRepository, userSmsClient, smsScope)
+        val service = OutSleepingService(outSleepingRepository, userQueryClient, userSmsClient, smsScope)
         val outSleeping = outSleeping()
 
         service.sendParentNotification(outSleeping)
@@ -39,7 +42,7 @@ class OutSleepingServiceSmsTest {
     @Test
     fun `보호자 문자 문구는 들여쓰기 없이 발송한다`() {
         val userSmsClient = mock(UserSmsClient::class.java) { true }
-        val service = OutSleepingService(outSleepingRepository, userSmsClient, smsScope)
+        val service = OutSleepingService(outSleepingRepository, userQueryClient, userSmsClient, smsScope)
 
         service.sendParentNotification(outSleeping())
 
@@ -50,7 +53,7 @@ class OutSleepingServiceSmsTest {
     @Test
     fun `문자가 접수되지 않아도 예외 없이 끝난다`() {
         val rejectedClient = mock(UserSmsClient::class.java) { false }
-        val service = OutSleepingService(outSleepingRepository, rejectedClient, smsScope)
+        val service = OutSleepingService(outSleepingRepository, userQueryClient, rejectedClient, smsScope)
 
         assertDoesNotThrow { service.sendParentNotification(outSleeping()) }
     }
@@ -58,7 +61,7 @@ class OutSleepingServiceSmsTest {
     @Test
     fun `문자 발송 중 예외가 나도 호출한 쪽으로 전파하지 않는다`() {
         val failingClient = mock(UserSmsClient::class.java) { throw IllegalStateException("gRPC 실패") }
-        val service = OutSleepingService(outSleepingRepository, failingClient, smsScope)
+        val service = OutSleepingService(outSleepingRepository, userQueryClient, failingClient, smsScope)
 
         assertDoesNotThrow { service.sendParentNotification(outSleeping()) }
     }

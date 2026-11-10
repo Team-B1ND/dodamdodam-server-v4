@@ -99,13 +99,13 @@ class OutSleepingService(
         [대구소프트웨어마이스터고] 외박 승인 안내
         안녕하십니까 학부모님, ${name} 학생의 외박이 승인되었습니다.
 
-        ◼︎ 외박 기간: ${startAt.format(DATE_FORMAT)} ~ ${endAt.format(DATE_FORMAT)}
-        ◼︎ 복귀 시간: ${endAt.format(DATE_FORMAT)} 8시 30분까지
+        ■ 외박 기간: ${startAt.format(DATE_FORMAT)} ~ ${endAt.format(DATE_FORMAT)}
+        ■ 복귀 시간: ${endAt.format(DATE_FORMAT)} 8시 30분까지
 
         가족과 행복한 시간 보내시고, 다음날 복귀 시간까지 정상 등교 할 수 있도록 지도 부탁드립니다.
         ※ 문의처
-        • 교무실(대표번호): 053-231-9226
-          ◦ 남자 사감선생님: ${malePhone}
+        - 교무실(대표번호): 053-231-9226
+        - 남자 사감선생님: ${malePhone}
     """.trimIndent()
     }
 }
