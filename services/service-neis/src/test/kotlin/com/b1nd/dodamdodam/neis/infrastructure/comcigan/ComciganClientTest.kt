@@ -32,4 +32,14 @@ class ComciganClientTest {
         assertEquals(1, resolveWeek(response, LocalDate.of(2026, 9, 10)))
         assertEquals(2, resolveWeek(response, LocalDate.of(2026, 9, 14)))
     }
+
+    @Test
+    fun `난독화된 컴시간 스크립트를 복호화해 원본 HTML 뒤에 붙인다`() {
+        val html = "<script>/* hour-obfuscated-v2 */(function(a,k){var s='';(0,eval)(s);})(" +
+            "[[1,\"var x=1;\"],[0,\"C7C3B8AC0043C7EAB84B00A50093009C00E000BC00BD00BF\"]],83);</script>"
+
+        val result = deobfuscateScripts(html, objectMapper)
+
+        assertEquals("$html\nvar x=1;자료.자료122[th]", result)
+    }
 }

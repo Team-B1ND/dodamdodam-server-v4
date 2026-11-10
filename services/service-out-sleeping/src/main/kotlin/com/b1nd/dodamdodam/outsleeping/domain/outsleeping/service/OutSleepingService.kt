@@ -8,19 +8,23 @@ import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingI
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingNotFoundException
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.exception.OutSleepingNotOwnerException
 import com.b1nd.dodamdodam.outsleeping.domain.outsleeping.repository.OutSleepingRepository
+import com.b1nd.dodamdodam.outsleeping.infrastructure.user.client.UserQueryClient
 import com.b1nd.dodamdodam.outsleeping.infrastructure.user.client.UserSmsClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 @Service
 class OutSleepingService(
     private val outSleepingRepository: OutSleepingRepository,
+    private val userQueryClient: UserQueryClient,
     private val userSmsClient: UserSmsClient,
     private val smsScope: CoroutineScope
 ) {
@@ -75,8 +79,10 @@ class OutSleepingService(
     fun sendParentNotification(outSleeping: OutSleepingEntity) {
         val outSleepingId = outSleeping.publicId
         val studentId = outSleeping.userId
+        val user = runBlocking { userQueryClient.getUser(outSleeping.userId) }
+        val phone = runBlocking { userQueryClient.getUser(MALE_DORM_TEACHER_ID) }
         smsScope.launch {
-            val accepted = userSmsClient.sendParentSms(studentId, PARENT_NOTIFICATION_MESSAGE)
+            val accepted = userSmsClient.sendParentSms(studentId, parentNotificationMessage(user.name, outSleeping.startAt, outSleeping.endAt, phone.phone))
             if (accepted) {
                 log.info("외박 승인 보호자 문자 발송 완료: outSleepingId={}, studentId={}", outSleepingId, studentId)
             } else {
@@ -86,10 +92,20 @@ class OutSleepingService(
     }
 
     companion object {
-        private val PARENT_NOTIFICATION_MESSAGE = """
-            이 문자를 받으신 학부모님의 자녀는 오늘 기숙사 미입소를 승인했습니다. 
-            가족들과 행복한 시간 보내게 해 주시고 월요일에 등교하게 해 주십시오.
-            - 대구 소마고에서 알려드립니다.
-        """.trimIndent()
+        private val DATE_FORMAT = DateTimeFormatter.ofPattern("M월 d일")
+        private val MALE_DORM_TEACHER_ID = UUID.fromString("019d465d-033e-71b3-bb38-8def42e4a6c9")
+
+        private fun parentNotificationMessage(name: String, startAt: LocalDate, endAt: LocalDate, malePhone: String) = """
+        [대구소프트웨어마이스터고] 외박 승인 안내
+        안녕하십니까 학부모님, ${name} 학생의 외박이 승인되었습니다.
+
+        ◼︎ 외박 기간: ${startAt.format(DATE_FORMAT)} ~ ${endAt.format(DATE_FORMAT)}
+        ◼︎ 복귀 시간: ${endAt.format(DATE_FORMAT)} 8시 30분까지
+
+        가족과 행복한 시간 보내시고, 다음날 복귀 시간까지 정상 등교 할 수 있도록 지도 부탁드립니다.
+        ※ 문의처
+        • 교무실(대표번호): 053-231-9226
+          ◦ 남자 사감선생님: ${malePhone}
+    """.trimIndent()
     }
 }
