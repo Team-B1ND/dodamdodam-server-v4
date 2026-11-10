@@ -103,7 +103,7 @@ class OutSleepingUseCaseGetByDateTest {
     }
 
     private fun useCase(users: List<UserResponse>) = OutSleepingUseCase(
-        outSleepingService = OutSleepingService(outSleepingRepository, userSmsClient, smsScope),
+        outSleepingService = OutSleepingService(outSleepingRepository, mock(UserQueryClient::class.java), userSmsClient, smsScope),
         userQueryClient = mock(UserQueryClient::class.java) { users },
         deadlineService = deadlineService,
     )
