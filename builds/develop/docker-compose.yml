@@ -130,13 +130,6 @@ services:
       kafka:
         condition: service_healthy
 
-  service-wakeup-song:
-    <<: *spring-service
-    image: ${DOCKERHUB_USERNAME:?DOCKERHUB_USERNAME is required}/dodam-wakeup-song:dev
-    environment:
-      <<: *spring-environment
-      MYSQL_HOST: mysql://mysql:3306/dodam-wakeup-song
-
   service-inapp:
     <<: *spring-service
     image: ${DOCKERHUB_USERNAME:?DOCKERHUB_USERNAME is required}/dodam-inapp:dev

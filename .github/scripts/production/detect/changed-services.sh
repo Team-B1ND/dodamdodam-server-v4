@@ -12,7 +12,7 @@ else
   changed=$(git ls-tree -r --name-only HEAD)
 fi
 
-all_services=(gateway auth user wakeup-song inapp file neis out-sleeping nightstudy oauth notification)
+all_services=(gateway auth user inapp file neis out-sleeping nightstudy oauth notification)
 services=()
 
 core_changed=false
