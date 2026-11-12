@@ -5,7 +5,7 @@ set -euo pipefail
 : "${HEAD_SHA:?HEAD_SHA is required}"
 : "${GITHUB_OUTPUT:?GITHUB_OUTPUT is required}"
 
-all_services=(gateway auth user wakeup-song inapp file neis out-sleeping nightstudy oauth notification)
+all_services=(gateway auth user inapp file neis out-sleeping nightstudy oauth notification)
 changed_files=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
 services=()
 shared_changed=false
