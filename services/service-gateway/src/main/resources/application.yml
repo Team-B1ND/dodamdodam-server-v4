@@ -39,9 +39,6 @@ app:
         write: nightstudy:write
       - path: /outgoing/
         read: outgoing:read
-      - path: /wakeup-song/
-        read: wakeupsong:read
-        write: wakeupsong:write
       - path: /user/
         read: profile:read
       - path: /notification/

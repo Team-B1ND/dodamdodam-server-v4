@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.ZoneId
 
 @Component
 @Transactional(rollbackFor = [Exception::class])
@@ -30,7 +31,7 @@ class TimeTableUseCase(
         val user = runBlocking { userQueryClient.getUser(userId.toString()) }
         val student = user.student
 
-        val today = LocalDate.now()
+        val today = LocalDate.now(ZoneId.of("Asia/Seoul"))
         val monday = today.with(DayOfWeek.MONDAY)
         val friday = today.with(DayOfWeek.FRIDAY)
 

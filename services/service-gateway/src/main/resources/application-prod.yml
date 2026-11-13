@@ -18,12 +18,6 @@ spring:
             - Path=/user/**
           filters:
             - StripPrefix=1
-        - id: wakeup-song-service
-          uri: http://wakeup.dodam.svc.cluster.local:8080
-          predicates:
-            - Path=/wakeup-song/**
-          filters:
-            - StripPrefix=1
         - id: nightstudy-service
           uri: http://nightstudy.dodam.svc.cluster.local:8080
           predicates:

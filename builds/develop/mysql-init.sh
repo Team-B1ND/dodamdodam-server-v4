@@ -4,7 +4,6 @@ set -euo pipefail
 databases=(
   dodam-auth
   dodam-user
-  dodam-wakeup-song
   dodam-inapp
   dodam-oauth
   dodam-neis

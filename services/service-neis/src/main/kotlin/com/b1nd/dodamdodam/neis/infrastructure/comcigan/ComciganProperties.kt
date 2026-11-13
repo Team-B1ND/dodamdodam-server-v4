@@ -7,4 +7,5 @@ data class ComciganProperties(
     val schoolName: String,
     val maxGrade: Int = 3,
     val maxRoom: Int = 4,
+    val baseUrl: String = "http://comci.net:4082/st",
 )
