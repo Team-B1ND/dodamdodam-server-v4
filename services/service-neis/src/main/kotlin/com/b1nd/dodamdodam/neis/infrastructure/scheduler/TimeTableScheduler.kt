@@ -1,53 +1,42 @@
 package com.b1nd.dodamdodam.neis.infrastructure.scheduler
 
-import com.b1nd.dodamdodam.neis.domain.timetable.service.TimeTableService
-import com.b1nd.dodamdodam.neis.infrastructure.comcigan.ComciganClient
+import com.b1nd.dodamdodam.neis.application.timetable.TimeTableUseCase
 import org.slf4j.LoggerFactory
+import org.springframework.boot.context.event.ApplicationReadyEvent
+import org.springframework.context.event.EventListener
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Transactional
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.ZoneId
 
 @Component
 class TimeTableScheduler(
-    private val comciganClient: ComciganClient,
-    private val timeTableService: TimeTableService,
+    private val timeTableUseCase: TimeTableUseCase,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    @Scheduled(cron = "0 0 18 * * FRI")
-    @Transactional
+    @Scheduled(cron = "0 0 18 * * FRI", zone = "Asia/Seoul")
     fun fetchNextWeekTimeTables() {
-        val nextMonday = LocalDate.now().with(DayOfWeek.MONDAY).plusWeeks(1)
-        syncWeekly(nextMonday)
+        syncWeekly(today().with(DayOfWeek.MONDAY).plusWeeks(1))
     }
 
-    @Scheduled(cron = "0 40 8 * * MON-FRI")
-    @Transactional
+    // Recover missing days after an outage/deployment, as well as today's changes.
+    @EventListener(ApplicationReadyEvent::class)
+    @Scheduled(cron = "0 40 8 * * MON-FRI", zone = "Asia/Seoul")
     fun fetchTodayTimeTables() {
-        syncDaily(LocalDate.now())
+        syncWeekly(today().with(DayOfWeek.MONDAY))
     }
 
     private fun syncWeekly(mondayDate: LocalDate) {
         try {
-            val timeTables = comciganClient.fetchWeeklyTimeTables(mondayDate)
-            timeTables.forEach {
-                timeTableService.saveOrUpdate(it.date, it.grade, it.room, it.period, it.subject, it.teacher, it.isReplaced)
-            }
+            // The use case owns the transaction, including commit; failures are caught here.
+            timeTableUseCase.syncWeeklyTimeTables(mondayDate)
+            log.info("주간 시간표 동기화 완료: {}", mondayDate)
         } catch (e: Exception) {
-            log.error("다음 주 시간표 동기화 실패: {}", mondayDate, e)
+            log.error("주간 시간표 동기화 실패: {}", mondayDate, e)
         }
     }
 
-    private fun syncDaily(date: LocalDate) {
-        try {
-            val timeTables = comciganClient.fetchDailyTimeTables(date)
-            timeTables.forEach {
-                timeTableService.saveOrUpdate(it.date, it.grade, it.room, it.period, it.subject, it.teacher, it.isReplaced)
-            }
-        } catch (e: Exception) {
-            log.error("당일 시간표 동기화 실패: {}", date, e)
-        }
-    }
+    private fun today() = LocalDate.now(ZoneId.of("Asia/Seoul"))
 }
