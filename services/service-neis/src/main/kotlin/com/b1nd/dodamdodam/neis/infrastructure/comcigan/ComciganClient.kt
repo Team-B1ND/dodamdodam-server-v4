@@ -3,274 +3,127 @@ package com.b1nd.dodamdodam.neis.infrastructure.comcigan
 import com.b1nd.dodamdodam.neis.infrastructure.comcigan.data.ParsedTimeTable
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.slf4j.LoggerFactory
-import org.springframework.boot.context.event.ApplicationReadyEvent
-import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import java.net.URI
+import java.net.URLEncoder
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.nio.charset.Charset
 import java.time.DayOfWeek
+import java.time.Duration
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.*
+import java.util.Base64
 
 @Component
 class ComciganClient(
     private val comciganProperties: ComciganProperties,
     private val objectMapper: ObjectMapper,
 ) {
-    private val log = LoggerFactory.getLogger(javaClass)
-    private val eucKr = Charset.forName("EUC-KR")
-    private val httpClient = HttpClient.newHttpClient()
+    private val pageUri get() = URI.create(comciganProperties.baseUrl)
+    private val httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
 
-    private lateinit var baseUrl: String
-    private lateinit var searchUrl: String
-    private lateinit var prefix: String
-    private var orgNum: Int = 0
-    private var dayNum: Int = 0
-    private var thNum: Int = 0
-    private var sbNum: Int = 0
-    private var schoolCode: Int = 0
-
-    @Volatile
-    private var initialized = false
-
-    @EventListener(ApplicationReadyEvent::class)
-    fun warmUp() {
-        try {
-            ensureInitialized()
-        } catch (e: Exception) {
-            log.error("컴시간 초기화 실패 - 시간표 동기화 시 다시 시도합니다.", e)
+    fun fetchWeeklyTimeTables(mondayDate: LocalDate): List<ParsedTimeTable> {
+        require(mondayDate.dayOfWeek == DayOfWeek.MONDAY) { "주간 시간표 기준일은 월요일이어야 해요." }
+        // Fetch fresh page metadata per sync: tokens, keys and field numbers can rotate.
+        // This also avoids making the whole NEIS service depend on Comcigan at bean creation.
+        repeat(2) { attempt ->
+            try {
+                return fetchWeek(mondayDate)
+            } catch (e: ComciganHttpException) {
+                if (e.status != 403 || attempt != 0) throw e
+            }
         }
-    }
-
-    @Synchronized
-    private fun ensureInitialized() {
-        if (initialized) return
-        bootstrap()
-        resolveSchool()
-        initialized = true
-    }
-
-    private fun <T> withInitialized(action: () -> T): T {
-        ensureInitialized()
-        return try {
-            action()
-        } catch (e: Exception) {
-            log.warn("컴시간 시간표 조회 실패 - 다시 초기화한 뒤 재시도합니다.", e)
-            initialized = false
-            ensureInitialized()
-            action()
-        }
-    }
-
-    private fun bootstrap() {
-        val html = deobfuscateScripts(fetchAsEucKr("http://comci.net:4082/st"), objectMapper)
-
-        val route = Regex("\\./\\d+\\?\\d+l").find(html)?.value
-            ?: throw IllegalStateException("컴시간 라우트 추출 실패")
-        prefix = Regex("'(\\d+_)'").find(html)?.groupValues?.get(1)
-            ?: throw IllegalStateException("컴시간 프리픽스 추출 실패")
-
-        val orgDataMatch = Regex("원자료=Q자료\\(자료\\.자료(\\d+)").find(html)
-        val dayDataMatch = Regex("일일자료=Q자료\\(자료\\.자료(\\d+)").find(html)
-
-        orgNum = orgDataMatch?.groupValues?.get(1)?.toInt()
-            ?: throw IllegalStateException("컴시간 orgNum 추출 실패")
-        dayNum = dayDataMatch?.groupValues?.get(1)?.toInt() ?: orgNum
-        thNum = Regex("자료\\.자료(\\d+)\\[th]").find(html)?.groupValues?.get(1)?.toInt()
-            ?: throw IllegalStateException("컴시간 thNum 추출 실패")
-        sbNum = Regex("자료\\.자료(\\d+)\\[sb]").find(html)?.groupValues?.get(1)?.toInt()
-            ?: throw IllegalStateException("컴시간 sbNum 추출 실패")
-
-        baseUrl = "http://comci.net:4082${route.substring(1, 8)}"
-        searchUrl = "$baseUrl${route.substring(8)}"
-    }
-
-    private fun resolveSchool() {
-        val name = comciganProperties.schoolName
-        val url = "$searchUrl${encodeEucKr(name)}"
-        val body = fetchAsUtf8(url)
-        val json = objectMapper.readTree(body.replace("\u0000", ""))
-
-        val schools = json["학교검색"]
-            ?: throw IllegalStateException("컴시간 학교 검색 실패")
-        if (schools.size() == 0) {
-            throw IllegalStateException("컴시간에서 '$name' 학교를 찾을 수 없어요.")
-        }
-
-        schoolCode = schools[0][3].asInt()
-    }
-
-    fun fetchWeeklyTimeTables(mondayDate: LocalDate): List<ParsedTimeTable> = withInitialized {
-        parseWeeklyTimeTables(mondayDate)
+        error("컴시간 요청 토큰 갱신 실패")
     }
 
     fun fetchDailyTimeTables(date: LocalDate): List<ParsedTimeTable> {
-        val dayOfWeek = date.dayOfWeek
-        if (dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY) return emptyList()
-        return withInitialized { parseDailyTimeTables(date) }
+        if (date.dayOfWeek in setOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY)) return emptyList()
+        return fetchWeeklyTimeTables(date.with(DayOfWeek.MONDAY)).filter { it.date == date }
     }
 
-    private fun parseWeeklyTimeTables(mondayDate: LocalDate): List<ParsedTimeTable> {
-        val base = fetchTimetable()
-        val week = resolveWeek(base, mondayDate)
-        val json = if (week == DEFAULT_WEEK) base else fetchTimetable(week)
-        val subjects = json["자료$sbNum"]
-        val teachers = json["자료$thNum"]
-        val timetableData = json["자료$dayNum"]
-        val orgData = if (orgNum != dayNum) json["자료$orgNum"] else null
-
-        val result = mutableListOf<ParsedTimeTable>()
-
-        for (gradeIdx in 1..minOf(comciganProperties.maxGrade, timetableData.size() - 1)) {
-            val gradeData = timetableData[gradeIdx]
-            val orgGradeData = orgData?.get(gradeIdx)
-            for (roomIdx in 1..minOf(comciganProperties.maxRoom, gradeData.size() - 1)) {
-                val roomData = gradeData[roomIdx]
-                val orgRoomData = orgGradeData?.get(roomIdx)
-                for (dayIdx in 1..minOf(5, roomData.size() - 1)) {
-                    val dayData = roomData[dayIdx]
-                    val orgDayData = orgRoomData?.get(dayIdx)
-                    val date = mondayDate.plusDays((dayIdx - 1).toLong())
-                    parsePeriods(dayData, orgDayData, subjects, teachers) { period, subject, teacher, isReplaced ->
-                        result.add(ParsedTimeTable(date, gradeIdx, roomIdx, period, subject, teacher, isReplaced))
-                    }
-                }
-            }
+    private fun fetchWeek(mondayDate: LocalDate): List<ParsedTimeTable> {
+        val html = String(fetch(pageUri), Charset.forName("EUC-KR"))
+        val protocol = ComciganProtocol(html, objectMapper)
+        val endpoint = pageUri.resolve(protocol.route)
+        fun request(parameter: String): JsonNode {
+            val encoded = Base64.getEncoder().encodeToString(parameter.toByteArray(Charsets.UTF_8))
+            val uri = URI.create("$endpoint?${encode(encoded)}")
+            return protocol.decodeResponse(String(fetch(uri, protocol.token), Charsets.UTF_8))
         }
-
-        return result
+        val schools = request(protocol.searchPrefix + encode(comciganProperties.schoolName) + "_enc5")["학교검색"]
+        check(schools != null && schools.isArray) { "컴시간 학교 검색 응답 오류" }
+        val school = schools.firstOrNull {
+            it[0].asInt() != 0 && protocol.decodeText(it[2].asText()) == comciganProperties.schoolName
+        } ?: error("컴시간에서 '${comciganProperties.schoolName}' 학교를 찾을 수 없어요.")
+        val schoolCode = protocol.decodeText(school[school[0].asInt() / protocol.schoolCodeDivisor + 2].asText()).toInt()
+        val base = request(buildTimetableParameter(protocol.timetablePrefix, schoolCode, 1))
+        val week = resolveWeek(base, mondayDate, protocol.weeksField, protocol::decodeText)
+        val json = if (week == 1) base else request(buildTimetableParameter(protocol.timetablePrefix, schoolCode, week))
+        val actualMonday = LocalDate.parse(protocol.decodeText(json[protocol.startDateField].asText()))
+        check(actualMonday == mondayDate) { "컴시간 응답 주차 불일치: 요청 $mondayDate, 응답 $actualMonday" }
+        return parseComciganTimeTables(json, protocol, mondayDate, comciganProperties)
     }
 
-    private fun parseDailyTimeTables(date: LocalDate): List<ParsedTimeTable> {
-        val dayIdx = date.dayOfWeek.value
-        val base = fetchTimetable()
-        val week = resolveWeek(base, date)
-        val json = if (week == DEFAULT_WEEK) base else fetchTimetable(week)
-        val subjects = json["자료$sbNum"]
-        val teachers = json["자료$thNum"]
-        val timetableData = json["자료$dayNum"]
-        val orgData = if (orgNum != dayNum) json["자료$orgNum"] else null
-
-        val result = mutableListOf<ParsedTimeTable>()
-
-        for (gradeIdx in 1..minOf(comciganProperties.maxGrade, timetableData.size() - 1)) {
-            val gradeData = timetableData[gradeIdx]
-            val orgGradeData = orgData?.get(gradeIdx)
-            for (roomIdx in 1..minOf(comciganProperties.maxRoom, gradeData.size() - 1)) {
-                val roomData = gradeData[roomIdx]
-                val orgRoomData = orgGradeData?.get(roomIdx)
-                if (dayIdx >= roomData.size()) continue
-                val dayData = roomData[dayIdx]
-                val orgDayData = orgRoomData?.get(dayIdx)
-                parsePeriods(dayData, orgDayData, subjects, teachers) { period, subject, teacher, isReplaced ->
-                    result.add(ParsedTimeTable(date, gradeIdx, roomIdx, period, subject, teacher, isReplaced))
-                }
-            }
-        }
-
-        return result
+    private fun fetch(uri: URI, token: String? = null): ByteArray {
+        val builder = HttpRequest.newBuilder(uri).timeout(Duration.ofSeconds(20))
+            .header("User-Agent", "Mozilla/5.0").header("Referer", pageUri.toString())
+        if (token != null) builder.header("X-Hour-Token", token)
+        val response = httpClient.send(builder.GET().build(), HttpResponse.BodyHandlers.ofByteArray())
+        if (response.statusCode() != 200) throw ComciganHttpException(response.statusCode())
+        return response.body()
     }
 
-    private inline fun parsePeriods(
-        dayData: JsonNode,
-        orgDayData: JsonNode?,
-        subjects: JsonNode,
-        teachers: JsonNode,
-        onPeriod: (period: Int, subject: String, teacher: String, isReplaced: Boolean) -> Unit,
-    ) {
-        for (periodIdx in 1 until dayData.size()) {
-            val rawText = dayData[periodIdx].asText()
-            val str = rawText.removePrefix(">")
-            if (str.length < 3) continue
-
-            val subjectIdx = if (str.length >= 5) str.substring(0, 2).toInt() else str.substring(0, 1).toInt()
-            val teacherIdx = str.substring(str.length - 2).toInt()
-
-            val subject = getTextSafe(subjects, subjectIdx)
-            val teacher = getTextSafe(teachers, teacherIdx)
-            if (subject.isBlank()) continue
-
-            val value = str.toInt()
-            val orgValue = orgDayData?.get(periodIdx)?.asInt() ?: value
-            val isReplaced = value != orgValue
-
-            onPeriod(periodIdx, subject, teacher, isReplaced)
-        }
-    }
-
-    private fun fetchTimetable(week: Int = DEFAULT_WEEK): JsonNode {
-        val param = buildTimetableParameter(prefix, schoolCode, week)
-        val encoded = Base64.getEncoder().encodeToString(param.toByteArray(Charsets.UTF_8))
-        val body = fetchAsUtf8("$baseUrl?$encoded")
-        return objectMapper.readTree(body.replace("\u0000", ""))
-    }
-
-    private fun fetchAsEucKr(url: String): String {
-        val request = HttpRequest.newBuilder().uri(URI.create(url))
-            .header("User-Agent", "Mozilla/5.0").GET().build()
-        val response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray())
-        return String(response.body(), eucKr)
-    }
-
-    private fun fetchAsUtf8(url: String): String {
-        val request = HttpRequest.newBuilder().uri(URI.create(url))
-            .header("User-Agent", "Mozilla/5.0").GET().build()
-        return httpClient.send(request, HttpResponse.BodyHandlers.ofString()).body()
-    }
-
-    private fun encodeEucKr(text: String): String {
-        return text.toByteArray(eucKr).joinToString("") { "%${String.format("%02X", it)}" }
-    }
-
-    private fun getTextSafe(node: JsonNode?, index: Int): String {
-        if (node == null || index < 0 || index >= node.size()) return ""
-        return node[index].asText("")
-    }
-
-    companion object {
-        private const val DEFAULT_WEEK = 1
-    }
+    private fun encode(text: String) = URLEncoder.encode(text, Charsets.UTF_8).replace("+", "%20")
 }
 
-internal fun deobfuscateScripts(html: String, objectMapper: ObjectMapper): String {
-    val scripts = Regex("\\(0,eval\\)\\(s\\);\\}\\)\\((\\[\\[.*?]]),(\\d+)\\);", RegexOption.DOT_MATCHES_ALL).findAll(html)
-    val decoded = scripts.joinToString("\n") { match ->
-        val chunks = objectMapper.readTree(match.groupValues[1])
-        val key = match.groupValues[2].toInt()
-        buildString {
-            for (chunk in chunks) {
-                val text = chunk[1].asText()
-                if (chunk[0].asInt() != 0) {
-                    append(text)
-                    continue
-                }
-                for (j in text.indices step 4) {
-                    val code = text.substring(j, j + 4).toInt(16)
-                    append((code xor ((key + (j / 4) * 13) and 255)).toChar())
+private class ComciganHttpException(val status: Int) : IllegalStateException("컴시간 HTTP 요청 실패: $status")
+
+internal fun parseComciganTimeTables(
+    json: JsonNode,
+    protocol: ComciganProtocol,
+    mondayDate: LocalDate,
+    properties: ComciganProperties,
+): List<ParsedTimeTable> {
+    fun array(field: String): JsonNode = json[field].also {
+        check(it != null && it.isArray) { "컴시간 시간표 자료 없음: $field" }
+    }
+    val subjects = array(protocol.subjectField)
+    val teachers = array(protocol.teacherField)
+    val daily = array(protocol.dailyField)
+    val original = array(protocol.originalField)
+    val divisor = json.path("분리").asInt(100)
+    check(divisor > 0) { "컴시간 과목 분리 값 오류" }
+    val explicitChanges = json.path("변경알림").asInt() == 1
+    val limit = json.path("열람제한일").asText().takeIf { it.isNotBlank() }
+        ?.let { runCatching { LocalDate.parse(it.take(10)) }.getOrNull() }?.takeIf { it.year >= 2014 }
+    val result = mutableListOf<ParsedTimeTable>()
+    for (grade in 1..minOf(properties.maxGrade, daily.size() - 1)) {
+        for (room in 1..minOf(properties.maxRoom, daily[grade].size() - 1)) {
+            val roomData = daily[grade][room]
+            for (day in 1..minOf(5, roomData.size() - 1)) {
+                val date = mondayDate.plusDays(day - 1L)
+                if (limit != null && !date.isBefore(limit)) continue
+                for (period in 1 until roomData[day].size()) {
+                    val raw = roomData[day][period].asText()
+                    val value = raw.removePrefix(">").toLongOrNull() ?: error("컴시간 교시 자료 형식 변경")
+                    val teacherIndex = (value % 1000).toInt()
+                    if (teacherIndex == 0) continue
+                    val subjectIndex = ((value / 1000) % divisor).toInt()
+                    check(teacherIndex in 1 until teachers.size() && subjectIndex in 1 until subjects.size()) { "컴시간 교사 또는 과목 인덱스 오류" }
+                    val subject = protocol.decodeText(subjects[subjectIndex].asText())
+                    val teacher = displayTeacherName(protocol.decodeText(teachers[teacherIndex].asText()))
+                    check(subject.isNotBlank()) { "컴시간 과목명 누락" }
+                    val originalValue = original.path(grade).path(room).path(day).path(period).asText("0").removePrefix(">").toLongOrNull() ?: 0L
+                    val replaced = if (explicitChanges) raw.startsWith(">") else value != originalValue
+                    result.add(ParsedTimeTable(date, grade, room, period, subject, teacher, replaced))
                 }
             }
         }
     }
-    return "$html\n$decoded"
+    return result
 }
 
-internal fun buildTimetableParameter(prefix: String, schoolCode: Int, week: Int): String =
-    "${prefix}${schoolCode}_0_$week"
-
-internal fun resolveWeek(json: JsonNode, date: LocalDate): Int {
-    val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-    val weeks = json["일자자료"]
-    for (week in weeks) {
-        val label = week[1].asText()
-        val start = LocalDate.parse("20" + label.substringBefore(" ~ ").trim(), dateFormatter)
-        val end = LocalDate.parse("20" + label.substringAfter("~ ").trim(), dateFormatter)
-
-        if (!date.isBefore(start) && !date.isAfter(end)) return week[0].asInt()
-    }
-    return json["오늘r"].asInt()
-}
+private fun displayTeacherName(name: String): String =
+    if ((name.contains('*') && !name.startsWith('*') && !name.endsWith('*')) || (name.length == 2 && name[1] == '*')) name
+    else name.replaceFirst("*", "")
