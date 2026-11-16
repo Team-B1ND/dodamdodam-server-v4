@@ -82,6 +82,7 @@ class NightStudyEntity (
     fun pending() {
         this.status = NightStudyStatusType.PENDING
         this.rejectionReason = null
+        unassignRoom()
     }
 
     fun assignRoom(room: ProjectRoomEntity) {

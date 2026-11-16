@@ -9,7 +9,10 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.Ni
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudyMember.NightStudyMemberQueryRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudyMember.NightStudyMemberRepository
+import com.b1nd.dodamdodam.nightstudy.domain.room.entity.ProjectRoomEntity
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.`when`
@@ -207,6 +210,54 @@ class NightStudyServiceTest {
 
         assertEquals(NightStudyStatusType.PENDING, project.status)
         assertEquals(null, project.rejectionReason)
+    }
+
+    @Test
+    fun `프로젝트 승인 취소 시 실 배정을 해제하고 희망실은 유지한다`() {
+        val publicId = UUID.randomUUID()
+        val wishRoom = ProjectRoomEntity(name = "희망실", floor = 2)
+        val assignedRoom = ProjectRoomEntity(name = "배정실", floor = 3)
+        val project = nightStudy(NightStudyType.PROJECT).apply {
+            this.wishRoom = wishRoom
+            allow()
+            assignRoom(assignedRoom)
+        }
+        `when`(nightStudyRepository.findByPublicIdForUpdate(publicId)).thenReturn(project)
+
+        service.pending(publicId)
+
+        assertEquals(NightStudyStatusType.PENDING, project.status)
+        assertNull(project.room)
+        assertSame(wishRoom, project.wishRoom)
+    }
+
+    @Test
+    fun `승인 취소 후 다시 승인해도 이전 실 배정은 복구되지 않는다`() {
+        val publicId = UUID.randomUUID()
+        val project = nightStudy(NightStudyType.PROJECT).apply {
+            allow()
+            assignRoom(ProjectRoomEntity(name = "프로젝트실", floor = 3))
+        }
+        `when`(nightStudyRepository.findByPublicIdForUpdate(publicId)).thenReturn(project)
+        `when`(nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(project)).thenReturn(emptyList())
+
+        service.pending(publicId)
+        service.allow(publicId)
+
+        assertEquals(NightStudyStatusType.ALLOWED, project.status)
+        assertNull(project.room)
+    }
+
+    @Test
+    fun `실 배정이 없는 개인 심자도 승인을 취소할 수 있다`() {
+        val publicId = UUID.randomUUID()
+        val personal = nightStudy(NightStudyType.PERSONAL).apply { allow() }
+        `when`(nightStudyRepository.findByPublicIdForUpdate(publicId)).thenReturn(personal)
+
+        service.pending(publicId)
+
+        assertEquals(NightStudyStatusType.PENDING, personal.status)
+        assertNull(personal.room)
     }
 
     @Test
