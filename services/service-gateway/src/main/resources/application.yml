@@ -28,6 +28,8 @@ management:
         include: gateway,health,info
 
 app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:https://dodam.b1nd.com}
   auth:
     access-token-cookie: ${COOKIE_ACCESS_TOKEN_NAME:access_token}
   openapi:
