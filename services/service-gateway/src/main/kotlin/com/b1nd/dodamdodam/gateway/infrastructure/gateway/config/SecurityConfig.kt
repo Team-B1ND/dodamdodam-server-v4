@@ -1,5 +1,6 @@
 package com.b1nd.dodamdodam.gateway.infrastructure.gateway.config
 
+import com.b1nd.dodamdodam.gateway.infrastructure.gateway.properties.CorsProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
@@ -11,7 +12,9 @@ import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
 
 @Configuration
 @EnableWebFluxSecurity
-class SecurityConfig {
+class SecurityConfig(
+    private val corsProperties: CorsProperties,
+) {
 
     @Bean
     fun securityWebFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain {
@@ -27,7 +30,7 @@ class SecurityConfig {
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val configuration = CorsConfiguration().apply {
-            allowedOriginPatterns = listOf("*")
+            allowedOrigins = corsProperties.allowedOrigins
             allowedMethods = listOf("*")
             allowedHeaders = listOf("*")
             allowCredentials = true
