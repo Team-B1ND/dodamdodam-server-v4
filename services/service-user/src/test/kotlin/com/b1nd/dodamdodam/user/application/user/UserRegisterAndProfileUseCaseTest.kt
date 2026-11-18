@@ -17,6 +17,7 @@ import com.b1nd.dodamdodam.user.domain.teacher.service.TeacherService
 import com.b1nd.dodamdodam.user.domain.user.entity.UserEntity
 import com.b1nd.dodamdodam.user.domain.user.enumeration.Gender
 import com.b1nd.dodamdodam.user.domain.user.enumeration.StatusType
+import com.b1nd.dodamdodam.user.domain.user.exception.InvalidProfileImageException
 import com.b1nd.dodamdodam.user.domain.user.exception.PhoneAlreadyExistsException
 import com.b1nd.dodamdodam.user.domain.user.service.UserQueryService
 import com.b1nd.dodamdodam.user.domain.user.service.UserService
@@ -34,6 +35,7 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.mockingDetails
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
+import org.mockito.Mockito.verifyNoInteractions
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
 import java.time.LocalDateTime
@@ -81,6 +83,16 @@ class UserRegisterAndProfileUseCaseTest {
     @AfterEach
     fun logout() {
         SecurityContextHolder.clearContext()
+    }
+
+    @Test
+    fun `프로필 검증 실패 시 사용자 변경 이벤트를 발행하지 않는다`() {
+        val failure = InvalidProfileImageException()
+        `when`(userService.update(userId, null, null, "bad-url", null)).thenThrow(failure)
+        assertThrows(failure.javaClass) {
+            useCase.updateUser(UpdateUserInfoRequest(null, null, "bad-url", null))
+        }
+        verifyNoInteractions(kafkaMessageProducer)
     }
 
     // ---------- 회원가입 ----------

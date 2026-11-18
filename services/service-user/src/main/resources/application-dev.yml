@@ -22,6 +22,10 @@ server:
   port: 8080
 
 grpc:
+  client:
+    service-file:
+      address: "${FILE_GRPC_ADDRESS:static://service-file:9090}"
+      negotiation-type: plaintext
   server:
     port: 9090
 
