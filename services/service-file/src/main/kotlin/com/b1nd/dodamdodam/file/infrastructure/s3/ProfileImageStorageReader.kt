@@ -15,26 +15,42 @@ class ProfileImageStorageReader(
     private val properties: S3Properties,
 ) {
     fun read(key: String): ByteArray {
-        val request = GetObjectRequest.builder().bucket(properties.bucket).key(key)
-            .overrideConfiguration { it.apiCallTimeout(Duration.ofSeconds(5)).apiCallAttemptTimeout(Duration.ofSeconds(3)) }
+        val request = GetObjectRequest.builder()
+            .bucket(properties.bucket)
+            .key(key)
+            .overrideConfiguration {
+                it.apiCallTimeout(Duration.ofSeconds(5))
+                    .apiCallAttemptTimeout(Duration.ofSeconds(3))
+            }
             .build()
+
+        val transformer = ResponseTransformer<GetObjectResponse, ByteArray> { response, stream ->
+            val contentLength = response.contentLength()
+            if (contentLength !in 1..MAX_BYTES.toLong()) {
+                stream.abort()
+                return@ResponseTransformer byteArrayOf()
+            }
+
+            val bytes = stream.readNBytes(MAX_BYTES + 1)
+            if (bytes.size > MAX_BYTES || bytes.size.toLong() != contentLength) {
+                stream.abort()
+                return@ResponseTransformer byteArrayOf()
+            }
+
+            bytes
+        }
+
         try {
-            val bytes = s3Client.getObject(request, ResponseTransformer<GetObjectResponse, ByteArray> { response, stream ->
-                if (response.contentLength() !in 1..MAX_BYTES.toLong()) {
-                    stream.abort()
-                    return@ResponseTransformer byteArrayOf()
-                }
-                val bytes = stream.readNBytes(MAX_BYTES + 1)
-                if (bytes.size > MAX_BYTES || bytes.size.toLong() != response.contentLength()) {
-                    stream.abort()
-                    return@ResponseTransformer byteArrayOf()
-                }
-                bytes
-            })
-            if (bytes.isEmpty()) throw InvalidProfileImageException()
+            val bytes = s3Client.getObject(request, transformer)
+            // SDK가 입력 오류를 통신 오류로 감싸지 않도록 변환기 밖에서 예외를 던진다.
+            if (bytes.isEmpty()) {
+                throw InvalidProfileImageException()
+            }
             return bytes
         } catch (e: S3Exception) {
-            if (e.statusCode() == 404) throw InvalidProfileImageException()
+            if (e.statusCode() == 404) {
+                throw InvalidProfileImageException()
+            }
             throw e
         }
     }

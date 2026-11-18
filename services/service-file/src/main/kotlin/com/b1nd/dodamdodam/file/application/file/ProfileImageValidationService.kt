@@ -16,7 +16,11 @@ class ProfileImageValidationService(
     fun validate(url: String) {
         val key = fileUrl.resolveKey(url)
         val extension = key.substringAfterLast('.', "").lowercase()
-        if (FileType.fromExtension(extension) != FileType.IMAGE) throw InvalidProfileImageException()
-        validator.validate(storageReader.read(key), extension)
+        if (FileType.fromExtension(extension) != FileType.IMAGE) {
+            throw InvalidProfileImageException()
+        }
+
+        val bytes = storageReader.read(key)
+        validator.validate(bytes, extension)
     }
 }

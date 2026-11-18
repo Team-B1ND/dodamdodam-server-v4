@@ -11,11 +11,15 @@ import net.devh.boot.grpc.server.service.GrpcService
 import org.slf4j.LoggerFactory
 
 @GrpcService
-class ProfileImageGrpcController(private val validationService: ProfileImageValidationService) :
-    ProfileImageServiceGrpc.ProfileImageServiceImplBase() {
+class ProfileImageGrpcController(
+    private val validationService: ProfileImageValidationService,
+) : ProfileImageServiceGrpc.ProfileImageServiceImplBase() {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    override fun validateProfileImage(request: ValidateProfileImageRequest, observer: StreamObserver<ValidateProfileImageResponse>) {
+    override fun validateProfileImage(
+        request: ValidateProfileImageRequest,
+        observer: StreamObserver<ValidateProfileImageResponse>,
+    ) {
         val valid = try {
             validationService.validate(request.url)
             true
@@ -23,10 +27,17 @@ class ProfileImageGrpcController(private val validationService: ProfileImageVali
             false
         } catch (e: Exception) {
             log.warn("프로필 이미지 검증에 실패했습니다.", e)
-            observer.onError(Status.UNAVAILABLE.withDescription("Profile image validation unavailable").asRuntimeException())
+            val error = Status.UNAVAILABLE
+                .withDescription("Profile image validation unavailable")
+                .asRuntimeException()
+            observer.onError(error)
             return
         }
-        observer.onNext(ValidateProfileImageResponse.newBuilder().setValid(valid).build())
+
+        val response = ValidateProfileImageResponse.newBuilder()
+            .setValid(valid)
+            .build()
+        observer.onNext(response)
         observer.onCompleted()
     }
 }

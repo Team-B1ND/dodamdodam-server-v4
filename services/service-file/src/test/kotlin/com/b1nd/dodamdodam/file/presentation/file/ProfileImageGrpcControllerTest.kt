@@ -6,14 +6,21 @@ import com.b1nd.dodamdodam.grpc.file.ValidateProfileImageRequest
 import com.b1nd.dodamdodam.grpc.file.ValidateProfileImageResponse
 import io.grpc.Status
 import io.grpc.stub.StreamObserver
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.*
+import org.mockito.Mockito.`when`
+import org.mockito.Mockito.doThrow
+import org.mockito.Mockito.mock
 
 class ProfileImageGrpcControllerTest {
     private val service = mock(ProfileImageValidationService::class.java)
     private val controller = ProfileImageGrpcController(service)
-    private val request = ValidateProfileImageRequest.newBuilder().setUrl("test-url").build()
+    private val request = ValidateProfileImageRequest.newBuilder()
+        .setUrl("test-url")
+        .build()
 
     @Test
     fun `검증 성공과 거부를 응답한다`() {
@@ -21,6 +28,7 @@ class ProfileImageGrpcControllerTest {
         controller.validateProfileImage(request, success)
         assertEquals(true, success.response?.valid)
         assertTrue(success.completed)
+
         doThrow(InvalidProfileImageException()).`when`(service).validate("test-url")
         val invalid = Observer()
         controller.validateProfileImage(request, invalid)
@@ -42,8 +50,17 @@ class ProfileImageGrpcControllerTest {
         var response: ValidateProfileImageResponse? = null
         var error: Throwable? = null
         var completed = false
-        override fun onNext(value: ValidateProfileImageResponse) { response = value }
-        override fun onError(t: Throwable) { error = t }
-        override fun onCompleted() { completed = true }
+
+        override fun onNext(value: ValidateProfileImageResponse) {
+            response = value
+        }
+
+        override fun onError(t: Throwable) {
+            error = t
+        }
+
+        override fun onCompleted() {
+            completed = true
+        }
     }
 }

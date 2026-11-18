@@ -16,14 +16,23 @@ class GrpcProfileImageValidator : ProfileImageValidator {
     private lateinit var stub: ProfileImageServiceGrpc.ProfileImageServiceBlockingStub
 
     override fun validate(url: String) {
-        if (url.isBlank() || url.length > 2048) throw InvalidProfileImageException()
+        if (url.isBlank() || url.length > 2048) {
+            throw InvalidProfileImageException()
+        }
+
+        val request = ValidateProfileImageRequest.newBuilder()
+            .setUrl(url)
+            .build()
+
         val response = try {
-            stub.withDeadlineAfter(8, TimeUnit.SECONDS).validateProfileImage(
-                ValidateProfileImageRequest.newBuilder().setUrl(url).build()
-            )
+            stub.withDeadlineAfter(8, TimeUnit.SECONDS)
+                .validateProfileImage(request)
         } catch (_: StatusRuntimeException) {
             throw ProfileImageValidationUnavailableException()
         }
-        if (!response.valid) throw InvalidProfileImageException()
+
+        if (!response.valid) {
+            throw InvalidProfileImageException()
+        }
     }
 }

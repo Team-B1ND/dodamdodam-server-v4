@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import javax.imageio.ImageIO
+import javax.imageio.ImageReader
 import javax.imageio.stream.MemoryCacheImageInputStream
 
 @Component
@@ -16,25 +17,22 @@ class StaticProfileImageValidator {
                 "png", "bmp", "webp", "tiff" -> extension.lowercase()
                 else -> throw InvalidProfileImageException()
             }
-            if (expectedFormat == "png") rejectAnimatedPng(bytes)
-            if (expectedFormat == "webp") rejectAnimatedWebp(bytes)
+
+            when (expectedFormat) {
+                "png" -> rejectAnimatedPng(bytes)
+                "webp" -> rejectAnimatedWebp(bytes)
+            }
+
             MemoryCacheImageInputStream(bytes.inputStream()).use { input ->
                 val readers = ImageIO.getImageReaders(input)
-                if (!readers.hasNext()) throw InvalidProfileImageException()
+                if (!readers.hasNext()) {
+                    throw InvalidProfileImageException()
+                }
+
                 val reader = readers.next()
                 try {
                     reader.input = input
-                    val actualFormat = reader.formatName.lowercase().let { if (it == "tif") "tiff" else it }
-                    if (actualFormat != expectedFormat || reader.getNumImages(true) != 1) {
-                        throw InvalidProfileImageException()
-                    }
-                    val width = reader.getWidth(0)
-                    val height = reader.getHeight(0)
-                    if (width !in 1..8192 || height !in 1..8192 || width.toLong() * height > 16_000_000) {
-                        throw InvalidProfileImageException()
-                    }
-                    // 헤더뿐 아니라 실제 이미지 데이터도 디코딩한다.
-                    if (reader.read(0) == null) throw InvalidProfileImageException()
+                    validateImage(reader, expectedFormat)
                 } finally {
                     reader.dispose()
                 }
@@ -46,45 +44,114 @@ class StaticProfileImageValidator {
         }
     }
 
+    private fun validateImage(reader: ImageReader, expectedFormat: String) {
+        val actualFormat = when (val format = reader.formatName.lowercase()) {
+            "tif" -> "tiff"
+            else -> format
+        }
+
+        if (actualFormat != expectedFormat || reader.getNumImages(true) != 1) {
+            throw InvalidProfileImageException()
+        }
+
+        val width = reader.getWidth(0)
+        val height = reader.getHeight(0)
+        val pixelCount = width.toLong() * height
+
+        if (width !in 1..MAX_DIMENSION || height !in 1..MAX_DIMENSION || pixelCount > MAX_PIXELS) {
+            throw InvalidProfileImageException()
+        }
+
+        // 헤더만 정상인 손상 파일도 거부하도록 실제 이미지 데이터를 디코딩한다.
+        if (reader.read(0) == null) {
+            throw InvalidProfileImageException()
+        }
+    }
+
     // ImageIO는 APNG도 단일 PNG로 읽으므로 애니메이션 청크를 별도로 검사한다.
     private fun rejectAnimatedPng(bytes: ByteArray) {
-        val signature = byteArrayOf(0x89.toByte(), 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)
-        if (!bytes.take(8).toByteArray().contentEquals(signature)) throw InvalidProfileImageException()
-        var offset = 8
+        val signature = bytes.take(PNG_SIGNATURE.size).toByteArray()
+        if (!signature.contentEquals(PNG_SIGNATURE)) {
+            throw InvalidProfileImageException()
+        }
+
+        var offset = PNG_SIGNATURE.size
         while (offset + 12 <= bytes.size) {
-            val length = uint32(bytes, offset, ByteOrder.BIG_ENDIAN)
+            val length = readUnsignedInt(bytes, offset, ByteOrder.BIG_ENDIAN)
             val end = offset.toLong() + length + 12
-            if (end > bytes.size) throw InvalidProfileImageException()
-            when (fourCC(bytes, offset + 4)) {
+            if (end > bytes.size) {
+                throw InvalidProfileImageException()
+            }
+
+            when (readChunkType(bytes, offset + 4)) {
                 "acTL", "fcTL", "fdAT" -> throw InvalidProfileImageException()
                 "IEND" -> {
-                    if (length != 0L || end != bytes.size.toLong()) throw InvalidProfileImageException()
+                    if (length != 0L || end != bytes.size.toLong()) {
+                        throw InvalidProfileImageException()
+                    }
                     return
                 }
             }
+
             offset = end.toInt()
         }
+
         throw InvalidProfileImageException()
     }
 
     private fun rejectAnimatedWebp(bytes: ByteArray) {
-        if (bytes.size < 12 || fourCC(bytes, 0) != "RIFF" || fourCC(bytes, 8) != "WEBP" ||
-            uint32(bytes, 4, ByteOrder.LITTLE_ENDIAN) + 8 != bytes.size.toLong()) throw InvalidProfileImageException()
+        if (bytes.size < 12) {
+            throw InvalidProfileImageException()
+        }
+
+        val containerType = readChunkType(bytes, 0)
+        val imageType = readChunkType(bytes, 8)
+        val declaredSize = readUnsignedInt(bytes, 4, ByteOrder.LITTLE_ENDIAN) + 8
+
+        if (containerType != "RIFF" || imageType != "WEBP" || declaredSize != bytes.size.toLong()) {
+            throw InvalidProfileImageException()
+        }
+
         var offset = 12
         while (offset + 8 <= bytes.size) {
-            val length = uint32(bytes, offset + 4, ByteOrder.LITTLE_ENDIAN)
-            val end = offset.toLong() + 8 + length + length % 2
-            if (end > bytes.size) throw InvalidProfileImageException()
-            when (fourCC(bytes, offset)) {
-                "ANIM", "ANMF" -> throw InvalidProfileImageException()
-                "VP8X" -> if (length != 10L || bytes[offset + 8].toInt() and 0x02 != 0) throw InvalidProfileImageException()
+            val length = readUnsignedInt(bytes, offset + 4, ByteOrder.LITTLE_ENDIAN)
+            val padding = length % 2
+            val end = offset.toLong() + 8 + length + padding
+            if (end > bytes.size) {
+                throw InvalidProfileImageException()
             }
+
+            when (readChunkType(bytes, offset)) {
+                "ANIM", "ANMF" -> throw InvalidProfileImageException()
+                "VP8X" -> {
+                    if (length != 10L) {
+                        throw InvalidProfileImageException()
+                    }
+
+                    val hasAnimation = (bytes[offset + 8].toInt() and 0x02) != 0
+                    if (hasAnimation) {
+                        throw InvalidProfileImageException()
+                    }
+                }
+            }
+
             offset = end.toInt()
         }
-        if (offset != bytes.size) throw InvalidProfileImageException()
+
+        if (offset != bytes.size) {
+            throw InvalidProfileImageException()
+        }
     }
 
-    private fun fourCC(bytes: ByteArray, offset: Int) = String(bytes, offset, 4, Charsets.US_ASCII)
-    private fun uint32(bytes: ByteArray, offset: Int, order: ByteOrder) =
+    private fun readChunkType(bytes: ByteArray, offset: Int): String =
+        String(bytes, offset, 4, Charsets.US_ASCII)
+
+    private fun readUnsignedInt(bytes: ByteArray, offset: Int, order: ByteOrder): Long =
         ByteBuffer.wrap(bytes, offset, 4).order(order).int.toLong() and 0xffffffffL
+
+    companion object {
+        private const val MAX_DIMENSION = 8192
+        private const val MAX_PIXELS = 16_000_000
+        private val PNG_SIGNATURE = byteArrayOf(0x89.toByte(), 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)
+    }
 }
