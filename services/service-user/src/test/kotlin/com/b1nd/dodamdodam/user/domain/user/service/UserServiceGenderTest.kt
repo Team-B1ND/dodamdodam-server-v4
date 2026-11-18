@@ -29,6 +29,7 @@ class UserServiceGenderTest {
         userRepository = userRepository,
         userRoleRepository = userRoleRepository,
         encoder = encoder,
+        profileImageValidator = mock(ProfileImageValidator::class.java),
     )
 
     private val publicId: UUID = UUID.randomUUID()

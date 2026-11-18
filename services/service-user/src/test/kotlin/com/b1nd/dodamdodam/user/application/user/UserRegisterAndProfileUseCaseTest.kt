@@ -83,6 +83,16 @@ class UserRegisterAndProfileUseCaseTest {
         SecurityContextHolder.clearContext()
     }
 
+    @Test
+    fun `프로필 검증 실패 시 사용자 변경 이벤트를 발행하지 않는다`() {
+        val failure = com.b1nd.dodamdodam.user.domain.user.exception.InvalidProfileImageException()
+        `when`(userService.update(userId, null, null, "bad-url", null)).thenThrow(failure)
+        assertThrows(failure.javaClass) {
+            useCase.updateUser(UpdateUserInfoRequest(null, null, "bad-url", null))
+        }
+        org.mockito.Mockito.verifyNoInteractions(kafkaMessageProducer)
+    }
+
     // ---------- 회원가입 ----------
 
     @Test

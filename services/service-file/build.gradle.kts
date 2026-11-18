@@ -9,6 +9,10 @@ dependencies {
     implementation(project(":core:core-kafka"))
     implementation(project(":core:core-github-client"))
 
+    implementation(project(":core:core-grpc"))
+    implementation(libs.springGrpc)
+    implementation("com.twelvemonkeys.imageio:imageio-webp:3.15.3")
+
     // swagger
     implementation(libs.springdoc.openapi.webmvc.ui)
 
