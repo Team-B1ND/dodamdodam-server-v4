@@ -3,6 +3,7 @@ package com.b1nd.dodamdodam.weekendstudy.domain.room.service
 import com.b1nd.dodamdodam.weekendstudy.domain.room.entity.ProjectRoomBlockEntity
 import com.b1nd.dodamdodam.weekendstudy.domain.room.entity.ProjectRoomEntity
 import com.b1nd.dodamdodam.weekendstudy.domain.room.exception.ProjectRoomAlreadyBlockedException
+import com.b1nd.dodamdodam.weekendstudy.domain.room.exception.ProjectRoomBlockNotFoundException
 import com.b1nd.dodamdodam.weekendstudy.domain.room.exception.ProjectRoomBlockedException
 import com.b1nd.dodamdodam.weekendstudy.domain.room.repository.ProjectRoomBlockRepository
 import org.springframework.dao.DataIntegrityViolationException
@@ -23,6 +24,15 @@ class ProjectRoomBlockService(
         } catch (e: DataIntegrityViolationException) {
             throw ProjectRoomAlreadyBlockedException()
         }
+    }
+
+    fun getAllByRoom(room: ProjectRoomEntity): List<ProjectRoomBlockEntity> =
+        projectRoomBlockRepository.findAllByRoomOrderByStartAtDescPeriodAsc(room)
+
+    fun delete(room: ProjectRoomEntity, blockId: Long) {
+        val block = projectRoomBlockRepository.findByIdAndRoom(blockId, room)
+            ?: throw ProjectRoomBlockNotFoundException()
+        projectRoomBlockRepository.delete(block)
     }
 
     fun validateNotBlocked(room: ProjectRoomEntity, date: LocalDate, periods: List<Int>) {

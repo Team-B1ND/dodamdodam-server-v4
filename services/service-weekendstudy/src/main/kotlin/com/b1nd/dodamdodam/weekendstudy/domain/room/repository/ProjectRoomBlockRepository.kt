@@ -12,4 +12,7 @@ interface ProjectRoomBlockRepository : JpaRepository<ProjectRoomBlockEntity, Lon
         endAt: LocalDate,
         startAt: LocalDate,
     ): Boolean
+
+    fun findAllByRoomOrderByStartAtDescPeriodAsc(room: ProjectRoomEntity): List<ProjectRoomBlockEntity>
+    fun findByIdAndRoom(id: Long, room: ProjectRoomEntity): ProjectRoomBlockEntity?
 }

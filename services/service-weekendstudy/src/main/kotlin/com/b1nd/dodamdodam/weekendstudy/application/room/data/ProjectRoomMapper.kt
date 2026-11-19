@@ -2,6 +2,7 @@ package com.b1nd.dodamdodam.weekendstudy.application.room.data
 
 import com.b1nd.dodamdodam.weekendstudy.application.room.data.request.BlockProjectRoomRequest
 import com.b1nd.dodamdodam.weekendstudy.application.room.data.request.SaveProjectRoomRequest
+import com.b1nd.dodamdodam.weekendstudy.application.room.data.response.ProjectRoomBlockResponse
 import com.b1nd.dodamdodam.weekendstudy.application.room.data.response.ProjectRoomResponse
 import com.b1nd.dodamdodam.weekendstudy.domain.room.entity.ProjectRoomBlockEntity
 import com.b1nd.dodamdodam.weekendstudy.domain.room.entity.ProjectRoomEntity
@@ -16,4 +17,12 @@ fun ProjectRoomEntity.toResponse() = ProjectRoomResponse(
     id = id!!,
     name = name,
     floor = floor,
+)
+
+fun ProjectRoomBlockEntity.toResponse() = ProjectRoomBlockResponse(
+    id = id!!,
+    period = period,
+    description = description,
+    startAt = startAt,
+    endAt = endAt,
 )

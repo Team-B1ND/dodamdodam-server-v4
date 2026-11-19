@@ -3,6 +3,7 @@ package com.b1nd.dodamdodam.weekendstudy.application.room
 import com.b1nd.dodamdodam.core.common.data.Response
 import com.b1nd.dodamdodam.weekendstudy.application.room.data.request.BlockProjectRoomRequest
 import com.b1nd.dodamdodam.weekendstudy.application.room.data.request.SaveProjectRoomRequest
+import com.b1nd.dodamdodam.weekendstudy.application.room.data.response.ProjectRoomBlockResponse
 import com.b1nd.dodamdodam.weekendstudy.application.room.data.response.ProjectRoomResponse
 import com.b1nd.dodamdodam.weekendstudy.application.room.data.toEntities
 import com.b1nd.dodamdodam.weekendstudy.application.room.data.toEntity
@@ -50,6 +51,18 @@ class ProjectRoomUseCase(
         validateBlock(request.startAt, request.endAt, request.periods)
         projectRoomBlockService.saveAll(request.toEntities(room))
         return Response.created("방을 차단했어요.")
+    }
+
+    @Transactional(readOnly = true)
+    fun getBlocks(roomId: Long): Response<List<ProjectRoomBlockResponse>> {
+        val room = projectRoomService.getById(roomId)
+        return Response.ok("방 차단 목록을 조회했어요.", projectRoomBlockService.getAllByRoom(room).map { it.toResponse() })
+    }
+
+    fun unblock(roomId: Long, blockId: Long): Response<Any> {
+        val room = projectRoomService.getById(roomId)
+        projectRoomBlockService.delete(room, blockId)
+        return Response.ok("방 차단을 해제했어요.")
     }
 
     private fun validateBlock(startAt: LocalDate, endAt: LocalDate, periods: List<Int>) {

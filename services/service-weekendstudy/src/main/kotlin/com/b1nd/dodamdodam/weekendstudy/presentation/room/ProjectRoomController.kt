@@ -6,6 +6,7 @@ import com.b1nd.dodamdodam.core.security.passport.enumerations.RoleType
 import com.b1nd.dodamdodam.weekendstudy.application.room.ProjectRoomUseCase
 import com.b1nd.dodamdodam.weekendstudy.application.room.data.request.BlockProjectRoomRequest
 import com.b1nd.dodamdodam.weekendstudy.application.room.data.request.SaveProjectRoomRequest
+import com.b1nd.dodamdodam.weekendstudy.application.room.data.response.ProjectRoomBlockResponse
 import com.b1nd.dodamdodam.weekendstudy.application.room.data.response.ProjectRoomResponse
 import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -46,4 +47,14 @@ class ProjectRoomController(
     @PostMapping("/{roomId}/blocks")
     fun block(@PathVariable roomId: Long, @RequestBody @Valid request: BlockProjectRoomRequest): Response<Any> =
         projectRoomUseCase.block(roomId, request)
+
+    @UserAccess(roles = [RoleType.WEEKEND_MANAGER])
+    @GetMapping("/{roomId}/blocks")
+    fun getBlocks(@PathVariable roomId: Long): Response<List<ProjectRoomBlockResponse>> =
+        projectRoomUseCase.getBlocks(roomId)
+
+    @UserAccess(roles = [RoleType.WEEKEND_MANAGER])
+    @DeleteMapping("/{roomId}/blocks/{blockId}")
+    fun unblock(@PathVariable roomId: Long, @PathVariable blockId: Long): Response<Any> =
+        projectRoomUseCase.unblock(roomId, blockId)
 }
