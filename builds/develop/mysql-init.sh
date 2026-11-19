@@ -11,6 +11,7 @@ databases=(
   dodam-nightstudy
   dodam-file
   dodam-notification
+  dodam-weekendstudy
 )
 
 escaped_user=${MYSQL_USER//\`/\`\`}

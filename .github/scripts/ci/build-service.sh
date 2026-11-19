@@ -4,7 +4,7 @@ set -euo pipefail
 : "${SERVICE:?SERVICE is required}"
 
 case "$SERVICE" in
-  gateway|auth|user|inapp|file|neis|out-sleeping|nightstudy|oauth)
+  gateway|auth|user|inapp|file|neis|out-sleeping|nightstudy|oauth|weekendstudy)
     chmod +x gradlew
     ./gradlew ":services:service-${SERVICE}:build" -x test --no-daemon
     ;;
