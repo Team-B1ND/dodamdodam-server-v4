@@ -1,0 +1,70 @@
+package com.b1nd.dodamdodam.weekendstudy.application.attendance
+
+import com.b1nd.dodamdodam.core.common.data.InfinityScrollPageResponse
+import com.b1nd.dodamdodam.core.common.data.Response
+import com.b1nd.dodamdodam.core.security.passport.holder.PassportHolder
+import com.b1nd.dodamdodam.core.security.passport.requireUserId
+import com.b1nd.dodamdodam.weekendstudy.application.attendance.data.request.CheckWeekendStudyAttendanceRequest
+import com.b1nd.dodamdodam.weekendstudy.application.attendance.data.request.GetWeekendStudyAttendanceSummaryRequest
+import com.b1nd.dodamdodam.weekendstudy.application.attendance.data.response.WeekendStudyAttendanceSummaryResponse
+import com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.data.toApplicantResponse
+import com.b1nd.dodamdodam.weekendstudy.domain.attendance.enumeration.WeekendStudyAttendanceStatus
+import com.b1nd.dodamdodam.weekendstudy.domain.attendance.service.WeekendStudyAttendanceService
+import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.service.WeekendStudyService
+import com.b1nd.dodamdodam.weekendstudy.infrastructure.user.client.UserQueryClient
+import kotlinx.coroutines.runBlocking
+import org.springframework.data.domain.Pageable
+import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
+import java.util.UUID
+
+@Component
+@Transactional(rollbackFor = [Exception::class])
+class WeekendStudyAttendanceUseCase(
+    private val weekendStudyService: WeekendStudyService,
+    private val attendanceService: WeekendStudyAttendanceService,
+    private val userQueryClient: UserQueryClient,
+) {
+    fun check(userId: UUID, request: CheckWeekendStudyAttendanceRequest): Response<Any> {
+        val checkerId = PassportHolder.current().requireUserId()
+        val weekendStudyPeriod = weekendStudyService.getPeriod(userId, request.date, request.period)
+        attendanceService.check(weekendStudyPeriod, request.status, checkerId)
+        return Response.ok("출석을 체크했어요.")
+    }
+
+    @Transactional(readOnly = true)
+    fun getSummaries(request: GetWeekendStudyAttendanceSummaryRequest, pageable: Pageable): Response<InfinityScrollPageResponse<WeekendStudyAttendanceSummaryResponse>> {
+        val countsByUser = attendanceService.countByUserAndStatus(request.startAt, request.endAt)
+        val usersMap = fetchUsersMap(countsByUser.keys)
+
+        val summaries = countsByUser.mapNotNull { (userId, counts) ->
+            usersMap[userId.toString()]?.let { student ->
+                WeekendStudyAttendanceSummaryResponse(
+                    student = student,
+                    attendance = counts[WeekendStudyAttendanceStatus.ATTENDANCE] ?: 0L,
+                    late = counts[WeekendStudyAttendanceStatus.LATE] ?: 0L,
+                    absent = counts[WeekendStudyAttendanceStatus.ABSENT] ?: 0L,
+                )
+            }
+        }.sortedWith(compareBy(
+            { it.student.student?.grade ?: Int.MAX_VALUE },
+            { it.student.student?.room ?: Int.MAX_VALUE },
+            { it.student.student?.number ?: Int.MAX_VALUE },
+        ))
+
+        val offset = pageable.offset.toInt()
+        val pageSize = pageable.pageSize
+        val sliced = summaries.drop(offset).take(pageSize)
+        val hasNext = offset + pageSize < summaries.size
+
+        return Response.ok(
+            "주말 자습 출결 정보를 조회했어요.",
+            InfinityScrollPageResponse(content = sliced, hasNext = hasNext)
+        )
+    }
+
+    private fun fetchUsersMap(userIds: Collection<UUID>) =
+        if (userIds.isEmpty()) emptyMap()
+        else runBlocking { userQueryClient.getUsers(userIds.map { it.toString() }) }.usersList
+            .associate { it.publicId to it.toApplicantResponse() }
+}

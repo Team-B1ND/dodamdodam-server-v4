@@ -180,6 +180,13 @@ services:
       <<: *spring-environment
       MYSQL_HOST: mysql://mysql:3306/dodam-nightstudy
 
+  service-weekendstudy:
+    <<: *spring-service
+    image: ${DOCKERHUB_USERNAME:?DOCKERHUB_USERNAME is required}/dodam-weekendstudy:dev
+    environment:
+      <<: *spring-environment
+      MYSQL_HOST: mysql://mysql:3306/dodam-weekendstudy
+
   service-file:
     <<: *spring-service
     image: ${DOCKERHUB_USERNAME:?DOCKERHUB_USERNAME is required}/dodam-file:dev
