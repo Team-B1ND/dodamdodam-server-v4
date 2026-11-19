@@ -41,5 +41,6 @@ include(":services:service-file")
 include(":services:service-neis")
 include(":services:service-oauth")
 include(":services:service-nightstudy")
+include(":services:service-weekendstudy")
 
 rootProject.name = "dodamdodam-server"
