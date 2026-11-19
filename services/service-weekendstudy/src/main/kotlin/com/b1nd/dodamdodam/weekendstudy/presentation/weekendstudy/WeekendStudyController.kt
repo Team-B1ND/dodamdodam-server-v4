@@ -5,6 +5,7 @@ import com.b1nd.dodamdodam.core.common.data.Response
 import com.b1nd.dodamdodam.core.security.annotation.authentication.UserAccess
 import com.b1nd.dodamdodam.core.security.passport.enumerations.RoleType
 import com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.WeekendStudyUseCase
+import com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.data.request.AssignRoomRequest
 import com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.data.request.PersonalWeekendStudyApplyRequest
 import com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.data.request.ProjectWeekendStudyApplyRequest
 import com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.data.request.RejectWeekendStudyRequest
@@ -15,6 +16,7 @@ import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.enumeration.WeekendS
 import jakarta.validation.Valid
 import org.springframework.data.domain.Pageable
 import org.springframework.format.annotation.DateTimeFormat
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -49,6 +51,11 @@ class WeekendStudyController(
     fun getMyProject(): Response<List<ProjectWeekendStudyResponse>> =
         weekendStudyUseCase.getMyProject()
 
+    @UserAccess(roles = [RoleType.STUDENT])
+    @DeleteMapping("/{id}")
+    fun cancel(@PathVariable("id") id: UUID): Response<Any> =
+        weekendStudyUseCase.cancel(id)
+
     @UserAccess(roles = [RoleType.WEEKEND_MANAGER])
     @GetMapping("/applications")
     fun getApplications(
@@ -67,4 +74,19 @@ class WeekendStudyController(
     @PatchMapping("/{id}/reject")
     fun reject(@PathVariable("id") id: UUID, @RequestBody @Valid request: RejectWeekendStudyRequest): Response<Any> =
         weekendStudyUseCase.reject(id, request)
+
+    @UserAccess(roles = [RoleType.WEEKEND_MANAGER])
+    @PatchMapping("/{id}/pending")
+    fun pending(@PathVariable("id") id: UUID): Response<Any> =
+        weekendStudyUseCase.pending(id)
+
+    @UserAccess(roles = [RoleType.WEEKEND_MANAGER])
+    @PatchMapping("/{id}/room")
+    fun assignRoom(@PathVariable("id") id: UUID, @RequestBody request: AssignRoomRequest): Response<Any> =
+        weekendStudyUseCase.assignRoom(id, request)
+
+    @UserAccess(roles = [RoleType.WEEKEND_MANAGER])
+    @DeleteMapping("/{id}/room")
+    fun unassignRoom(@PathVariable("id") id: UUID): Response<Any> =
+        weekendStudyUseCase.unassignRoom(id)
 }

@@ -15,6 +15,7 @@ data class WeekendStudyApplicationResponse(
     val name: String?,
     val description: String?,
     val wishRoom: RoomInfo?,
+    val room: RoomInfo?,
     val leader: WeekendStudyApplicantResponse,
     val members: List<WeekendStudyApplicantResponse>,
 ) {

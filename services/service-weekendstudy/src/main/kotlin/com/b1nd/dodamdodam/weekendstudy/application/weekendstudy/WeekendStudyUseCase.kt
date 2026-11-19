@@ -4,6 +4,7 @@ import com.b1nd.dodamdodam.core.common.data.InfinityScrollPageResponse
 import com.b1nd.dodamdodam.core.common.data.Response
 import com.b1nd.dodamdodam.core.security.passport.holder.PassportHolder
 import com.b1nd.dodamdodam.core.security.passport.requireUserId
+import com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.data.request.AssignRoomRequest
 import com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.data.request.PersonalWeekendStudyApplyRequest
 import com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.data.request.ProjectWeekendStudyApplyRequest
 import com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.data.request.RejectWeekendStudyRequest
@@ -107,6 +108,17 @@ class WeekendStudyUseCase(
         )
     }
 
+    fun cancel(id: UUID): Response<Any> {
+        val userId = PassportHolder.current().requireUserId()
+        weekendStudyService.cancel(userId, id)
+        return Response.ok("주말 자습 신청을 취소했어요.")
+    }
+
+    fun pending(id: UUID): Response<Any> {
+        weekendStudyService.pending(id)
+        return Response.ok("주말 자습 신청을 대기 상태로 변경했어요.")
+    }
+
     fun allow(id: UUID): Response<Any> {
         weekendStudyService.allow(id)
         return Response.ok("주말 자습 신청을 승인했어요.")
@@ -115,6 +127,20 @@ class WeekendStudyUseCase(
     fun reject(id: UUID, request: RejectWeekendStudyRequest): Response<Any> {
         weekendStudyService.reject(id, request.rejectionReason)
         return Response.ok("주말 자습 신청을 거절했어요.")
+    }
+
+    fun assignRoom(id: UUID, request: AssignRoomRequest): Response<Any> {
+        val weekendStudy = weekendStudyService.getByPublicId(id)
+        val room = projectRoomService.getById(request.roomId)
+        val periods = weekendStudyService.getPeriods(weekendStudy)
+        projectRoomBlockService.validateNotBlocked(room, weekendStudy.date, periods)
+        weekendStudyService.assignRoom(weekendStudy, room, periods)
+        return Response.ok("방 배정이 완료됐어요.")
+    }
+
+    fun unassignRoom(id: UUID): Response<Any> {
+        weekendStudyService.unassignRoom(id)
+        return Response.ok("방 배정을 해제했어요.")
     }
 
     private fun validateApplication(date: LocalDate, periods: List<Int>) {

@@ -34,12 +34,17 @@ CREATE TABLE weekend_studies (
 	name VARCHAR(100) NULL,
 	description VARCHAR(250) NULL,
 	rejection_reason VARCHAR(255) NULL,
-	fk_wish_room_id BIGINT NULL
+	fk_wish_room_id BIGINT NULL,
+	fk_room_id BIGINT NULL
 );
 
 ALTER TABLE weekend_studies
 	ADD CONSTRAINT FK_WEEKEND_STUDIES_ON_FK_WISH_ROOM
 	FOREIGN KEY (fk_wish_room_id) REFERENCES project_rooms (id);
+
+ALTER TABLE weekend_studies
+	ADD CONSTRAINT FK_WEEKEND_STUDIES_ON_FK_ROOM
+	FOREIGN KEY (fk_room_id) REFERENCES project_rooms (id);
 
 CREATE TABLE weekend_study_periods (
 	id BIGINT AUTO_INCREMENT NOT NULL PRIMARY KEY,

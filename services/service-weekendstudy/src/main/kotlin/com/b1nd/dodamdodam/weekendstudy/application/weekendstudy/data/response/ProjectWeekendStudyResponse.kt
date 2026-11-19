@@ -14,6 +14,7 @@ data class ProjectWeekendStudyResponse(
     val rejectionReason: String?,
     val isLeader: Boolean,
     val wishRoom: RoomInfo?,
+    val room: RoomInfo?,
 ) {
     data class RoomInfo(
         val id: Long,

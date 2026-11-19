@@ -51,6 +51,7 @@ fun List<WeekendStudyPeriodEntity>.toProjectResponses(userId: UUID) =
             rejectionReason = weekendStudy.rejectionReason,
             isLeader = weekendStudy.userId == userId,
             wishRoom = weekendStudy.wishRoom?.let { ProjectWeekendStudyResponse.RoomInfo(id = it.id!!, name = it.name) },
+            room = weekendStudy.room?.let { ProjectWeekendStudyResponse.RoomInfo(id = it.id!!, name = it.name) },
         )
     }
 
@@ -89,6 +90,7 @@ fun List<WeekendStudyPeriodEntity>.toApplicationResponses(usersMap: Map<String, 
                 name = weekendStudy.name,
                 description = weekendStudy.description,
                 wishRoom = weekendStudy.wishRoom?.let { WeekendStudyApplicationResponse.RoomInfo(id = it.id!!, name = it.name) },
+                room = weekendStudy.room?.let { WeekendStudyApplicationResponse.RoomInfo(id = it.id!!, name = it.name) },
                 leader = leader,
                 members = periods.map { it.userId }.distinct()
                     .filter { it != weekendStudy.userId }

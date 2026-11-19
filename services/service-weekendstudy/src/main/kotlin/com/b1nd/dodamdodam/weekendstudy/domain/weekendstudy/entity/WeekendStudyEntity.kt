@@ -49,6 +49,11 @@ class WeekendStudyEntity(
     @JoinColumn(name = "fk_wish_room_id")
     var wishRoom: ProjectRoomEntity? = null,
 ) : BaseTimeEntity() {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fk_room_id")
+    var room: ProjectRoomEntity? = null
+        protected set
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null
@@ -69,5 +74,19 @@ class WeekendStudyEntity(
     fun reject(rejectionReason: String) {
         this.status = WeekendStudyStatusType.REJECTED
         this.rejectionReason = rejectionReason
+    }
+
+    fun pending() {
+        this.status = WeekendStudyStatusType.PENDING
+        this.rejectionReason = null
+        this.room = null
+    }
+
+    fun assignRoom(room: ProjectRoomEntity) {
+        this.room = room
+    }
+
+    fun unassignRoom() {
+        this.room = null
     }
 }
