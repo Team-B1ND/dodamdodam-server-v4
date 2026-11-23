@@ -5,7 +5,6 @@ import com.b1nd.dodamdodam.core.common.data.Response
 import com.b1nd.dodamdodam.core.security.passport.holder.PassportHolder
 import com.b1nd.dodamdodam.core.security.passport.requireUserId
 import com.b1nd.dodamdodam.weekendstudy.application.attendance.data.request.CheckWeekendStudyAttendanceRequest
-import com.b1nd.dodamdodam.weekendstudy.application.attendance.data.request.GetWeekendStudyAttendanceSummaryRequest
 import com.b1nd.dodamdodam.weekendstudy.application.attendance.data.response.WeekendStudyAttendanceSummaryResponse
 import com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.data.toApplicantResponse
 import com.b1nd.dodamdodam.weekendstudy.domain.attendance.enumeration.WeekendStudyAttendanceStatus
@@ -16,7 +15,8 @@ import kotlinx.coroutines.runBlocking
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import java.util.UUID
+import java.time.LocalDate
+import java.util.*
 
 @Component
 @Transactional(rollbackFor = [Exception::class])
@@ -33,8 +33,8 @@ class WeekendStudyAttendanceUseCase(
     }
 
     @Transactional(readOnly = true)
-    fun getSummaries(request: GetWeekendStudyAttendanceSummaryRequest, pageable: Pageable): Response<InfinityScrollPageResponse<WeekendStudyAttendanceSummaryResponse>> {
-        val countsByUser = attendanceService.countByUserAndStatus(request.startAt, request.endAt)
+    fun getSummaries(startAt: LocalDate, endAt: LocalDate, pageable: Pageable): Response<InfinityScrollPageResponse<WeekendStudyAttendanceSummaryResponse>> {
+        val countsByUser = attendanceService.countByUserAndStatus(startAt, endAt)
         val usersMap = fetchUsersMap(countsByUser.keys)
 
         val summaries = countsByUser.mapNotNull { (userId, counts) ->
