@@ -3,6 +3,7 @@ package com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyBannedException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.PeriodOverlappedException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyBannedRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyQueryRepository
@@ -222,6 +223,47 @@ class NightStudyServiceTest {
 
         verify(nightStudyMemberRepository).deleteAllByNightStudy(project)
         verify(nightStudyRepository).delete(project)
+    }
+
+    @Test
+    fun `신청자가 신청 시작일에 정지 중이면 신청할 수 없다`() {
+        val userId = UUID.randomUUID()
+        val personal = nightStudy(NightStudyType.PERSONAL)
+        `when`(bannedRepository.existsByUserIdAndEndAtGreaterThanEqual(userId, personal.startAt)).thenReturn(true)
+
+        assertThrows(NightStudyBannedException::class.java) {
+            service.save(personal, userId, null)
+        }
+
+        verify(nightStudyRepository, never()).save(org.mockito.ArgumentMatchers.any())
+    }
+
+    @Test
+    fun `정지 여부는 신청 종료일이 아니라 시작일 기준으로 판단한다`() {
+        val userId = UUID.randomUUID()
+        val personal = nightStudy(NightStudyType.PERSONAL)
+        `when`(bannedRepository.existsByUserIdAndEndAtGreaterThanEqual(userId, personal.endAt)).thenReturn(true)
+        `when`(bannedRepository.existsByUserIdAndEndAtGreaterThanEqual(userId, personal.startAt)).thenReturn(false)
+        `when`(nightStudyRepository.save(personal)).thenReturn(personal)
+
+        service.save(personal, userId, null)
+
+        verify(nightStudyRepository).save(personal)
+    }
+
+    @Test
+    fun `프로젝트 멤버가 신청 시작일에 정지 중이면 신청할 수 없다`() {
+        val leaderId = UUID.randomUUID()
+        val memberId = UUID.randomUUID()
+        val project = nightStudy(NightStudyType.PROJECT)
+        `when`(bannedRepository.existsByUserIdAndEndAtGreaterThanEqual(leaderId, project.startAt)).thenReturn(false)
+        `when`(bannedRepository.existsByUserIdAndEndAtGreaterThanEqual(memberId, project.startAt)).thenReturn(true)
+
+        assertThrows(NightStudyBannedException::class.java) {
+            service.save(project, leaderId, listOf(memberId))
+        }
+
+        verify(nightStudyRepository, never()).save(org.mockito.ArgumentMatchers.any())
     }
 
     private fun nightStudy(type: NightStudyType): NightStudyEntity {
