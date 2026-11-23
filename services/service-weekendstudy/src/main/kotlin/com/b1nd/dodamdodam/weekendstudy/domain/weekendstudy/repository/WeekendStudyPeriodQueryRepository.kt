@@ -10,4 +10,5 @@ interface WeekendStudyPeriodQueryRepository {
     fun findAllByDateAndType(date: LocalDate, type: WeekendStudyType): List<WeekendStudyPeriodEntity>
     fun existsReservedRoomByDateAndPeriods(roomId: Long, date: LocalDate, periods: Collection<Int>, excludeWeekendStudyId: Long?): Boolean
     fun existsAttendanceByWeekendStudyId(weekendStudyId: Long): Boolean
+    fun findReservedRoomPeriodsByDate(date: LocalDate): List<Pair<Long, Int>>
 }

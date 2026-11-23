@@ -73,4 +73,17 @@ class WeekendStudyPeriodQueryRepositoryImpl(
             .where(weekendStudyPeriodEntity.weekendStudy.id.eq(weekendStudyId))
             .fetchFirst() != null
     }
+
+    override fun findReservedRoomPeriodsByDate(date: LocalDate): List<Pair<Long, Int>> {
+        return queryFactory.select(weekendStudyEntity.room.id, weekendStudyPeriodEntity.period)
+            .distinct()
+            .from(weekendStudyPeriodEntity)
+            .join(weekendStudyPeriodEntity.weekendStudy, weekendStudyEntity)
+            .where(
+                weekendStudyEntity.date.eq(date),
+                weekendStudyEntity.room.isNotNull,
+            )
+            .fetch()
+            .map { it.get(weekendStudyEntity.room.id)!! to it.get(weekendStudyPeriodEntity.period)!! }
+    }
 }

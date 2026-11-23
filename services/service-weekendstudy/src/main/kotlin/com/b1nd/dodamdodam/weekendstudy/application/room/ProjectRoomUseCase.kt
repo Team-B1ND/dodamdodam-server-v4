@@ -5,14 +5,17 @@ import com.b1nd.dodamdodam.weekendstudy.application.room.data.request.BlockProje
 import com.b1nd.dodamdodam.weekendstudy.application.room.data.request.SaveProjectRoomRequest
 import com.b1nd.dodamdodam.weekendstudy.application.room.data.response.ProjectRoomBlockResponse
 import com.b1nd.dodamdodam.weekendstudy.application.room.data.response.ProjectRoomResponse
+import com.b1nd.dodamdodam.weekendstudy.application.room.data.response.ProjectRoomStatusResponse
 import com.b1nd.dodamdodam.weekendstudy.application.room.data.toEntities
 import com.b1nd.dodamdodam.weekendstudy.application.room.data.toEntity
 import com.b1nd.dodamdodam.weekendstudy.application.room.data.toResponse
+import com.b1nd.dodamdodam.weekendstudy.application.room.data.toStatusResponse
 import com.b1nd.dodamdodam.weekendstudy.domain.room.exception.InvalidBlockDateRangeException
 import com.b1nd.dodamdodam.weekendstudy.domain.room.service.ProjectRoomBlockService
 import com.b1nd.dodamdodam.weekendstudy.domain.room.service.ProjectRoomService
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.exception.EmptyPeriodException
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.exception.InvalidPeriodException
+import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.service.WeekendStudyService
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -22,9 +25,11 @@ import java.time.LocalDate
 class ProjectRoomUseCase(
     private val projectRoomService: ProjectRoomService,
     private val projectRoomBlockService: ProjectRoomBlockService,
+    private val weekendStudyService: WeekendStudyService,
 ) {
     companion object {
-        private val AVAILABLE_PERIODS = setOf(17, 18, 19, 20, 21)
+        private val AVAILABLE_PERIODS = setOf(17, 18, 19, 20)
+        private val STATUS_PERIODS = listOf(17, 18, 19, 20)
     }
 
     fun create(request: SaveProjectRoomRequest): Response<Any> {
@@ -35,6 +40,21 @@ class ProjectRoomUseCase(
     @Transactional(readOnly = true)
     fun getAll(): Response<List<ProjectRoomResponse>> =
         Response.ok("방 목록을 조회했어요.", projectRoomService.getAll().map { it.toResponse() })
+
+    @Transactional(readOnly = true)
+    fun getStatus(date: LocalDate, floor: Int?): Response<List<ProjectRoomStatusResponse>> {
+        val rooms = projectRoomService.getAll()
+            .filter { floor == null || it.floor == floor }
+            .sortedWith(compareBy({ it.floor }, { it.name }))
+        val blocksByRoomId = projectRoomBlockService.getAllByDate(date).groupBy { it.room.id!! }
+        val reservedPeriodsByRoomId = weekendStudyService.getReservedRoomPeriods(date)
+        return Response.ok(
+            "방 예약 현황을 조회했어요.",
+            rooms.map {
+                it.toStatusResponse(STATUS_PERIODS, blocksByRoomId[it.id].orEmpty(), reservedPeriodsByRoomId[it.id].orEmpty())
+            },
+        )
+    }
 
     fun update(id: Long, request: SaveProjectRoomRequest): Response<Any> {
         projectRoomService.update(id, request.name, request.floor)

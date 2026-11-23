@@ -80,6 +80,11 @@ class WeekendStudyService(
         weekendStudyPeriodRepository.findByUserIdAndDateAndPeriod(userId, date, period)
             ?: throw WeekendStudyPeriodNotFoundException()
 
+    fun getReservedRoomPeriods(date: LocalDate): Map<Long, Set<Int>> =
+        weekendStudyPeriodQueryRepository.findReservedRoomPeriodsByDate(date)
+            .groupBy({ it.first }, { it.second })
+            .mapValues { it.value.toSet() }
+
     fun getByPublicId(publicId: UUID): WeekendStudyEntity =
         weekendStudyRepository.findByPublicId(publicId)
             ?: throw WeekendStudyNotFoundException()

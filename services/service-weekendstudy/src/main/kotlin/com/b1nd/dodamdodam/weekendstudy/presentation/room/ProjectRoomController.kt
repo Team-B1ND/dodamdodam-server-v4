@@ -8,7 +8,9 @@ import com.b1nd.dodamdodam.weekendstudy.application.room.data.request.BlockProje
 import com.b1nd.dodamdodam.weekendstudy.application.room.data.request.SaveProjectRoomRequest
 import com.b1nd.dodamdodam.weekendstudy.application.room.data.response.ProjectRoomBlockResponse
 import com.b1nd.dodamdodam.weekendstudy.application.room.data.response.ProjectRoomResponse
+import com.b1nd.dodamdodam.weekendstudy.application.room.data.response.ProjectRoomStatusResponse
 import jakarta.validation.Valid
+import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
@@ -16,7 +18,11 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.temporal.TemporalAdjusters
 
 @RestController
 @RequestMapping("/rooms")
@@ -32,6 +38,14 @@ class ProjectRoomController(
     @GetMapping
     fun getAll(): Response<List<ProjectRoomResponse>> =
         projectRoomUseCase.getAll()
+
+    @UserAccess
+    @GetMapping("/status")
+    fun getStatus(
+        @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") date: LocalDate?,
+        @RequestParam(required = false) floor: Int?,
+    ): Response<List<ProjectRoomStatusResponse>> =
+        projectRoomUseCase.getStatus(date ?: LocalDate.now().with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY)), floor)
 
     @UserAccess(roles = [RoleType.WEEKEND_MANAGER])
     @PatchMapping("/{id}")

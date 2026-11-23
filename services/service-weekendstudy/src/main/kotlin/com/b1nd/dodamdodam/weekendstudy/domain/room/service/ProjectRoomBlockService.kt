@@ -29,6 +29,9 @@ class ProjectRoomBlockService(
     fun getAllByRoom(room: ProjectRoomEntity): List<ProjectRoomBlockEntity> =
         projectRoomBlockRepository.findAllByRoomOrderByStartAtDescPeriodAsc(room)
 
+    fun getAllByDate(date: LocalDate): List<ProjectRoomBlockEntity> =
+        projectRoomBlockRepository.findAllByStartAtLessThanEqualAndEndAtGreaterThanEqual(date, date)
+
     fun delete(room: ProjectRoomEntity, blockId: Long) {
         val block = projectRoomBlockRepository.findByIdAndRoom(blockId, room)
             ?: throw ProjectRoomBlockNotFoundException()

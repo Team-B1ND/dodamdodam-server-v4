@@ -35,5 +35,5 @@ class WeekendStudyAttendanceController(
         @RequestParam endAt: LocalDate,
         pageable: Pageable,
     ): Response<InfinityScrollPageResponse<WeekendStudyAttendanceSummaryResponse>> =
-        attendanceUseCase.getSummaries(request, pageable)
+        attendanceUseCase.getSummaries(startAt, endAt, pageable)
 }

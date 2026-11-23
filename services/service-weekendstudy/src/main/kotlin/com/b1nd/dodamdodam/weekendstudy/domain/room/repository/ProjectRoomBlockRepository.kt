@@ -15,4 +15,5 @@ interface ProjectRoomBlockRepository : JpaRepository<ProjectRoomBlockEntity, Lon
 
     fun findAllByRoomOrderByStartAtDescPeriodAsc(room: ProjectRoomEntity): List<ProjectRoomBlockEntity>
     fun findByIdAndRoom(id: Long, room: ProjectRoomEntity): ProjectRoomBlockEntity?
+    fun findAllByStartAtLessThanEqualAndEndAtGreaterThanEqual(startAt: LocalDate, endAt: LocalDate): List<ProjectRoomBlockEntity>
 }
