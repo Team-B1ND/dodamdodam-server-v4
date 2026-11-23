@@ -1,12 +1,10 @@
 package com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.repository
 
 import com.b1nd.dodamdodam.weekendstudy.domain.attendance.entity.QWeekendStudyAttendanceEntity.weekendStudyAttendanceEntity
-import com.b1nd.dodamdodam.weekendstudy.domain.room.entity.QProjectRoomEntity
 import com.b1nd.dodamdodam.weekendstudy.domain.room.entity.QProjectRoomEntity.projectRoomEntity
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.entity.QWeekendStudyEntity.weekendStudyEntity
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.entity.QWeekendStudyPeriodEntity.weekendStudyPeriodEntity
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.entity.WeekendStudyPeriodEntity
-import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.enumeration.WeekendStudyStatusType
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.enumeration.WeekendStudyType
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Repository
@@ -19,11 +17,9 @@ class WeekendStudyPeriodQueryRepositoryImpl(
 ) : WeekendStudyPeriodQueryRepository {
 
     override fun findAllByUserIdAndTypeAndDateGoe(userId: UUID, type: WeekendStudyType, date: LocalDate): List<WeekendStudyPeriodEntity> {
-        val assignedRoom = QProjectRoomEntity("assignedRoom")
         return queryFactory.selectFrom(weekendStudyPeriodEntity)
             .join(weekendStudyPeriodEntity.weekendStudy, weekendStudyEntity).fetchJoin()
-            .leftJoin(weekendStudyEntity.wishRoom, projectRoomEntity).fetchJoin()
-            .leftJoin(weekendStudyEntity.room, assignedRoom).fetchJoin()
+            .leftJoin(weekendStudyEntity.room, projectRoomEntity).fetchJoin()
             .where(
                 weekendStudyPeriodEntity.userId.eq(userId),
                 weekendStudyEntity.type.eq(type),
@@ -37,11 +33,9 @@ class WeekendStudyPeriodQueryRepositoryImpl(
     }
 
     override fun findAllByDateAndType(date: LocalDate, type: WeekendStudyType): List<WeekendStudyPeriodEntity> {
-        val assignedRoom = QProjectRoomEntity("assignedRoom")
         return queryFactory.selectFrom(weekendStudyPeriodEntity)
             .join(weekendStudyPeriodEntity.weekendStudy, weekendStudyEntity).fetchJoin()
-            .leftJoin(weekendStudyEntity.wishRoom, projectRoomEntity).fetchJoin()
-            .leftJoin(weekendStudyEntity.room, assignedRoom).fetchJoin()
+            .leftJoin(weekendStudyEntity.room, projectRoomEntity).fetchJoin()
             .where(
                 weekendStudyPeriodEntity.date.eq(date),
                 weekendStudyEntity.type.eq(type),
@@ -54,20 +48,11 @@ class WeekendStudyPeriodQueryRepositoryImpl(
             .fetch()
     }
 
-    override fun findPeriodsByWeekendStudyId(weekendStudyId: Long): List<Int> {
-        return queryFactory.select(weekendStudyPeriodEntity.period)
-            .distinct()
-            .from(weekendStudyPeriodEntity)
-            .where(weekendStudyPeriodEntity.weekendStudy.id.eq(weekendStudyId))
-            .orderBy(weekendStudyPeriodEntity.period.asc())
-            .fetch()
-    }
-
-    override fun existsAssignedRoomByDateAndPeriods(
+    override fun existsReservedRoomByDateAndPeriods(
         roomId: Long,
         date: LocalDate,
         periods: Collection<Int>,
-        excludeWeekendStudyId: Long,
+        excludeWeekendStudyId: Long?,
     ): Boolean {
         return queryFactory.selectOne()
             .from(weekendStudyPeriodEntity)
@@ -75,8 +60,7 @@ class WeekendStudyPeriodQueryRepositoryImpl(
             .where(
                 weekendStudyEntity.room.id.eq(roomId),
                 weekendStudyEntity.date.eq(date),
-                weekendStudyEntity.status.eq(WeekendStudyStatusType.ALLOWED),
-                weekendStudyEntity.id.ne(excludeWeekendStudyId),
+                excludeWeekendStudyId?.let { weekendStudyEntity.id.ne(it) },
                 weekendStudyPeriodEntity.period.`in`(periods),
             )
             .fetchFirst() != null

@@ -20,6 +20,9 @@ class ProjectRoomService(
     fun getById(id: Long): ProjectRoomEntity =
         projectRoomRepository.findById(id).orElseThrow { ProjectRoomNotFoundException() }
 
+    fun getByIdWithLock(id: Long): ProjectRoomEntity =
+        projectRoomRepository.findWithLockById(id) ?: throw ProjectRoomNotFoundException()
+
     fun update(id: Long, name: String, floor: Int) {
         val room = getById(id)
         if (room.name != name) checkNameExists(name)

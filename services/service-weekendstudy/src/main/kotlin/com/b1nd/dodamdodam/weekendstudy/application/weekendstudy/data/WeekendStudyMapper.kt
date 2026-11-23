@@ -19,13 +19,13 @@ fun PersonalWeekendStudyApplyRequest.toEntity(userId: UUID) = WeekendStudyEntity
     type = WeekendStudyType.PERSONAL,
 )
 
-fun ProjectWeekendStudyApplyRequest.toEntity(userId: UUID, wishRoom: ProjectRoomEntity?) = WeekendStudyEntity(
+fun ProjectWeekendStudyApplyRequest.toEntity(userId: UUID, room: ProjectRoomEntity) = WeekendStudyEntity(
     userId = userId,
     date = date,
     type = WeekendStudyType.PROJECT,
     name = name,
     description = description,
-    wishRoom = wishRoom,
+    room = room,
 )
 
 fun List<WeekendStudyPeriodEntity>.toPersonalResponses() =
@@ -34,8 +34,6 @@ fun List<WeekendStudyPeriodEntity>.toPersonalResponses() =
             id = weekendStudy.publicId!!,
             date = weekendStudy.date,
             periods = periods.map { it.period },
-            status = weekendStudy.status,
-            rejectionReason = weekendStudy.rejectionReason,
         )
     }
 
@@ -47,10 +45,7 @@ fun List<WeekendStudyPeriodEntity>.toProjectResponses(userId: UUID) =
             description = weekendStudy.description!!,
             date = weekendStudy.date,
             periods = periods.map { it.period },
-            status = weekendStudy.status,
-            rejectionReason = weekendStudy.rejectionReason,
             isLeader = weekendStudy.userId == userId,
-            wishRoom = weekendStudy.wishRoom?.let { ProjectWeekendStudyResponse.RoomInfo(id = it.id!!, name = it.name) },
             room = weekendStudy.room?.let { ProjectWeekendStudyResponse.RoomInfo(id = it.id!!, name = it.name) },
         )
     }
@@ -85,11 +80,8 @@ fun List<WeekendStudyPeriodEntity>.toApplicationResponses(usersMap: Map<String, 
                 type = weekendStudy.type,
                 date = weekendStudy.date,
                 periods = periods.filter { it.userId == weekendStudy.userId }.map { it.period },
-                status = weekendStudy.status,
-                rejectionReason = weekendStudy.rejectionReason,
                 name = weekendStudy.name,
                 description = weekendStudy.description,
-                wishRoom = weekendStudy.wishRoom?.let { WeekendStudyApplicationResponse.RoomInfo(id = it.id!!, name = it.name) },
                 room = weekendStudy.room?.let { WeekendStudyApplicationResponse.RoomInfo(id = it.id!!, name = it.name) },
                 leader = leader,
                 members = periods.map { it.userId }.distinct()

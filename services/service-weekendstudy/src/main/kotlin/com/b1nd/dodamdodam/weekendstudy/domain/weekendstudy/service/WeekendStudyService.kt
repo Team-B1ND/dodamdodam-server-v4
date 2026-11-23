@@ -3,16 +3,13 @@ package com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.service
 import com.b1nd.dodamdodam.weekendstudy.domain.room.entity.ProjectRoomEntity
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.entity.WeekendStudyEntity
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.entity.WeekendStudyPeriodEntity
-import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.enumeration.WeekendStudyStatusType
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.enumeration.WeekendStudyType
-import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.exception.AlreadyAllowedException
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.exception.AttendanceAlreadyCheckedException
+import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.exception.InvalidWeekendStudyTypeException
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.exception.NotLeaderException
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.exception.NotMyWeekendStudyException
-import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.exception.NotProjectWeekendStudyException
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.exception.PeriodOverlappedException
-import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.exception.RoomAlreadyAssignedException
-import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.exception.RoomAssignNotAllowedException
+import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.exception.RoomAlreadyReservedException
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.exception.WeekendStudyNotFoundException
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.exception.WeekendStudyPeriodNotFoundException
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.repository.WeekendStudyPeriodQueryRepository
@@ -30,48 +27,47 @@ class WeekendStudyService(
     private val weekendStudyPeriodQueryRepository: WeekendStudyPeriodQueryRepository,
 ) {
     fun save(weekendStudy: WeekendStudyEntity, periods: List<Int>, memberIds: List<UUID> = emptyList()) {
+        weekendStudy.room?.let { validateRoomNotReserved(it, weekendStudy.date, periods, null) }
         val userIds = listOf(weekendStudy.userId) + memberIds
         userIds.forEach { validateNotOverlapped(it, weekendStudy.date, periods) }
 
         val saved = weekendStudyRepository.save(weekendStudy)
-        try {
-            weekendStudyPeriodRepository.saveAll(
-                userIds.flatMap { userId -> periods.map { WeekendStudyPeriodEntity(saved, userId, saved.date, it) } }
-            )
-        } catch (e: DataIntegrityViolationException) {
-            throw PeriodOverlappedException()
-        }
+        savePeriods(saved, userIds, periods)
     }
 
-    fun allow(publicId: UUID) {
-        val weekendStudy = weekendStudyRepository.findByPublicId(publicId)
-            ?: throw WeekendStudyNotFoundException()
-        weekendStudy.allow()
-    }
-
-    fun reject(publicId: UUID, rejectionReason: String) {
-        val weekendStudy = weekendStudyRepository.findByPublicId(publicId)
-            ?: throw WeekendStudyNotFoundException()
-        weekendStudy.reject(rejectionReason)
-    }
-
-    fun cancel(userId: UUID, publicId: UUID) {
+    fun getMine(userId: UUID, publicId: UUID, type: WeekendStudyType? = null): WeekendStudyEntity {
         val weekendStudy = getByPublicId(publicId)
-        if (!weekendStudyPeriodRepository.existsByWeekendStudyAndUserId(weekendStudy, userId))
+        if (weekendStudy.userId != userId) {
+            if (weekendStudyPeriodRepository.existsByWeekendStudyAndUserId(weekendStudy, userId))
+                throw NotLeaderException()
             throw NotMyWeekendStudyException()
-        if (weekendStudy.type == WeekendStudyType.PROJECT && weekendStudy.userId != userId)
-            throw NotLeaderException()
-        if (weekendStudy.status == WeekendStudyStatusType.ALLOWED)
-            throw AlreadyAllowedException()
+        }
+        if (type != null && weekendStudy.type != type)
+            throw InvalidWeekendStudyTypeException()
+        return weekendStudy
+    }
+
+    fun updatePersonal(weekendStudy: WeekendStudyEntity, periods: List<Int>) {
+        replacePeriods(weekendStudy, listOf(weekendStudy.userId), periods)
+    }
+
+    fun updateProject(
+        weekendStudy: WeekendStudyEntity,
+        name: String,
+        description: String,
+        room: ProjectRoomEntity,
+        periods: List<Int>,
+        memberIds: List<UUID>,
+    ) {
+        validateRoomNotReserved(room, weekendStudy.date, periods, weekendStudy.id)
+        weekendStudy.update(name, description, room)
+        replacePeriods(weekendStudy, listOf(weekendStudy.userId) + memberIds, periods)
+    }
+
+    fun cancel(weekendStudy: WeekendStudyEntity) {
+        validateAttendanceNotChecked(weekendStudy)
         weekendStudyPeriodRepository.deleteAllByWeekendStudy(weekendStudy)
         weekendStudyRepository.delete(weekendStudy)
-    }
-
-    fun pending(publicId: UUID) {
-        val weekendStudy = getByPublicId(publicId)
-        if (weekendStudyPeriodQueryRepository.existsAttendanceByWeekendStudyId(weekendStudy.id!!))
-            throw AttendanceAlreadyCheckedException()
-        weekendStudy.pending()
     }
 
     fun getAllMyPeriods(userId: UUID, type: WeekendStudyType, date: LocalDate): List<WeekendStudyPeriodEntity> =
@@ -88,22 +84,32 @@ class WeekendStudyService(
         weekendStudyRepository.findByPublicId(publicId)
             ?: throw WeekendStudyNotFoundException()
 
-    fun getPeriods(weekendStudy: WeekendStudyEntity): List<Int> =
-        weekendStudyPeriodQueryRepository.findPeriodsByWeekendStudyId(weekendStudy.id!!)
-
-    fun     assignRoom(weekendStudy: WeekendStudyEntity, room: ProjectRoomEntity, periods: List<Int>) {
-        if (weekendStudy.type != WeekendStudyType.PROJECT)
-            throw NotProjectWeekendStudyException()
-        if (weekendStudy.status != WeekendStudyStatusType.ALLOWED)
-            throw RoomAssignNotAllowedException()
-        if (weekendStudyPeriodQueryRepository.existsAssignedRoomByDateAndPeriods(
-                room.id!!, weekendStudy.date, periods, weekendStudy.id!!))
-            throw RoomAlreadyAssignedException()
-        weekendStudy.assignRoom(room)
+    private fun replacePeriods(weekendStudy: WeekendStudyEntity, userIds: List<UUID>, periods: List<Int>) {
+        validateAttendanceNotChecked(weekendStudy)
+        weekendStudyPeriodRepository.deleteAllByWeekendStudy(weekendStudy)
+        weekendStudyPeriodRepository.flush()
+        userIds.forEach { validateNotOverlapped(it, weekendStudy.date, periods) }
+        savePeriods(weekendStudy, userIds, periods)
     }
 
-    fun unassignRoom(publicId: UUID) {
-        getByPublicId(publicId).unassignRoom()
+    private fun savePeriods(weekendStudy: WeekendStudyEntity, userIds: List<UUID>, periods: List<Int>) {
+        try {
+            weekendStudyPeriodRepository.saveAll(
+                userIds.flatMap { userId -> periods.map { WeekendStudyPeriodEntity(weekendStudy, userId, weekendStudy.date, it) } }
+            )
+        } catch (e: DataIntegrityViolationException) {
+            throw PeriodOverlappedException()
+        }
+    }
+
+    private fun validateAttendanceNotChecked(weekendStudy: WeekendStudyEntity) {
+        if (weekendStudyPeriodQueryRepository.existsAttendanceByWeekendStudyId(weekendStudy.id!!))
+            throw AttendanceAlreadyCheckedException()
+    }
+
+    private fun validateRoomNotReserved(room: ProjectRoomEntity, date: LocalDate, periods: List<Int>, excludeWeekendStudyId: Long?) {
+        if (weekendStudyPeriodQueryRepository.existsReservedRoomByDateAndPeriods(room.id!!, date, periods, excludeWeekendStudyId))
+            throw RoomAlreadyReservedException()
     }
 
     private fun validateNotOverlapped(userId: UUID, date: LocalDate, periods: List<Int>) {

@@ -14,5 +14,5 @@ data class ProjectWeekendStudyApplyRequest(
     val date: LocalDate,
     val periods: List<Int>,
     val members: List<UUID>,
-    val wishRoomId: Long? = null,
+    val roomId: Long,
 )

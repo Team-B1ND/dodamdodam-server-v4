@@ -3,7 +3,6 @@ package com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.entity
 import com.b1nd.dodamdodam.core.common.uuid.UuidV7
 import com.b1nd.dodamdodam.core.jpa.entity.BaseTimeEntity
 import com.b1nd.dodamdodam.weekendstudy.domain.room.entity.ProjectRoomEntity
-import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.enumeration.WeekendStudyStatusType
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.enumeration.WeekendStudyType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -33,27 +32,16 @@ class WeekendStudyEntity(
     @Column(length = 20, nullable = false)
     var type: WeekendStudyType,
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 10)
-    var status: WeekendStudyStatusType = WeekendStudyStatusType.PENDING,
-
     @Column(length = 100)
     var name: String? = null,
 
     @Column(length = 250)
     var description: String? = null,
 
-    var rejectionReason: String? = null,
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "fk_wish_room_id")
-    var wishRoom: ProjectRoomEntity? = null,
-) : BaseTimeEntity() {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_room_id")
-    var room: ProjectRoomEntity? = null
-        protected set
-
+    var room: ProjectRoomEntity? = null,
+) : BaseTimeEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null
@@ -67,26 +55,9 @@ class WeekendStudyEntity(
         publicId = UuidV7.generate()
     }
 
-    fun allow() {
-        this.status = WeekendStudyStatusType.ALLOWED
-    }
-
-    fun reject(rejectionReason: String) {
-        this.status = WeekendStudyStatusType.REJECTED
-        this.rejectionReason = rejectionReason
-    }
-
-    fun pending() {
-        this.status = WeekendStudyStatusType.PENDING
-        this.rejectionReason = null
-        this.room = null
-    }
-
-    fun assignRoom(room: ProjectRoomEntity) {
+    fun update(name: String, description: String, room: ProjectRoomEntity) {
+        this.name = name
+        this.description = description
         this.room = room
-    }
-
-    fun unassignRoom() {
-        this.room = null
     }
 }

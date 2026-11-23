@@ -5,10 +5,8 @@ import com.b1nd.dodamdodam.core.common.data.Response
 import com.b1nd.dodamdodam.core.security.annotation.authentication.UserAccess
 import com.b1nd.dodamdodam.core.security.passport.enumerations.RoleType
 import com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.WeekendStudyUseCase
-import com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.data.request.AssignRoomRequest
 import com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.data.request.PersonalWeekendStudyApplyRequest
 import com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.data.request.ProjectWeekendStudyApplyRequest
-import com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.data.request.RejectWeekendStudyRequest
 import com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.data.response.PersonalWeekendStudyResponse
 import com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.data.response.ProjectWeekendStudyResponse
 import com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.data.response.WeekendStudyApplicationResponse
@@ -42,6 +40,16 @@ class WeekendStudyController(
         weekendStudyUseCase.applyProject(request)
 
     @UserAccess(roles = [RoleType.STUDENT])
+    @PatchMapping("/personal/{id}")
+    fun updatePersonal(@PathVariable("id") id: UUID, @RequestBody request: PersonalWeekendStudyApplyRequest): Response<Any> =
+        weekendStudyUseCase.updatePersonal(id, request)
+
+    @UserAccess(roles = [RoleType.STUDENT])
+    @PatchMapping("/project/{id}")
+    fun updateProject(@PathVariable("id") id: UUID, @RequestBody @Valid request: ProjectWeekendStudyApplyRequest): Response<Any> =
+        weekendStudyUseCase.updateProject(id, request)
+
+    @UserAccess(roles = [RoleType.STUDENT])
     @GetMapping("/my/personal")
     fun getMyPersonal(): Response<List<PersonalWeekendStudyResponse>> =
         weekendStudyUseCase.getMyPersonal()
@@ -64,29 +72,4 @@ class WeekendStudyController(
         pageable: Pageable,
     ): Response<InfinityScrollPageResponse<WeekendStudyApplicationResponse>> =
         weekendStudyUseCase.getApplications(date, type, pageable)
-
-    @UserAccess(roles = [RoleType.WEEKEND_MANAGER])
-    @PatchMapping("/{id}/allow")
-    fun allow(@PathVariable("id") id: UUID): Response<Any> =
-        weekendStudyUseCase.allow(id)
-
-    @UserAccess(roles = [RoleType.WEEKEND_MANAGER])
-    @PatchMapping("/{id}/reject")
-    fun reject(@PathVariable("id") id: UUID, @RequestBody @Valid request: RejectWeekendStudyRequest): Response<Any> =
-        weekendStudyUseCase.reject(id, request)
-
-    @UserAccess(roles = [RoleType.WEEKEND_MANAGER])
-    @PatchMapping("/{id}/pending")
-    fun pending(@PathVariable("id") id: UUID): Response<Any> =
-        weekendStudyUseCase.pending(id)
-
-    @UserAccess(roles = [RoleType.WEEKEND_MANAGER])
-    @PatchMapping("/{id}/room")
-    fun assignRoom(@PathVariable("id") id: UUID, @RequestBody request: AssignRoomRequest): Response<Any> =
-        weekendStudyUseCase.assignRoom(id, request)
-
-    @UserAccess(roles = [RoleType.WEEKEND_MANAGER])
-    @DeleteMapping("/{id}/room")
-    fun unassignRoom(@PathVariable("id") id: UUID): Response<Any> =
-        weekendStudyUseCase.unassignRoom(id)
 }

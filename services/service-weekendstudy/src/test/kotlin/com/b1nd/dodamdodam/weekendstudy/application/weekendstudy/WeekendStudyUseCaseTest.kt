@@ -12,7 +12,6 @@ import com.b1nd.dodamdodam.weekendstudy.domain.room.service.ProjectRoomBlockServ
 import com.b1nd.dodamdodam.weekendstudy.domain.room.service.ProjectRoomService
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.entity.WeekendStudyEntity
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.entity.WeekendStudyPeriodEntity
-import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.enumeration.WeekendStudyStatusType
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.enumeration.WeekendStudyType
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.exception.EmptyPeriodException
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.exception.InvalidPeriodException
@@ -91,7 +90,6 @@ class WeekendStudyUseCaseTest {
         assertEquals(userId, study.value.userId)
         assertEquals(sunday, study.value.date)
         assertEquals(WeekendStudyType.PERSONAL, study.value.type)
-        assertEquals(WeekendStudyStatusType.PENDING, study.value.status)
 
         @Suppress("UNCHECKED_CAST")
         val periods = ArgumentCaptor.forClass(List::class.java) as ArgumentCaptor<List<WeekendStudyPeriodEntity>>

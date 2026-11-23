@@ -2,5 +2,4 @@ package com.b1nd.dodamdodam.weekendstudy.domain.attendance.exception
 
 import com.b1nd.dodamdodam.core.common.exception.BasicException
 
-class NotAllowedWeekendStudyException : BasicException(WeekendStudyAttendanceExceptionCode.NOT_ALLOWED_WEEKEND_STUDY)
 class InvalidDateRangeException : BasicException(WeekendStudyAttendanceExceptionCode.INVALID_DATE_RANGE)

@@ -1,6 +1,5 @@
 package com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.data.response
 
-import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.enumeration.WeekendStudyStatusType
 import java.time.LocalDate
 import java.util.UUID
 
@@ -10,10 +9,7 @@ data class ProjectWeekendStudyResponse(
     val description: String,
     val date: LocalDate,
     val periods: List<Int>,
-    val status: WeekendStudyStatusType,
-    val rejectionReason: String?,
     val isLeader: Boolean,
-    val wishRoom: RoomInfo?,
     val room: RoomInfo?,
 ) {
     data class RoomInfo(

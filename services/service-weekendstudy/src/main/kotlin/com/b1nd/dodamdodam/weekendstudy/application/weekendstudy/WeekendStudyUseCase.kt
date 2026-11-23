@@ -4,10 +4,8 @@ import com.b1nd.dodamdodam.core.common.data.InfinityScrollPageResponse
 import com.b1nd.dodamdodam.core.common.data.Response
 import com.b1nd.dodamdodam.core.security.passport.holder.PassportHolder
 import com.b1nd.dodamdodam.core.security.passport.requireUserId
-import com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.data.request.AssignRoomRequest
 import com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.data.request.PersonalWeekendStudyApplyRequest
 import com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.data.request.ProjectWeekendStudyApplyRequest
-import com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.data.request.RejectWeekendStudyRequest
 import com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.data.response.PersonalWeekendStudyResponse
 import com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.data.response.ProjectWeekendStudyResponse
 import com.b1nd.dodamdodam.weekendstudy.application.weekendstudy.data.response.WeekendStudyApplicantResponse
@@ -59,12 +57,35 @@ class WeekendStudyUseCase(
 
     fun applyProject(request: ProjectWeekendStudyApplyRequest): Response<Any> {
         val userId = PassportHolder.current().requireUserId()
+        val room = projectRoomService.getByIdWithLock(request.roomId)
         validateApplication(request.date, request.periods)
         validateMembers(userId, request.members)
-        val wishRoom = request.wishRoomId?.let { projectRoomService.getById(it) }
-        wishRoom?.let { projectRoomBlockService.validateNotBlocked(it, request.date, request.periods) }
-        weekendStudyService.save(request.toEntity(userId, wishRoom), request.periods, request.members)
+        projectRoomBlockService.validateNotBlocked(room, request.date, request.periods)
+        weekendStudyService.save(request.toEntity(userId, room), request.periods, request.members)
         return Response.created("프로젝트 자습 신청이 완료됐어요.")
+    }
+
+    fun updatePersonal(id: UUID, request: PersonalWeekendStudyApplyRequest): Response<Any> {
+        val userId = PassportHolder.current().requireUserId()
+        val weekendStudy = weekendStudyService.getMine(userId, id, WeekendStudyType.PERSONAL)
+        validateApplication(request.date, request.periods)
+        validateSameDate(weekendStudy.date, request.date)
+        weekendStudyService.updatePersonal(weekendStudy, request.periods)
+        return Response.ok("개별 자습 신청을 수정했어요.")
+    }
+
+    fun updateProject(id: UUID, request: ProjectWeekendStudyApplyRequest): Response<Any> {
+        val userId = PassportHolder.current().requireUserId()
+        val room = projectRoomService.getByIdWithLock(request.roomId)
+        val weekendStudy = weekendStudyService.getMine(userId, id, WeekendStudyType.PROJECT)
+        validateApplication(request.date, request.periods)
+        validateSameDate(weekendStudy.date, request.date)
+        validateMembers(userId, request.members)
+        projectRoomBlockService.validateNotBlocked(room, request.date, request.periods)
+        weekendStudyService.updateProject(
+            weekendStudy, request.name, request.description, room, request.periods, request.members
+        )
+        return Response.ok("프로젝트 자습 신청을 수정했어요.")
     }
 
     @Transactional(readOnly = true)
@@ -110,49 +131,31 @@ class WeekendStudyUseCase(
 
     fun cancel(id: UUID): Response<Any> {
         val userId = PassportHolder.current().requireUserId()
-        weekendStudyService.cancel(userId, id)
+        val weekendStudy = weekendStudyService.getMine(userId, id)
+        validateChangeable(weekendStudy.date)
+        weekendStudyService.cancel(weekendStudy)
         return Response.ok("주말 자습 신청을 취소했어요.")
-    }
-
-    fun pending(id: UUID): Response<Any> {
-        weekendStudyService.pending(id)
-        return Response.ok("주말 자습 신청을 대기 상태로 변경했어요.")
-    }
-
-    fun allow(id: UUID): Response<Any> {
-        weekendStudyService.allow(id)
-        return Response.ok("주말 자습 신청을 승인했어요.")
-    }
-
-    fun reject(id: UUID, request: RejectWeekendStudyRequest): Response<Any> {
-        weekendStudyService.reject(id, request.rejectionReason)
-        return Response.ok("주말 자습 신청을 거절했어요.")
-    }
-
-    fun assignRoom(id: UUID, request: AssignRoomRequest): Response<Any> {
-        val weekendStudy = weekendStudyService.getByPublicId(id)
-        val room = projectRoomService.getById(request.roomId)
-        val periods = weekendStudyService.getPeriods(weekendStudy)
-        projectRoomBlockService.validateNotBlocked(room, weekendStudy.date, periods)
-        weekendStudyService.assignRoom(weekendStudy, room, periods)
-        return Response.ok("방 배정이 완료됐어요.")
-    }
-
-    fun unassignRoom(id: UUID): Response<Any> {
-        weekendStudyService.unassignRoom(id)
-        return Response.ok("방 배정을 해제했어요.")
     }
 
     private fun validateApplication(date: LocalDate, periods: List<Int>) {
         if (date.dayOfWeek != DayOfWeek.SUNDAY)
             throw NotOperatingDayException()
-        if (date != LocalDate.now().with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY)))
-            throw NotApplicationTimeException()
-        deadlineService.validateDeadline()
+        validateChangeable(date)
         if (periods.isEmpty())
             throw EmptyPeriodException()
             if (!AVAILABLE_PERIODS.containsAll(periods) || periods.size != periods.toSet().size)
             throw InvalidPeriodException()
+    }
+
+    private fun validateChangeable(date: LocalDate) {
+        if (date != LocalDate.now().with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY)))
+            throw NotApplicationTimeException()
+        deadlineService.validateDeadline()
+    }
+
+    private fun validateSameDate(appliedDate: LocalDate, requestedDate: LocalDate) {
+        if (appliedDate != requestedDate)
+            throw NotApplicationTimeException()
     }
 
     private fun fetchUsersMap(userIds: List<UUID>): Map<String, WeekendStudyApplicantResponse> {
