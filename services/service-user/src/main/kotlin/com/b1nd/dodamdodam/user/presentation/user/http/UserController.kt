@@ -83,6 +83,11 @@ class UserController(
         userUseCase.grantDormitoryManager(request)
 
     @UserAccess(roles = [RoleType.ADMIN])
+    @PatchMapping("/grant-weekend-manager")
+    fun grantWeekend(@RequestBody request: GrantWeekendManagerRequest) =
+        userUseCase.grantWeekendManager(request)
+
+    @UserAccess(roles = [RoleType.ADMIN])
     @PatchMapping("/deactivate")
     fun deactivateUser(@RequestBody request: DeactivateUserRequest) =
         userUseCase.deactivateUser(request)

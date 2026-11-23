@@ -24,6 +24,12 @@ spring:
             - Path=/nightstudy/**
           filters:
             - StripPrefix=1
+        - id: weekendstudy-service
+          uri: http://weekendstudy.dodam.svc.cluster.local:8080
+          predicates:
+            - Path=/weekendstudy/**
+          filters:
+            - StripPrefix=1
         - id: out-sleeping-service
           uri: http://out-sleeping.dodam.svc.cluster.local:8080
           predicates:

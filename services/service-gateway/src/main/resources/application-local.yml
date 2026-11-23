@@ -60,6 +60,12 @@ spring:
             - Path=/out-sleeping/**
           filters:
             - StripPrefix=1
+        - id: weekendstudy-service
+          uri: http://localhost:8090
+          predicates:
+            - Path=/weekendstudy/**
+          filters:
+            - StripPrefix=1
 
 app:
   auth:

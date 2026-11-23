@@ -60,6 +60,12 @@ spring:
             - Path=/notification/**
           filters:
             - StripPrefix=1
+        - id: weekendstudy-service
+          uri: http://service-weekendstudy:8080
+          predicates:
+            - Path=/weekendstudy/**
+          filters:
+            - StripPrefix=1
 
 app:
   auth:
