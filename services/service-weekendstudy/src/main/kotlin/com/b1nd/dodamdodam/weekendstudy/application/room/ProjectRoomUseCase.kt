@@ -11,6 +11,8 @@ import com.b1nd.dodamdodam.weekendstudy.application.room.data.toEntity
 import com.b1nd.dodamdodam.weekendstudy.application.room.data.toResponse
 import com.b1nd.dodamdodam.weekendstudy.application.room.data.toStatusResponse
 import com.b1nd.dodamdodam.weekendstudy.domain.room.exception.InvalidBlockDateRangeException
+import com.b1nd.dodamdodam.weekendstudy.domain.room.exception.ProjectRoomInUseException
+import com.b1nd.dodamdodam.weekendstudy.domain.room.exception.ProjectRoomReservedException
 import com.b1nd.dodamdodam.weekendstudy.domain.room.service.ProjectRoomBlockService
 import com.b1nd.dodamdodam.weekendstudy.domain.room.service.ProjectRoomService
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.exception.EmptyPeriodException
@@ -62,13 +64,19 @@ class ProjectRoomUseCase(
     }
 
     fun delete(id: Long): Response<Any> {
+        val room = projectRoomService.getByIdWithLock(id)
+        if (weekendStudyService.existsByRoom(room))
+            throw ProjectRoomInUseException()
+        projectRoomBlockService.deleteAllByRoom(room)
         projectRoomService.delete(id)
         return Response.ok("방을 삭제했어요.")
     }
 
     fun block(roomId: Long, request: BlockProjectRoomRequest): Response<Any> {
-        val room = projectRoomService.getById(roomId)
+        val room = projectRoomService.getByIdWithLock(roomId)
         validateBlock(request.startAt, request.endAt, request.periods)
+        if (weekendStudyService.existsReservationBetween(room, request.startAt, request.endAt, request.periods))
+            throw ProjectRoomReservedException()
         projectRoomBlockService.saveAll(request.toEntities(room))
         return Response.created("방을 차단했어요.")
     }

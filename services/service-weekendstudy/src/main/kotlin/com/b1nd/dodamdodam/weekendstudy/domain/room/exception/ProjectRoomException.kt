@@ -8,3 +8,5 @@ class ProjectRoomAlreadyBlockedException : BasicException(ProjectRoomExceptionCo
 class ProjectRoomBlockedException : BasicException(ProjectRoomExceptionCode.PROJECT_ROOM_BLOCKED)
 class InvalidBlockDateRangeException : BasicException(ProjectRoomExceptionCode.PROJECT_ROOM_BLOCK_INVALID_DATE_RANGE)
 class ProjectRoomBlockNotFoundException : BasicException(ProjectRoomExceptionCode.PROJECT_ROOM_BLOCK_NOT_FOUND)
+class ProjectRoomInUseException : BasicException(ProjectRoomExceptionCode.PROJECT_ROOM_IN_USE)
+class ProjectRoomReservedException : BasicException(ProjectRoomExceptionCode.PROJECT_ROOM_RESERVED)

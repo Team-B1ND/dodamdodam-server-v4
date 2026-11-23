@@ -85,6 +85,12 @@ class WeekendStudyService(
             .groupBy({ it.first }, { it.second })
             .mapValues { it.value.toSet() }
 
+    fun existsByRoom(room: ProjectRoomEntity): Boolean =
+        weekendStudyRepository.existsByRoom(room)
+
+    fun existsReservationBetween(room: ProjectRoomEntity, startAt: LocalDate, endAt: LocalDate, periods: List<Int>): Boolean =
+        weekendStudyPeriodQueryRepository.existsReservedRoomBetween(room.id!!, startAt, endAt, periods)
+
     fun getByPublicId(publicId: UUID): WeekendStudyEntity =
         weekendStudyRepository.findByPublicId(publicId)
             ?: throw WeekendStudyNotFoundException()

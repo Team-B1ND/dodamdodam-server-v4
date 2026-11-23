@@ -38,6 +38,10 @@ class ProjectRoomBlockService(
         projectRoomBlockRepository.delete(block)
     }
 
+    fun deleteAllByRoom(room: ProjectRoomEntity) {
+        projectRoomBlockRepository.deleteAllByRoom(room)
+    }
+
     fun validateNotBlocked(room: ProjectRoomEntity, date: LocalDate, periods: List<Int>) {
         if (projectRoomBlockRepository.existsByRoomAndPeriodInAndStartAtLessThanEqualAndEndAtGreaterThanEqual(
                 room, periods, date, date))

@@ -11,4 +11,5 @@ interface WeekendStudyPeriodQueryRepository {
     fun existsReservedRoomByDateAndPeriods(roomId: Long, date: LocalDate, periods: Collection<Int>, excludeWeekendStudyId: Long?): Boolean
     fun existsAttendanceByWeekendStudyId(weekendStudyId: Long): Boolean
     fun findReservedRoomPeriodsByDate(date: LocalDate): List<Pair<Long, Int>>
+    fun existsReservedRoomBetween(roomId: Long, startAt: LocalDate, endAt: LocalDate, periods: Collection<Int>): Boolean
 }

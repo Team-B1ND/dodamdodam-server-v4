@@ -25,6 +25,7 @@ import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.enumeration.WeekendS
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.exception.EmptyPeriodException
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.exception.InvalidMemberException
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.exception.InvalidPeriodException
+import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.exception.MemberNotFoundException
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.exception.NotApplicationTimeException
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.exception.NotOperatingDayException
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.service.WeekendStudyService
@@ -57,9 +58,9 @@ class WeekendStudyUseCase(
 
     fun applyProject(request: ProjectWeekendStudyApplyRequest): Response<Any> {
         val userId = PassportHolder.current().requireUserId()
+        validateMembers(userId, request.members)
         val room = projectRoomService.getByIdWithLock(request.roomId)
         validateApplication(request.date, request.periods)
-        validateMembers(userId, request.members)
         projectRoomBlockService.validateNotBlocked(room, request.date, request.periods)
         weekendStudyService.save(request.toEntity(userId, room), request.periods, request.members)
         return Response.created("프로젝트 자습 신청이 완료됐어요.")
@@ -76,11 +77,11 @@ class WeekendStudyUseCase(
 
     fun updateProject(id: UUID, request: ProjectWeekendStudyApplyRequest): Response<Any> {
         val userId = PassportHolder.current().requireUserId()
+        validateMembers(userId, request.members)
         val room = projectRoomService.getByIdWithLock(request.roomId)
         val weekendStudy = weekendStudyService.getMine(userId, id, WeekendStudyType.PROJECT)
         validateApplication(request.date, request.periods)
         validateSameDate(weekendStudy.date, request.date)
-        validateMembers(userId, request.members)
         projectRoomBlockService.validateNotBlocked(room, request.date, request.periods)
         weekendStudyService.updateProject(
             weekendStudy, request.name, request.description, room, request.periods, request.members
@@ -168,5 +169,10 @@ class WeekendStudyUseCase(
     private fun validateMembers(leaderId: UUID, members: List<UUID>) {
         if (leaderId in members || members.size != members.toSet().size)
             throw InvalidMemberException()
+        if (members.isEmpty()) return
+        val ids = members.map { it.toString() }
+        val found = runBlocking { userQueryClient.getUsers(ids) }.usersList.map { it.publicId }.toSet()
+        if (!found.containsAll(ids))
+            throw MemberNotFoundException()
     }
 }

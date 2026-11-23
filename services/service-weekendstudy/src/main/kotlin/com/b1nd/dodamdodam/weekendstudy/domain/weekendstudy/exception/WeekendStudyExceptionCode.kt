@@ -13,6 +13,7 @@ enum class WeekendStudyExceptionCode(
     INVALID_PERIOD(HttpStatus.BAD_REQUEST, "올바르지 않은 교시예요."),
     PERIOD_OVERLAPPED(HttpStatus.CONFLICT, "이미 신청한 시간이에요."),
     INVALID_MEMBER(HttpStatus.BAD_REQUEST, "팀원 구성이 올바르지 않아요."),
+    MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 팀원이 있어요."),
     WEEKEND_STUDY_NOT_FOUND(HttpStatus.NOT_FOUND, "주말 자습 신청을 찾을 수 없어요."),
     WEEKEND_STUDY_PERIOD_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 교시에 신청한 주말 자습이 없어요."),
     INVALID_WEEKEND_STUDY_TYPE(HttpStatus.BAD_REQUEST, "주말 자습 신청 유형이 맞지 않아요."),

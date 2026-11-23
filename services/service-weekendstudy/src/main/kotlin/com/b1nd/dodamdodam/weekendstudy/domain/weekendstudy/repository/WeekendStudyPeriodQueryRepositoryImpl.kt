@@ -86,4 +86,21 @@ class WeekendStudyPeriodQueryRepositoryImpl(
             .fetch()
             .map { it.get(weekendStudyEntity.room.id)!! to it.get(weekendStudyPeriodEntity.period)!! }
     }
+
+    override fun existsReservedRoomBetween(
+        roomId: Long,
+        startAt: LocalDate,
+        endAt: LocalDate,
+        periods: Collection<Int>,
+    ): Boolean {
+        return queryFactory.selectOne()
+            .from(weekendStudyPeriodEntity)
+            .join(weekendStudyPeriodEntity.weekendStudy, weekendStudyEntity)
+            .where(
+                weekendStudyEntity.room.id.eq(roomId),
+                weekendStudyEntity.date.between(startAt, endAt),
+                weekendStudyPeriodEntity.period.`in`(periods),
+            )
+            .fetchFirst() != null
+    }
 }

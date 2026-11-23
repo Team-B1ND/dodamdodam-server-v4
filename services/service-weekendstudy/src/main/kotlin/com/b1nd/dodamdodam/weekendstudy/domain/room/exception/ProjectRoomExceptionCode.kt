@@ -13,4 +13,6 @@ enum class ProjectRoomExceptionCode(
     PROJECT_ROOM_BLOCKED(HttpStatus.CONFLICT, "사용할 수 없는 시간이에요."),
     PROJECT_ROOM_BLOCK_INVALID_DATE_RANGE(HttpStatus.BAD_REQUEST, "시작일이 종료일보다 늦어요."),
     PROJECT_ROOM_BLOCK_NOT_FOUND(HttpStatus.NOT_FOUND, "방 차단 정보를 찾을 수 없어요."),
+    PROJECT_ROOM_IN_USE(HttpStatus.CONFLICT, "신청 내역이 있는 방은 삭제할 수 없어요."),
+    PROJECT_ROOM_RESERVED(HttpStatus.CONFLICT, "예약이 있는 시간은 차단할 수 없어요."),
 }
