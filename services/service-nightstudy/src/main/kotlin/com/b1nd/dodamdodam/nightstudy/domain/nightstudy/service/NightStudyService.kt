@@ -34,10 +34,10 @@ class NightStudyService(
     private val bannedRepository: NightStudyBannedRepository
 ) {
     fun save(nightStudy: NightStudyEntity, userId: UUID, members: List<UUID>?) {
-        if (isBanned(userId)) throw NightStudyBannedException()
+        if (isBanned(userId, nightStudy.startAt)) throw NightStudyBannedException()
 
         members?.forEach { member ->
-            if (isBanned(member)) throw NightStudyBannedException()
+            if (isBanned(member, nightStudy.startAt)) throw NightStudyBannedException()
             if (hasPeriodOverlap(member, nightStudy.period, nightStudy.type, nightStudy.startAt, nightStudy.endAt)) {
                 throw PeriodOverlappedException()
             }
@@ -166,8 +166,8 @@ class NightStudyService(
         )
     }
 
-    private fun isBanned(userId: UUID): Boolean {
-        return bannedRepository.existsByUserId(userId)
+    private fun isBanned(userId: UUID, startAt: LocalDate): Boolean {
+        return bannedRepository.existsByUserIdAndEndAtGreaterThanEqual(userId, startAt)
     }
 
     private fun isMine(userId: UUID, nightStudy: NightStudyEntity): Boolean {
