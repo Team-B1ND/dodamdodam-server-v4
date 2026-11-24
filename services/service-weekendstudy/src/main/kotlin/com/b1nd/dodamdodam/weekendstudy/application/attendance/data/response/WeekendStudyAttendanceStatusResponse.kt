@@ -11,4 +11,5 @@ data class WeekendStudyAttendanceStatusResponse(
     val type: WeekendStudyType,
     val status: WeekendStudyAttendanceStatus?,
     val checkedAt: LocalDateTime?,
+    val reason: String?,
 )

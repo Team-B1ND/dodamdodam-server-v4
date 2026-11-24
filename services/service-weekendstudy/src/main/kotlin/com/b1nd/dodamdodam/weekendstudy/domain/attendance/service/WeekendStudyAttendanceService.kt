@@ -17,13 +17,13 @@ class WeekendStudyAttendanceService(
     private val attendanceRepository: WeekendStudyAttendanceRepository,
     private val attendanceQueryRepository: WeekendStudyAttendanceQueryRepository,
 ) {
-    fun check(period: WeekendStudyPeriodEntity, status: WeekendStudyAttendanceStatus, checkerId: UUID) {
+    fun check(period: WeekendStudyPeriodEntity, status: WeekendStudyAttendanceStatus, checkerId: UUID, reason: String?) {
         val attendance = attendanceRepository.findByPeriod(period)
         if (attendance == null) {
-            attendanceRepository.save(WeekendStudyAttendanceEntity(period, status, checkerId))
+            attendanceRepository.save(WeekendStudyAttendanceEntity(period, status, checkerId, reason))
             return
         }
-        attendance.update(status, checkerId)
+        attendance.update(status, checkerId, reason)
     }
 
     fun countByUserAndStatus(startAt: LocalDate, endAt: LocalDate): Map<UUID, Map<WeekendStudyAttendanceStatus, Long>> {

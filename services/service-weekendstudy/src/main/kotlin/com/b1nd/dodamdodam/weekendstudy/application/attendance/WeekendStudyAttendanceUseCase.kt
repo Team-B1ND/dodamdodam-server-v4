@@ -29,7 +29,7 @@ class WeekendStudyAttendanceUseCase(
     fun check(userId: UUID, request: CheckWeekendStudyAttendanceRequest): Response<Any> {
         val checkerId = PassportHolder.current().requireUserId()
         val weekendStudyPeriod = weekendStudyService.getPeriod(userId, request.date, request.period)
-        attendanceService.check(weekendStudyPeriod, request.status, checkerId)
+        attendanceService.check(weekendStudyPeriod, request.status, checkerId, request.reason)
         return Response.ok("출석을 체크했어요.")
     }
 
@@ -77,6 +77,7 @@ class WeekendStudyAttendanceUseCase(
                     type = weekendStudyPeriod.weekendStudy.type,
                     status = attendance?.status,
                     checkedAt = attendance?.modifiedAt,
+                    reason = attendance?.reason,
                 )
             }
         }.sortedWith(compareBy(

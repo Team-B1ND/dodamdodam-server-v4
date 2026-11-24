@@ -29,13 +29,16 @@ class WeekendStudyAttendanceEntity(
 
     @Column(name = "fk_checker_id", columnDefinition = "BINARY(16)", nullable = false)
     var checkerId: UUID,
+
+    var reason: String? = null,
 ) : BaseTimeEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null
 
-    fun update(status: WeekendStudyAttendanceStatus, checkerId: UUID) {
+    fun update(status: WeekendStudyAttendanceStatus, checkerId: UUID, reason: String?) {
         this.status = status
         this.checkerId = checkerId
+        this.reason = reason
     }
 }
