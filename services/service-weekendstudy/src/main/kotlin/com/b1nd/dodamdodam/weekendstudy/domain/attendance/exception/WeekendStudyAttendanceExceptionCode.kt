@@ -8,4 +8,5 @@ enum class WeekendStudyAttendanceExceptionCode(
     override val message: String
 ) : ExceptionCode {
     INVALID_DATE_RANGE(HttpStatus.BAD_REQUEST, "시작일이 종료일보다 늦어요."),
+    ATTENDANCE_NOT_FOUND(HttpStatus.NOT_FOUND, "체크된 출결이 없어요."),
 }

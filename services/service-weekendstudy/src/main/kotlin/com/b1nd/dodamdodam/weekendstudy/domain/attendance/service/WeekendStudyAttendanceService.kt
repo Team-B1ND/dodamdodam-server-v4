@@ -2,6 +2,7 @@ package com.b1nd.dodamdodam.weekendstudy.domain.attendance.service
 
 import com.b1nd.dodamdodam.weekendstudy.domain.attendance.entity.WeekendStudyAttendanceEntity
 import com.b1nd.dodamdodam.weekendstudy.domain.attendance.enumeration.WeekendStudyAttendanceStatus
+import com.b1nd.dodamdodam.weekendstudy.domain.attendance.exception.AttendanceNotFoundException
 import com.b1nd.dodamdodam.weekendstudy.domain.attendance.exception.InvalidDateRangeException
 import com.b1nd.dodamdodam.weekendstudy.domain.attendance.repository.WeekendStudyAttendanceQueryRepository
 import com.b1nd.dodamdodam.weekendstudy.domain.attendance.repository.WeekendStudyAttendanceRepository
@@ -29,6 +30,12 @@ class WeekendStudyAttendanceService(
         if (startAt.isAfter(endAt))
             throw InvalidDateRangeException()
         return attendanceQueryRepository.countByUserIdAndStatus(startAt, endAt)
+    }
+
+    fun cancel(period: WeekendStudyPeriodEntity) {
+        val attendance = attendanceRepository.findByPeriod(period)
+            ?: throw AttendanceNotFoundException()
+        attendanceRepository.delete(attendance)
     }
 
     fun getAllPeriodsWithAttendance(date: LocalDate, period: Int?): List<WeekendStudyPeriodWithAttendance> =

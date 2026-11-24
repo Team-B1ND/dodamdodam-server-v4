@@ -89,6 +89,12 @@ class WeekendStudyAttendanceUseCase(
         return Response.ok("주말 자습 출결 현황을 조회했어요.", statuses)
     }
 
+    fun cancel(userId: UUID, date: LocalDate, period: Int): Response<Any> {
+        val weekendStudyPeriod = weekendStudyService.getPeriod(userId, date, period)
+        attendanceService.cancel(weekendStudyPeriod)
+        return Response.ok("출결 체크를 취소했어요.")
+    }
+
     private fun fetchUsersMap(userIds: Collection<UUID>) =
         if (userIds.isEmpty()) emptyMap()
         else runBlocking { userQueryClient.getUsers(userIds.map { it.toString() }) }.usersList

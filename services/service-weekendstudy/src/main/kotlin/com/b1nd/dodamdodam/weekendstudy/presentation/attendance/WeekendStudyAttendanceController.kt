@@ -46,4 +46,14 @@ class WeekendStudyAttendanceController(
         @RequestParam(required = false) period: Int?,
     ): Response<List<WeekendStudyAttendanceStatusResponse>> =
         attendanceUseCase.getStatuses(date, period)
+
+    @UserAccess(roles = [RoleType.WEEKEND_MANAGER])
+    @DeleteMapping("/{userId}")
+    fun cancel(
+        @PathVariable userId: UUID,
+        @DateTimeFormat(pattern = "yyyy-MM-dd")
+        @RequestParam date: LocalDate,
+        @RequestParam period: Int,
+    ): Response<Any> =
+        attendanceUseCase.cancel(userId, date, period)
 }
