@@ -146,29 +146,6 @@ class NightStudyQueryRepositoryImpl(
             .fetchFirst() != null
     }
 
-    override fun existsAllowedByUserIdAndPeriodOverlap(
-        userId: UUID,
-        period: Int,
-        startAt: LocalDate,
-        endAt: LocalDate,
-        excludeNightStudyId: Long,
-        type: NightStudyType
-    ): Boolean {
-        return queryFactory.selectOne()
-            .from(nightStudyMemberEntity)
-            .join(nightStudyMemberEntity.nightStudy, nightStudyEntity)
-            .where(
-                nightStudyMemberEntity.userId.eq(userId),
-                nightStudyEntity.period.eq(period),
-                nightStudyEntity.startAt.loe(endAt),
-                nightStudyEntity.endAt.goe(startAt),
-                nightStudyEntity.id.ne(excludeNightStudyId),
-                nightStudyEntity.status.eq(NightStudyStatusType.ALLOWED),
-                nightStudyEntity.type.eq(type)
-            )
-            .fetchFirst() != null
-    }
-
     override fun existsAllowedMemberByUserIdAndDateAndPeriod(userId: UUID, date: LocalDate, period: Int): Boolean {
         return queryFactory.selectOne()
             .from(nightStudyMemberEntity)
