@@ -19,6 +19,7 @@ fun ProjectRoomEntity.toResponse() = ProjectRoomResponse(
     id = id!!,
     name = name,
     floor = floor,
+    enabled = enabled,
 )
 
 fun ProjectRoomBlockEntity.toResponse() = ProjectRoomBlockResponse(

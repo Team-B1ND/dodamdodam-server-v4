@@ -39,6 +39,11 @@ class ProjectRoomController(
     fun getAll(): Response<List<ProjectRoomResponse>> =
         projectRoomUseCase.getAll()
 
+    @UserAccess(roles = [RoleType.WEEKEND_MANAGER])
+    @GetMapping("/all")
+    fun getAllWithDisabled(): Response<List<ProjectRoomResponse>> =
+        projectRoomUseCase.getAllWithDisabled()
+
     @UserAccess
     @GetMapping("/status")
     fun getStatus(
@@ -51,6 +56,11 @@ class ProjectRoomController(
     @PatchMapping("/{id}")
     fun update(@PathVariable id: Long, @RequestBody @Valid request: SaveProjectRoomRequest): Response<Any> =
         projectRoomUseCase.update(id, request)
+
+    @UserAccess(roles = [RoleType.WEEKEND_MANAGER])
+    @PatchMapping("/{id}/enabled")
+    fun updateEnabled(@PathVariable id: Long, @RequestParam enabled: Boolean): Response<Any> =
+        projectRoomUseCase.updateEnabled(id, enabled)
 
     @UserAccess(roles = [RoleType.WEEKEND_MANAGER])
     @DeleteMapping("/{id}")

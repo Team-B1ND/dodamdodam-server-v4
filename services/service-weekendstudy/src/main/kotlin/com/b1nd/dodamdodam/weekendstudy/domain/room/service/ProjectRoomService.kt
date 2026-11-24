@@ -2,6 +2,7 @@ package com.b1nd.dodamdodam.weekendstudy.domain.room.service
 
 import com.b1nd.dodamdodam.weekendstudy.domain.room.entity.ProjectRoomEntity
 import com.b1nd.dodamdodam.weekendstudy.domain.room.exception.ProjectRoomAlreadyExistsException
+import com.b1nd.dodamdodam.weekendstudy.domain.room.exception.ProjectRoomDisabledException
 import com.b1nd.dodamdodam.weekendstudy.domain.room.exception.ProjectRoomNotFoundException
 import com.b1nd.dodamdodam.weekendstudy.domain.room.repository.ProjectRoomRepository
 import org.springframework.stereotype.Service
@@ -17,6 +18,8 @@ class ProjectRoomService(
 
     fun getAll(): List<ProjectRoomEntity> = projectRoomRepository.findAll()
 
+    fun getAllEnabled(): List<ProjectRoomEntity> = projectRoomRepository.findAllByEnabledTrue()
+
     fun getById(id: Long): ProjectRoomEntity =
         projectRoomRepository.findById(id).orElseThrow { ProjectRoomNotFoundException() }
 
@@ -31,6 +34,10 @@ class ProjectRoomService(
 
     fun delete(id: Long) {
         projectRoomRepository.delete(getById(id))
+    }
+
+    fun validateEnabled(room: ProjectRoomEntity) {
+        if (!room.enabled) throw ProjectRoomDisabledException()
     }
 
     private fun checkNameExists(name: String) {
