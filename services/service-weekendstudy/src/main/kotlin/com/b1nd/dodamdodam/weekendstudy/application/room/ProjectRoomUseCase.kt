@@ -11,6 +11,7 @@ import com.b1nd.dodamdodam.weekendstudy.application.room.data.toEntity
 import com.b1nd.dodamdodam.weekendstudy.application.room.data.toResponse
 import com.b1nd.dodamdodam.weekendstudy.application.room.data.toStatusResponse
 import com.b1nd.dodamdodam.weekendstudy.domain.room.exception.InvalidBlockDateRangeException
+import com.b1nd.dodamdodam.weekendstudy.domain.room.exception.ProjectRoomHasUpcomingReservationException
 import com.b1nd.dodamdodam.weekendstudy.domain.room.exception.ProjectRoomInUseException
 import com.b1nd.dodamdodam.weekendstudy.domain.room.exception.ProjectRoomReservedException
 import com.b1nd.dodamdodam.weekendstudy.domain.room.service.ProjectRoomBlockService
@@ -41,11 +42,15 @@ class ProjectRoomUseCase(
 
     @Transactional(readOnly = true)
     fun getAll(): Response<List<ProjectRoomResponse>> =
+        Response.ok("방 목록을 조회했어요.", projectRoomService.getAllEnabled().map { it.toResponse() })
+
+    @Transactional(readOnly = true)
+    fun getAllWithDisabled(): Response<List<ProjectRoomResponse>> =
         Response.ok("방 목록을 조회했어요.", projectRoomService.getAll().map { it.toResponse() })
 
     @Transactional(readOnly = true)
     fun getStatus(date: LocalDate, floor: Int?): Response<List<ProjectRoomStatusResponse>> {
-        val rooms = projectRoomService.getAll()
+        val rooms = projectRoomService.getAllEnabled()
             .filter { floor == null || it.floor == floor }
             .sortedWith(compareBy({ it.floor }, { it.name }))
         val blocksByRoomId = projectRoomBlockService.getAllByDate(date).groupBy { it.room.id!! }
@@ -61,6 +66,14 @@ class ProjectRoomUseCase(
     fun update(id: Long, request: SaveProjectRoomRequest): Response<Any> {
         projectRoomService.update(id, request.name, request.floor)
         return Response.ok("방을 수정했어요.")
+    }
+
+    fun updateEnabled(id: Long, enabled: Boolean): Response<Any> {
+        val room = projectRoomService.getByIdWithLock(id)
+        if (!enabled && weekendStudyService.existsUpcomingReservation(room, LocalDate.now()))
+            throw ProjectRoomHasUpcomingReservationException()
+        room.updateEnabled(enabled)
+        return Response.ok("방 사용 여부를 변경했어요.")
     }
 
     fun delete(id: Long): Response<Any> {

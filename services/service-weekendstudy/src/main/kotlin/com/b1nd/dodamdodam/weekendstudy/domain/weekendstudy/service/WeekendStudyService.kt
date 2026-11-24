@@ -88,6 +88,9 @@ class WeekendStudyService(
     fun existsByRoom(room: ProjectRoomEntity): Boolean =
         weekendStudyRepository.existsByRoom(room)
 
+    fun existsUpcomingReservation(room: ProjectRoomEntity, date: LocalDate): Boolean =
+        weekendStudyRepository.existsByRoomAndDateGreaterThanEqual(room, date)
+
     fun existsReservationBetween(room: ProjectRoomEntity, startAt: LocalDate, endAt: LocalDate, periods: List<Int>): Boolean =
         weekendStudyPeriodQueryRepository.existsReservedRoomBetween(room.id!!, startAt, endAt, periods)
 

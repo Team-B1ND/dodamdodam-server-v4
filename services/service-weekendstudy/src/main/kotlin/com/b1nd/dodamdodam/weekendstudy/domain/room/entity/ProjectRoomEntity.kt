@@ -16,6 +16,9 @@ class ProjectRoomEntity(
 
     @Column(nullable = false)
     var floor: Int,
+
+    @Column(nullable = false)
+    var enabled: Boolean = true,
 ) : BaseTimeEntity() {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,5 +27,9 @@ class ProjectRoomEntity(
     fun update(name: String, floor: Int) {
         this.name = name
         this.floor = floor
+    }
+
+    fun updateEnabled(enabled: Boolean) {
+        this.enabled = enabled
     }
 }

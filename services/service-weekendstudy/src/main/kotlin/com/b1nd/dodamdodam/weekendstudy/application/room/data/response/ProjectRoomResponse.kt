@@ -4,4 +4,5 @@ data class ProjectRoomResponse(
     val id: Long,
     val name: String,
     val floor: Int,
+    val enabled: Boolean,
 )

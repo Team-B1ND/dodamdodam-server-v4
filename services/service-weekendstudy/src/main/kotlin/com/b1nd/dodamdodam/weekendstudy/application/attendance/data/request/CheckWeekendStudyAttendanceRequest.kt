@@ -9,4 +9,5 @@ data class CheckWeekendStudyAttendanceRequest(
     val date: LocalDate,
     val period: Int,
     val status: WeekendStudyAttendanceStatus,
+    val reason: String? = null,
 )

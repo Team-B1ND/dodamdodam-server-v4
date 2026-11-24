@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Lock
 
 interface ProjectRoomRepository : JpaRepository<ProjectRoomEntity, Long> {
     fun existsByName(name: String): Boolean
+    fun findAllByEnabledTrue(): List<ProjectRoomEntity>
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     fun findWithLockById(id: Long): ProjectRoomEntity?
