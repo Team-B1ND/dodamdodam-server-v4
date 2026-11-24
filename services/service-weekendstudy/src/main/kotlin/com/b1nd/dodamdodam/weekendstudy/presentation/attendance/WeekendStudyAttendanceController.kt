@@ -6,6 +6,7 @@ import com.b1nd.dodamdodam.core.security.annotation.authentication.UserAccess
 import com.b1nd.dodamdodam.core.security.passport.enumerations.RoleType
 import com.b1nd.dodamdodam.weekendstudy.application.attendance.WeekendStudyAttendanceUseCase
 import com.b1nd.dodamdodam.weekendstudy.application.attendance.data.request.CheckWeekendStudyAttendanceRequest
+import com.b1nd.dodamdodam.weekendstudy.application.attendance.data.response.WeekendStudyAttendanceStatusResponse
 import com.b1nd.dodamdodam.weekendstudy.application.attendance.data.response.WeekendStudyAttendanceSummaryResponse
 import org.springframework.data.domain.Pageable
 import org.springframework.format.annotation.DateTimeFormat
@@ -36,4 +37,13 @@ class WeekendStudyAttendanceController(
         pageable: Pageable,
     ): Response<InfinityScrollPageResponse<WeekendStudyAttendanceSummaryResponse>> =
         attendanceUseCase.getSummaries(startAt, endAt, pageable)
+
+    @UserAccess(roles = [RoleType.WEEKEND_MANAGER])
+    @GetMapping("/status")
+    fun getStatuses(
+        @DateTimeFormat(pattern = "yyyy-MM-dd")
+        @RequestParam date: LocalDate,
+        @RequestParam(required = false) period: Int?,
+    ): Response<List<WeekendStudyAttendanceStatusResponse>> =
+        attendanceUseCase.getStatuses(date, period)
 }

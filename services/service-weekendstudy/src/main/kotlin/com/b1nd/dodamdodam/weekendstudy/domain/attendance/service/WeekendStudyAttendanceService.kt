@@ -5,6 +5,7 @@ import com.b1nd.dodamdodam.weekendstudy.domain.attendance.enumeration.WeekendStu
 import com.b1nd.dodamdodam.weekendstudy.domain.attendance.exception.InvalidDateRangeException
 import com.b1nd.dodamdodam.weekendstudy.domain.attendance.repository.WeekendStudyAttendanceQueryRepository
 import com.b1nd.dodamdodam.weekendstudy.domain.attendance.repository.WeekendStudyAttendanceRepository
+import com.b1nd.dodamdodam.weekendstudy.domain.attendance.repository.WeekendStudyPeriodWithAttendance
 import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.entity.WeekendStudyPeriodEntity
 import org.springframework.stereotype.Service
 import java.time.LocalDate
@@ -29,4 +30,7 @@ class WeekendStudyAttendanceService(
             throw InvalidDateRangeException()
         return attendanceQueryRepository.countByUserIdAndStatus(startAt, endAt)
     }
+
+    fun getAllPeriodsWithAttendance(date: LocalDate, period: Int?): List<WeekendStudyPeriodWithAttendance> =
+        attendanceQueryRepository.findAllPeriodsWithAttendance(date, period)
 }
