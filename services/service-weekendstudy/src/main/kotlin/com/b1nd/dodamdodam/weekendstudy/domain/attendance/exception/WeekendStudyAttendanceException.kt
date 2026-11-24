@@ -3,3 +3,4 @@ package com.b1nd.dodamdodam.weekendstudy.domain.attendance.exception
 import com.b1nd.dodamdodam.core.common.exception.BasicException
 
 class InvalidDateRangeException : BasicException(WeekendStudyAttendanceExceptionCode.INVALID_DATE_RANGE)
+class AttendanceNotFoundException : BasicException(WeekendStudyAttendanceExceptionCode.ATTENDANCE_NOT_FOUND)
