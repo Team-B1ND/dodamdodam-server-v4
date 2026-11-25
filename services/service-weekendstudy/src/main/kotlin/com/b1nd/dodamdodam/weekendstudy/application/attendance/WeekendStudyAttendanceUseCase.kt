@@ -43,8 +43,7 @@ class WeekendStudyAttendanceUseCase(
                 WeekendStudyAttendanceSummaryResponse(
                     student = student,
                     attendance = counts[WeekendStudyAttendanceStatus.ATTENDANCE] ?: 0L,
-                    late = counts[WeekendStudyAttendanceStatus.LATE] ?: 0L,
-                    absent = counts[WeekendStudyAttendanceStatus.ABSENT] ?: 0L,
+                    late = counts[WeekendStudyAttendanceStatus.LATE] ?: 0L
                 )
             }
         }.sortedWith(compareBy(

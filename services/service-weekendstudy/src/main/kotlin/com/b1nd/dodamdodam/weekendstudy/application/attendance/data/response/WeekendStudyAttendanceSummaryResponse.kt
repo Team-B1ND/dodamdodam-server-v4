@@ -6,5 +6,4 @@ data class WeekendStudyAttendanceSummaryResponse(
     val student: WeekendStudyApplicantResponse,
     val attendance: Long,
     val late: Long,
-    val absent: Long,
 )
