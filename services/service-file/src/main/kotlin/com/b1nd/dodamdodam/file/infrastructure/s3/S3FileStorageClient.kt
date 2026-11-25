@@ -14,6 +14,7 @@ import java.util.UUID
 class S3FileStorageClient(
     private val s3Client: S3Client,
     private val properties: S3Properties,
+    private val fileUrl: S3FileUrl,
 ) {
     fun upload(file: MultipartFile, metadata: ValidatedFileMetadata): String {
         val key = generateKey(metadata.extension)
@@ -36,7 +37,7 @@ class S3FileStorageClient(
             }
         }.onFailure { throw FileUploadFailedException() }
 
-        return buildFileUrl(key)
+        return fileUrl.build(key)
     }
 
     private fun generateKey(extension: String): String {
@@ -46,10 +47,4 @@ class S3FileStorageClient(
         return if (prefix.isNotBlank()) "$prefix/$filename" else filename
     }
 
-    private fun buildFileUrl(key: String): String =
-        if (properties.endpoint.isNotBlank()) {
-            "${properties.endpoint.trimEnd('/')}/${properties.bucket}/$key"
-        } else {
-            "https://${properties.bucket}.s3.${properties.region}.amazonaws.com/$key"
-        }
 }

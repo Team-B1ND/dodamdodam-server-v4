@@ -19,6 +19,7 @@ import java.util.*
 class UserService(
     private val userRepository: UserRepository,
     private val userRoleRepository: UserRoleRepository,
+    private val profileImageValidator: ProfileImageValidator,
     private val encoder: PasswordEncoder
 ) {
     fun get(publicId: UUID): UserEntity =
@@ -43,6 +44,8 @@ class UserService(
 
         phone?.let{checkDuplicatePhone(it)}
 
+        // null은 미변경, 빈 문자열은 기존 프로필 삭제 동작을 유지한다.
+        profileImage?.takeIf { it.isNotEmpty() }?.let(profileImageValidator::validate)
         user.updateInfo(name, phone, profileImage, gender)
         return userRepository.save(user)
     }

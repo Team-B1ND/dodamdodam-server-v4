@@ -23,6 +23,10 @@ server:
   port: 8080
 
 grpc:
+  client:
+    service-file:
+      address: "${FILE_GRPC_ADDRESS:static://file.dodam.svc.cluster.local:9090}"
+      negotiation-type: plaintext
   server:
     port: 9090
 
