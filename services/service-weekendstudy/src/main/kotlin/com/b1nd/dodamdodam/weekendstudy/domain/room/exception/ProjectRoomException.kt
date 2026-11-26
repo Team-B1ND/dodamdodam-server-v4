@@ -1,0 +1,14 @@
+package com.b1nd.dodamdodam.weekendstudy.domain.room.exception
+
+import com.b1nd.dodamdodam.core.common.exception.BasicException
+
+class ProjectRoomNotFoundException : BasicException(ProjectRoomExceptionCode.PROJECT_ROOM_NOT_FOUND)
+class ProjectRoomAlreadyExistsException : BasicException(ProjectRoomExceptionCode.PROJECT_ROOM_ALREADY_EXISTS)
+class ProjectRoomAlreadyBlockedException : BasicException(ProjectRoomExceptionCode.PROJECT_ROOM_ALREADY_BLOCKED)
+class ProjectRoomBlockedException : BasicException(ProjectRoomExceptionCode.PROJECT_ROOM_BLOCKED)
+class InvalidBlockDateRangeException : BasicException(ProjectRoomExceptionCode.PROJECT_ROOM_BLOCK_INVALID_DATE_RANGE)
+class ProjectRoomBlockNotFoundException : BasicException(ProjectRoomExceptionCode.PROJECT_ROOM_BLOCK_NOT_FOUND)
+class ProjectRoomInUseException : BasicException(ProjectRoomExceptionCode.PROJECT_ROOM_IN_USE)
+class ProjectRoomReservedException : BasicException(ProjectRoomExceptionCode.PROJECT_ROOM_RESERVED)
+class ProjectRoomDisabledException : BasicException(ProjectRoomExceptionCode.PROJECT_ROOM_DISABLED)
+class ProjectRoomHasUpcomingReservationException : BasicException(ProjectRoomExceptionCode.PROJECT_ROOM_HAS_UPCOMING_RESERVATION)

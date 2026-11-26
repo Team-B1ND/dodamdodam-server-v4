@@ -1,0 +1,117 @@
+package com.b1nd.dodamdodam.weekendstudy.application.room
+
+import com.b1nd.dodamdodam.core.common.data.Response
+import com.b1nd.dodamdodam.weekendstudy.application.room.data.request.BlockProjectRoomRequest
+import com.b1nd.dodamdodam.weekendstudy.application.room.data.request.SaveProjectRoomRequest
+import com.b1nd.dodamdodam.weekendstudy.application.room.data.response.ProjectRoomBlockResponse
+import com.b1nd.dodamdodam.weekendstudy.application.room.data.response.ProjectRoomResponse
+import com.b1nd.dodamdodam.weekendstudy.application.room.data.response.ProjectRoomStatusResponse
+import com.b1nd.dodamdodam.weekendstudy.application.room.data.toEntities
+import com.b1nd.dodamdodam.weekendstudy.application.room.data.toEntity
+import com.b1nd.dodamdodam.weekendstudy.application.room.data.toResponse
+import com.b1nd.dodamdodam.weekendstudy.application.room.data.toStatusResponse
+import com.b1nd.dodamdodam.weekendstudy.domain.room.exception.InvalidBlockDateRangeException
+import com.b1nd.dodamdodam.weekendstudy.domain.room.exception.ProjectRoomHasUpcomingReservationException
+import com.b1nd.dodamdodam.weekendstudy.domain.room.exception.ProjectRoomInUseException
+import com.b1nd.dodamdodam.weekendstudy.domain.room.exception.ProjectRoomReservedException
+import com.b1nd.dodamdodam.weekendstudy.domain.room.service.ProjectRoomBlockService
+import com.b1nd.dodamdodam.weekendstudy.domain.room.service.ProjectRoomService
+import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.exception.EmptyPeriodException
+import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.exception.InvalidPeriodException
+import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.service.WeekendStudyService
+import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
+
+@Component
+@Transactional(rollbackFor = [Exception::class])
+class ProjectRoomUseCase(
+    private val projectRoomService: ProjectRoomService,
+    private val projectRoomBlockService: ProjectRoomBlockService,
+    private val weekendStudyService: WeekendStudyService,
+) {
+    companion object {
+        private val AVAILABLE_PERIODS = setOf(17, 18, 19, 20)
+        private val STATUS_PERIODS = listOf(17, 18, 19, 20)
+    }
+
+    fun create(request: SaveProjectRoomRequest): Response<Any> {
+        projectRoomService.save(request.toEntity())
+        return Response.created("방을 생성했어요.")
+    }
+
+    @Transactional(readOnly = true)
+    fun getAll(): Response<List<ProjectRoomResponse>> =
+        Response.ok("방 목록을 조회했어요.", projectRoomService.getAllEnabled().map { it.toResponse() })
+
+    @Transactional(readOnly = true)
+    fun getAllWithDisabled(): Response<List<ProjectRoomResponse>> =
+        Response.ok("방 목록을 조회했어요.", projectRoomService.getAll().map { it.toResponse() })
+
+    @Transactional(readOnly = true)
+    fun getStatus(date: LocalDate, floor: Int?): Response<List<ProjectRoomStatusResponse>> {
+        val rooms = projectRoomService.getAllEnabled()
+            .filter { floor == null || it.floor == floor }
+            .sortedWith(compareBy({ it.floor }, { it.name }))
+        val blocksByRoomId = projectRoomBlockService.getAllByDate(date).groupBy { it.room.id!! }
+        val reservedPeriodsByRoomId = weekendStudyService.getReservedRoomPeriods(date)
+        return Response.ok(
+            "방 예약 현황을 조회했어요.",
+            rooms.map {
+                it.toStatusResponse(STATUS_PERIODS, blocksByRoomId[it.id].orEmpty(), reservedPeriodsByRoomId[it.id].orEmpty())
+            },
+        )
+    }
+
+    fun update(id: Long, request: SaveProjectRoomRequest): Response<Any> {
+        projectRoomService.update(id, request.name, request.floor)
+        return Response.ok("방을 수정했어요.")
+    }
+
+    fun updateEnabled(id: Long, enabled: Boolean): Response<Any> {
+        val room = projectRoomService.getByIdWithLock(id)
+        if (!enabled && weekendStudyService.existsUpcomingReservation(room, LocalDate.now()))
+            throw ProjectRoomHasUpcomingReservationException()
+        room.updateEnabled(enabled)
+        return Response.ok("방 사용 여부를 변경했어요.")
+    }
+
+    fun delete(id: Long): Response<Any> {
+        val room = projectRoomService.getByIdWithLock(id)
+        if (weekendStudyService.existsByRoom(room))
+            throw ProjectRoomInUseException()
+        projectRoomBlockService.deleteAllByRoom(room)
+        projectRoomService.delete(id)
+        return Response.ok("방을 삭제했어요.")
+    }
+
+    fun block(roomId: Long, request: BlockProjectRoomRequest): Response<Any> {
+        val room = projectRoomService.getByIdWithLock(roomId)
+        validateBlock(request.startAt, request.endAt, request.periods)
+        if (weekendStudyService.existsReservationBetween(room, request.startAt, request.endAt, request.periods))
+            throw ProjectRoomReservedException()
+        projectRoomBlockService.saveAll(request.toEntities(room))
+        return Response.created("방을 차단했어요.")
+    }
+
+    @Transactional(readOnly = true)
+    fun getBlocks(roomId: Long): Response<List<ProjectRoomBlockResponse>> {
+        val room = projectRoomService.getById(roomId)
+        return Response.ok("방 차단 목록을 조회했어요.", projectRoomBlockService.getAllByRoom(room).map { it.toResponse() })
+    }
+
+    fun unblock(roomId: Long, blockId: Long): Response<Any> {
+        val room = projectRoomService.getById(roomId)
+        projectRoomBlockService.delete(room, blockId)
+        return Response.ok("방 차단을 해제했어요.")
+    }
+
+    private fun validateBlock(startAt: LocalDate, endAt: LocalDate, periods: List<Int>) {
+        if (startAt.isAfter(endAt))
+            throw InvalidBlockDateRangeException()
+        if (periods.isEmpty())
+            throw EmptyPeriodException()
+        if (!AVAILABLE_PERIODS.containsAll(periods) || periods.size != periods.toSet().size)
+            throw InvalidPeriodException()
+    }
+}

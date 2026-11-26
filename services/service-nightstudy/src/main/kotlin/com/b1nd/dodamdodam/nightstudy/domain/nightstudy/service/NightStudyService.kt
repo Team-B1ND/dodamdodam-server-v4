@@ -34,10 +34,13 @@ class NightStudyService(
     private val bannedRepository: NightStudyBannedRepository
 ) {
     fun save(nightStudy: NightStudyEntity, userId: UUID, members: List<UUID>?) {
-        if (isBanned(userId)) throw NightStudyBannedException()
+        if (isBanned(userId, nightStudy.startAt)) throw NightStudyBannedException()
+        if (hasPeriodOverlap(userId, nightStudy.period, nightStudy.type, nightStudy.startAt, nightStudy.endAt)) {
+            throw PeriodOverlappedException()
+        }
 
         members?.forEach { member ->
-            if (isBanned(member)) throw NightStudyBannedException()
+            if (isBanned(member, nightStudy.startAt)) throw NightStudyBannedException()
             if (hasPeriodOverlap(member, nightStudy.period, nightStudy.type, nightStudy.startAt, nightStudy.endAt)) {
                 throw PeriodOverlappedException()
             }
@@ -118,16 +121,6 @@ class NightStudyService(
 
     fun allow(publicId: UUID) {
         val ns = nightStudyRepository.findByPublicIdForUpdate(publicId) ?: throw NightStudyNotFoundException()
-
-        if (ns.status != NightStudyStatusType.ALLOWED) {
-            val memberIds = nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(ns).distinct()
-            memberIds.forEach { memberId ->
-                if (hasAllowedPeriodOverlap(memberId, ns.period, ns.startAt, ns.endAt, ns.id!!, ns.type)) {
-                    throw PeriodOverlappedException()
-                }
-            }
-        }
-
         ns.allow()
     }
 
@@ -166,25 +159,12 @@ class NightStudyService(
         )
     }
 
-    private fun isBanned(userId: UUID): Boolean {
-        return bannedRepository.existsByUserId(userId)
+    private fun isBanned(userId: UUID, startAt: LocalDate): Boolean {
+        return bannedRepository.existsByUserIdAndEndAtGreaterThanEqual(userId, startAt)
     }
 
     private fun isMine(userId: UUID, nightStudy: NightStudyEntity): Boolean {
         return nightStudyMemberRepository.existsByNightStudyAndUserId(nightStudy, userId)
-    }
-
-    private fun hasAllowedPeriodOverlap(
-        userId: UUID,
-        period: Int,
-        startAt: LocalDate,
-        endAt: LocalDate,
-        excludeNightStudyId: Long,
-        type: NightStudyType
-    ): Boolean {
-        return nightStudyQueryRepository.existsAllowedByUserIdAndPeriodOverlap(
-            userId, period, startAt, endAt, excludeNightStudyId, type
-        )
     }
 
     private fun hasPeriodOverlap(

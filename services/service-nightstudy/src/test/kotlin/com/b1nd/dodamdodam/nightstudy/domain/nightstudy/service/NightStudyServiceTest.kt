@@ -3,6 +3,7 @@ package com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
+import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.NightStudyBannedException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.PeriodOverlappedException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyBannedRepository
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyQueryRepository
@@ -62,121 +63,133 @@ class NightStudyServiceTest {
     }
 
     @Test
-    fun `같은 교시에 승인된 심자가 겹치는 멤버가 있으면 승인할 수 없다`() {
-        val publicId = UUID.randomUUID()
-        val memberId = UUID.randomUUID()
-        val project = nightStudy(NightStudyType.PROJECT)
-        `when`(nightStudyRepository.findByPublicIdForUpdate(publicId)).thenReturn(project)
-        `when`(nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(project)).thenReturn(listOf(memberId))
+    fun `신청자에게 같은 교시에 겹치는 심자가 있으면 신청할 수 없다`() {
+        val userId = UUID.randomUUID()
+        val personal = nightStudy(NightStudyType.PERSONAL)
         `when`(
-            nightStudyQueryRepository.existsAllowedByUserIdAndPeriodOverlap(
-                memberId,
-                project.period,
-                project.startAt,
-                project.endAt,
-                project.id!!,
-                NightStudyType.PROJECT,
+            nightStudyQueryRepository.existsByUserIdAndPeriodOverlap(
+                userId,
+                personal.period,
+                NightStudyType.PERSONAL,
+                personal.startAt,
+                personal.endAt,
             )
         ).thenReturn(true)
 
         assertThrows(PeriodOverlappedException::class.java) {
-            service.allow(publicId)
+            service.save(personal, userId, null)
         }
 
-        assertEquals(NightStudyStatusType.PENDING, project.status)
+        verify(nightStudyRepository, never()).save(org.mockito.ArgumentMatchers.any())
     }
 
     @Test
-    fun `프로젝트 승인 시 승인된 개인 심자는 겹침으로 보지 않는다`() {
-        val publicId = UUID.randomUUID()
+    fun `프로젝트 리더에게 겹치는 프로젝트 심자가 있으면 신청할 수 없다`() {
+        val leaderId = UUID.randomUUID()
         val memberId = UUID.randomUUID()
         val project = nightStudy(NightStudyType.PROJECT)
-        `when`(nightStudyRepository.findByPublicIdForUpdate(publicId)).thenReturn(project)
-        `when`(nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(project)).thenReturn(listOf(memberId))
         `when`(
-            nightStudyQueryRepository.existsAllowedByUserIdAndPeriodOverlap(
-                memberId,
+            nightStudyQueryRepository.existsByUserIdAndPeriodOverlap(
+                leaderId,
                 project.period,
+                NightStudyType.PROJECT,
                 project.startAt,
                 project.endAt,
-                project.id!!,
-                NightStudyType.PERSONAL,
             )
         ).thenReturn(true)
 
-        service.allow(publicId)
+        assertThrows(PeriodOverlappedException::class.java) {
+            service.save(project, leaderId, listOf(memberId))
+        }
 
-        assertEquals(NightStudyStatusType.ALLOWED, project.status)
-        verify(nightStudyQueryRepository).existsAllowedByUserIdAndPeriodOverlap(
-            memberId,
-            project.period,
-            project.startAt,
-            project.endAt,
-            project.id!!,
-            NightStudyType.PROJECT,
-        )
+        verify(nightStudyRepository, never()).save(org.mockito.ArgumentMatchers.any())
     }
 
     @Test
-    fun `개인 심자 승인 시 승인된 프로젝트 심자는 겹침으로 보지 않는다`() {
-        val publicId = UUID.randomUUID()
-        val userId = UUID.randomUUID()
-        val personal = nightStudy(NightStudyType.PERSONAL)
-        `when`(nightStudyRepository.findByPublicIdForUpdate(publicId)).thenReturn(personal)
-        `when`(nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(personal)).thenReturn(listOf(userId))
+    fun `프로젝트 멤버에게 겹치는 프로젝트 심자가 있으면 신청할 수 없다`() {
+        val leaderId = UUID.randomUUID()
+        val memberId = UUID.randomUUID()
+        val project = nightStudy(NightStudyType.PROJECT)
         `when`(
-            nightStudyQueryRepository.existsAllowedByUserIdAndPeriodOverlap(
-                userId,
-                personal.period,
-                personal.startAt,
-                personal.endAt,
-                personal.id!!,
+            nightStudyQueryRepository.existsByUserIdAndPeriodOverlap(
+                memberId,
+                project.period,
                 NightStudyType.PROJECT,
+                project.startAt,
+                project.endAt,
             )
         ).thenReturn(true)
 
-        service.allow(publicId)
+        assertThrows(PeriodOverlappedException::class.java) {
+            service.save(project, leaderId, listOf(memberId))
+        }
 
-        assertEquals(NightStudyStatusType.ALLOWED, personal.status)
-        verify(nightStudyQueryRepository).existsAllowedByUserIdAndPeriodOverlap(
+        verify(nightStudyRepository, never()).save(org.mockito.ArgumentMatchers.any())
+    }
+
+    @Test
+    fun `겹치는 심자가 없으면 신청이 저장된다`() {
+        val userId = UUID.randomUUID()
+        val personal = nightStudy(NightStudyType.PERSONAL)
+        `when`(nightStudyRepository.save(personal)).thenReturn(personal)
+
+        service.save(personal, userId, null)
+
+        verify(nightStudyRepository).save(personal)
+        verify(nightStudyQueryRepository).existsByUserIdAndPeriodOverlap(
             userId,
             personal.period,
+            NightStudyType.PERSONAL,
             personal.startAt,
             personal.endAt,
-            personal.id!!,
-            NightStudyType.PERSONAL,
         )
     }
 
     @Test
-    fun `개인 심자끼리 겹치는 멤버가 있으면 승인할 수 없다`() {
-        val publicId = UUID.randomUUID()
+    fun `신청자가 신청 시작일에 정지 중이면 신청할 수 없다`() {
         val userId = UUID.randomUUID()
         val personal = nightStudy(NightStudyType.PERSONAL)
-        `when`(nightStudyRepository.findByPublicIdForUpdate(publicId)).thenReturn(personal)
-        `when`(nightStudyMemberQueryRepository.findAllUserIdsByNightStudy(personal)).thenReturn(listOf(userId))
-        `when`(
-            nightStudyQueryRepository.existsAllowedByUserIdAndPeriodOverlap(
-                userId,
-                personal.period,
-                personal.startAt,
-                personal.endAt,
-                personal.id!!,
-                NightStudyType.PERSONAL,
-            )
-        ).thenReturn(true)
+        `when`(bannedRepository.existsByUserIdAndEndAtGreaterThanEqual(userId, personal.startAt)).thenReturn(true)
 
-        assertThrows(PeriodOverlappedException::class.java) {
-            service.allow(publicId)
+        assertThrows(NightStudyBannedException::class.java) {
+            service.save(personal, userId, null)
         }
 
-        assertEquals(NightStudyStatusType.PENDING, personal.status)
+        verify(nightStudyRepository, never()).save(org.mockito.ArgumentMatchers.any())
     }
 
     @Test
-    fun `이미 승인된 심자를 다시 승인해도 겹침을 검사하지 않는다`() {
+    fun `정지 여부는 신청 종료일이 아니라 시작일 기준으로 판단한다`() {
+        val userId = UUID.randomUUID()
+        val personal = nightStudy(NightStudyType.PERSONAL)
+        `when`(bannedRepository.existsByUserIdAndEndAtGreaterThanEqual(userId, personal.endAt)).thenReturn(true)
+        `when`(bannedRepository.existsByUserIdAndEndAtGreaterThanEqual(userId, personal.startAt)).thenReturn(false)
+        `when`(nightStudyRepository.save(personal)).thenReturn(personal)
+
+        service.save(personal, userId, null)
+
+        verify(nightStudyRepository).save(personal)
+    }
+
+    @Test
+    fun `프로젝트 멤버가 신청 시작일에 정지 중이면 신청할 수 없다`() {
+        val leaderId = UUID.randomUUID()
+        val memberId = UUID.randomUUID()
+        val project = nightStudy(NightStudyType.PROJECT)
+        `when`(bannedRepository.existsByUserIdAndEndAtGreaterThanEqual(leaderId, project.startAt)).thenReturn(false)
+        `when`(bannedRepository.existsByUserIdAndEndAtGreaterThanEqual(memberId, project.startAt)).thenReturn(true)
+
+        assertThrows(NightStudyBannedException::class.java) {
+            service.save(project, leaderId, listOf(memberId))
+        }
+
+        verify(nightStudyRepository, never()).save(org.mockito.ArgumentMatchers.any())
+    }
+
+    @Test
+    fun `승인 시에는 겹침을 검사하지 않는다`() {
         val publicId = UUID.randomUUID()
-        val project = nightStudy(NightStudyType.PROJECT).apply { allow() }
+        val project = nightStudy(NightStudyType.PROJECT)
         `when`(nightStudyRepository.findByPublicIdForUpdate(publicId)).thenReturn(project)
 
         service.allow(publicId)

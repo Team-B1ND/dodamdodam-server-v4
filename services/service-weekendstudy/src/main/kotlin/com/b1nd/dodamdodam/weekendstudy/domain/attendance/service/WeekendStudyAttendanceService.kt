@@ -1,0 +1,43 @@
+package com.b1nd.dodamdodam.weekendstudy.domain.attendance.service
+
+import com.b1nd.dodamdodam.weekendstudy.domain.attendance.entity.WeekendStudyAttendanceEntity
+import com.b1nd.dodamdodam.weekendstudy.domain.attendance.enumeration.WeekendStudyAttendanceStatus
+import com.b1nd.dodamdodam.weekendstudy.domain.attendance.exception.AttendanceNotFoundException
+import com.b1nd.dodamdodam.weekendstudy.domain.attendance.exception.InvalidDateRangeException
+import com.b1nd.dodamdodam.weekendstudy.domain.attendance.repository.WeekendStudyAttendanceQueryRepository
+import com.b1nd.dodamdodam.weekendstudy.domain.attendance.repository.WeekendStudyAttendanceRepository
+import com.b1nd.dodamdodam.weekendstudy.domain.attendance.repository.WeekendStudyPeriodWithAttendance
+import com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.entity.WeekendStudyPeriodEntity
+import org.springframework.stereotype.Service
+import java.time.LocalDate
+import java.util.UUID
+
+@Service
+class WeekendStudyAttendanceService(
+    private val attendanceRepository: WeekendStudyAttendanceRepository,
+    private val attendanceQueryRepository: WeekendStudyAttendanceQueryRepository,
+) {
+    fun check(period: WeekendStudyPeriodEntity, status: WeekendStudyAttendanceStatus, checkerId: UUID, reason: String?) {
+        val attendance = attendanceRepository.findByPeriod(period)
+        if (attendance == null) {
+            attendanceRepository.save(WeekendStudyAttendanceEntity(period, status, checkerId, reason))
+            return
+        }
+        attendance.update(status, checkerId, reason)
+    }
+
+    fun countByUserAndStatus(startAt: LocalDate, endAt: LocalDate): Map<UUID, Map<WeekendStudyAttendanceStatus, Long>> {
+        if (startAt.isAfter(endAt))
+            throw InvalidDateRangeException()
+        return attendanceQueryRepository.countByUserIdAndStatus(startAt, endAt)
+    }
+
+    fun cancel(period: WeekendStudyPeriodEntity) {
+        val attendance = attendanceRepository.findByPeriod(period)
+            ?: throw AttendanceNotFoundException()
+        attendanceRepository.delete(attendance)
+    }
+
+    fun getAllPeriodsWithAttendance(date: LocalDate, period: Int?): List<WeekendStudyPeriodWithAttendance> =
+        attendanceQueryRepository.findAllPeriodsWithAttendance(date, period)
+}

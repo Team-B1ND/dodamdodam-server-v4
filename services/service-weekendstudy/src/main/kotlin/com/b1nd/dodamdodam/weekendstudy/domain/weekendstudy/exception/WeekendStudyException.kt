@@ -1,0 +1,18 @@
+package com.b1nd.dodamdodam.weekendstudy.domain.weekendstudy.exception
+
+import com.b1nd.dodamdodam.core.common.exception.BasicException
+
+class NotOperatingDayException : BasicException(WeekendStudyExceptionCode.NOT_OPERATING_DAY)
+class NotApplicationTimeException : BasicException(WeekendStudyExceptionCode.NOT_APPLICATION_TIME)
+class EmptyPeriodException : BasicException(WeekendStudyExceptionCode.EMPTY_PERIOD)
+class InvalidPeriodException : BasicException(WeekendStudyExceptionCode.INVALID_PERIOD)
+class PeriodOverlappedException : BasicException(WeekendStudyExceptionCode.PERIOD_OVERLAPPED)
+class InvalidMemberException : BasicException(WeekendStudyExceptionCode.INVALID_MEMBER)
+class MemberNotFoundException : BasicException(WeekendStudyExceptionCode.MEMBER_NOT_FOUND)
+class WeekendStudyNotFoundException : BasicException(WeekendStudyExceptionCode.WEEKEND_STUDY_NOT_FOUND)
+class WeekendStudyPeriodNotFoundException : BasicException(WeekendStudyExceptionCode.WEEKEND_STUDY_PERIOD_NOT_FOUND)
+class InvalidWeekendStudyTypeException : BasicException(WeekendStudyExceptionCode.INVALID_WEEKEND_STUDY_TYPE)
+class RoomAlreadyReservedException : BasicException(WeekendStudyExceptionCode.ROOM_ALREADY_RESERVED)
+class NotMyWeekendStudyException : BasicException(WeekendStudyExceptionCode.NOT_MY_WEEKEND_STUDY)
+class NotLeaderException : BasicException(WeekendStudyExceptionCode.NOT_LEADER)
+class AttendanceAlreadyCheckedException : BasicException(WeekendStudyExceptionCode.ATTENDANCE_ALREADY_CHECKED)

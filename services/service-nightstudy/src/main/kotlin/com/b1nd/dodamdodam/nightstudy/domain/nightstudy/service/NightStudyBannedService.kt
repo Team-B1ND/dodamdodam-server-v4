@@ -5,7 +5,8 @@ import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.AlreadyBannedE
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.BanNotFoundException
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.repository.nightStudy.NightStudyBannedRepository
 import org.springframework.stereotype.Service
-import java.util.UUID
+import java.time.LocalDate
+import java.util.*
 
 @Service
 class NightStudyBannedService(
@@ -13,17 +14,21 @@ class NightStudyBannedService(
 ) {
 
     fun ban(banned: NightStudyBannedEntity) {
-        if (bannedRepository.existsByUserId(banned.userId)) throw AlreadyBannedException()
+        val today = LocalDate.now()
+        if (bannedRepository.existsByUserIdAndEndAtGreaterThanEqual(banned.userId, today)) throw AlreadyBannedException()
+        bannedRepository.deleteByUserId(banned.userId)
         bannedRepository.save(banned)
     }
 
-    fun getAll(): List<NightStudyBannedEntity> = bannedRepository.findAll()
+    fun getAll(): List<NightStudyBannedEntity> =
+        bannedRepository.findAllByEndAtGreaterThanEqual(LocalDate.now())
 
     fun findByUserId(userId: UUID): NightStudyBannedEntity? =
-        bannedRepository.findByUserId(userId)
+        bannedRepository.findByUserIdAndEndAtGreaterThanEqual(userId, LocalDate.now())
 
     fun unban(userId: UUID) {
-        if (!bannedRepository.existsByUserId(userId)) throw BanNotFoundException()
+        val today = LocalDate.now()
+        if (!bannedRepository.existsByUserIdAndEndAtGreaterThanEqual(userId, today)) throw BanNotFoundException()
         bannedRepository.deleteByUserId(userId)
     }
 }
