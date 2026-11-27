@@ -5,6 +5,7 @@ import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.Person
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.ProjectNightStudyApplyRequest
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.UpdateNightStudyAttendanceRequest
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.*
+import com.b1nd.dodamdodam.nightstudy.domain.deadline.service.NightStudyDeadlineService
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.command.NightStudyWithMembersCommand
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyStatusType
@@ -25,13 +26,11 @@ import com.b1nd.dodamdodam.core.security.passport.holder.PassportHolder
 import com.b1nd.dodamdodam.core.security.passport.requireUserId
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.response.NightStudyTotalCountResponse
 import kotlinx.coroutines.runBlocking
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.ZoneId
 import java.util.*
 
 @Component
@@ -42,8 +41,7 @@ class NightStudyUseCase(
     private val projectRoomService: ProjectRoomService,
     private val userQueryClient: UserQueryClient,
     private val outSleepingClient: OutSleepingClient,
-    @Value("\${app.night-study.application-deadline-enabled:true}")
-    private val applicationDeadlineEnabled: Boolean = true,
+    private val deadlineService: NightStudyDeadlineService,
 ) {
 
     companion object {
@@ -69,11 +67,9 @@ class NightStudyUseCase(
     }
 
     private fun validateApplication(startAt: LocalDate, period: Int) {
-        val now = LocalDateTime.now(ZoneId.of("Asia/Seoul"))
-        val deadline = now.toLocalDate().atTime(20, 30)
+        val now = LocalDateTime.now()
 
-        if (applicationDeadlineEnabled && now.isAfter(deadline))
-            throw BasicException(NightStudyExceptionCode.NOT_APPLICATION_TIME)
+        deadlineService.validateDeadline(now.toLocalTime())
         if (startAt.isBefore(now.toLocalDate()))
             throw BasicException(NightStudyExceptionCode.INVALID_START_AT)
         if (period !in 1..MAX_PERIOD)
