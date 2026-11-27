@@ -5,6 +5,9 @@ import com.b1nd.dodamdodam.core.security.passport.Passport
 import com.b1nd.dodamdodam.core.security.passport.PassportUserDetails
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.PersonalNightStudyApplyRequest
 import com.b1nd.dodamdodam.nightstudy.application.nightstudy.data.request.ProjectNightStudyApplyRequest
+import com.b1nd.dodamdodam.nightstudy.domain.deadline.entity.NightStudyDeadlineEntity
+import com.b1nd.dodamdodam.nightstudy.domain.deadline.repository.NightStudyDeadlineRepository
+import com.b1nd.dodamdodam.nightstudy.domain.deadline.service.NightStudyDeadlineService
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.exception.InvalidNightStudyTypeException
@@ -25,11 +28,12 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.mockStatic
 import org.mockito.Mockito.mockingDetails
 import org.mockito.Mockito.verifyNoInteractions
+import org.mockito.Mockito.`when`
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.ZoneId
+import java.time.LocalTime
 import java.util.UUID
 
 class NightStudyUseCaseApplicationTest {
@@ -73,15 +77,34 @@ class NightStudyUseCaseApplicationTest {
 
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
-    fun `마감 제한을 비활성화하면 마감 이후에도 신청을 저장한다`(project: Boolean) = at(afterDeadline) {
-        apply(useCase(applicationDeadlineEnabled = false), project)
+    fun `마감 시간을 늦추면 20시 30분 이후에도 신청을 저장한다`(project: Boolean) = at(afterDeadline) {
+        apply(useCase(deadline = NightStudyDeadlineEntity(LocalTime.MIDNIGHT, LocalTime.of(21, 0))), project)
 
         assertSaved(project)
     }
 
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
-    fun `마감 제한이 활성화되어도 정확히 20시 30분에는 신청할 수 있다`(project: Boolean) =
+    fun `마감 설정이 없으면 시간 제한 없이 신청을 저장한다`(project: Boolean) = at(afterDeadline) {
+        apply(useCase(deadline = null), project)
+
+        assertSaved(project)
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `시작 시간 이전에는 신청을 저장하지 않는다`(project: Boolean) = at(afterDeadline.withHour(7)) {
+        val exception = assertThrows(BasicException::class.java) {
+            apply(useCase(deadline = NightStudyDeadlineEntity(LocalTime.of(8, 0), LocalTime.of(20, 30))), project)
+        }
+
+        assertEquals(NightStudyExceptionCode.NOT_APPLICATION_TIME, exception.exceptionCode)
+        verifyNoInteractions(nightStudyService, projectRoomService)
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `기본 마감 설정에서도 정확히 20시 30분에는 신청할 수 있다`(project: Boolean) =
         at(afterDeadline.withMinute(30)) {
             apply(useCase(), project, period = 2)
 
@@ -90,9 +113,9 @@ class NightStudyUseCaseApplicationTest {
 
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
-    fun `마감 제한이 비활성화되어도 과거 날짜는 신청할 수 없다`(project: Boolean) = at(afterDeadline) {
+    fun `마감 시간 안이어도 과거 날짜는 신청할 수 없다`(project: Boolean) = at(afterDeadline) {
         val exception = assertThrows(BasicException::class.java) {
-            apply(useCase(applicationDeadlineEnabled = false), project, startAt = afterDeadline.toLocalDate().minusDays(1))
+            apply(useCase(deadline = null), project, startAt = afterDeadline.toLocalDate().minusDays(1))
         }
 
         assertEquals(NightStudyExceptionCode.INVALID_START_AT, exception.exceptionCode)
@@ -101,24 +124,30 @@ class NightStudyUseCaseApplicationTest {
 
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
-    fun `마감 제한이 비활성화되어도 잘못된 교시는 신청할 수 없다`(project: Boolean) = at(afterDeadline) {
+    fun `마감 시간 안이어도 잘못된 교시는 신청할 수 없다`(project: Boolean) = at(afterDeadline) {
         for (period in listOf(0, 3)) {
             assertThrows(InvalidNightStudyTypeException::class.java) {
-                apply(useCase(applicationDeadlineEnabled = false), project, period = period)
+                apply(useCase(deadline = null), project, period = period)
             }
         }
 
         verifyNoInteractions(nightStudyService, projectRoomService)
     }
 
-    private fun useCase(applicationDeadlineEnabled: Boolean = true) = NightStudyUseCase(
-        nightStudyService = nightStudyService,
-        nightStudyAttendanceService = mock(NightStudyAttendanceService::class.java),
-        projectRoomService = projectRoomService,
-        userQueryClient = mock(UserQueryClient::class.java),
-        outSleepingClient = mock(OutSleepingClient::class.java),
-        applicationDeadlineEnabled = applicationDeadlineEnabled,
-    )
+    private fun useCase(
+        deadline: NightStudyDeadlineEntity? = NightStudyDeadlineEntity(LocalTime.MIDNIGHT, LocalTime.of(20, 30)),
+    ): NightStudyUseCase {
+        val deadlineRepository = mock(NightStudyDeadlineRepository::class.java)
+        `when`(deadlineRepository.findAll()).thenReturn(listOfNotNull(deadline))
+        return NightStudyUseCase(
+            nightStudyService = nightStudyService,
+            nightStudyAttendanceService = mock(NightStudyAttendanceService::class.java),
+            projectRoomService = projectRoomService,
+            userQueryClient = mock(UserQueryClient::class.java),
+            outSleepingClient = mock(OutSleepingClient::class.java),
+            deadlineService = NightStudyDeadlineService(deadlineRepository),
+        )
+    }
 
     private fun apply(
         useCase: NightStudyUseCase,
@@ -155,7 +184,7 @@ class NightStudyUseCaseApplicationTest {
 
     private fun at(now: LocalDateTime, block: () -> Unit) {
         mockStatic(LocalDateTime::class.java, CALLS_REAL_METHODS).use { mocked ->
-            mocked.`when`<LocalDateTime> { LocalDateTime.now(ZoneId.of("Asia/Seoul")) }.thenReturn(now)
+            mocked.`when`<LocalDateTime> { LocalDateTime.now() }.thenReturn(now)
             block()
         }
     }

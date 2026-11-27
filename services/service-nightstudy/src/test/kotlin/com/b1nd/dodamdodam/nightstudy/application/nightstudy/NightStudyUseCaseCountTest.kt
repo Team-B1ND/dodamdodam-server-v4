@@ -7,6 +7,7 @@ import com.b1nd.dodamdodam.grpc.user.StudentInfo
 import com.b1nd.dodamdodam.grpc.user.UserResponse
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.entity.NightStudyEntity
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.enumeration.NightStudyType
+import com.b1nd.dodamdodam.nightstudy.domain.deadline.service.NightStudyDeadlineService
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service.NightStudyAttendanceService
 import com.b1nd.dodamdodam.nightstudy.domain.nightstudy.service.NightStudyService
 import com.b1nd.dodamdodam.nightstudy.domain.room.entity.ProjectRoomEntity
@@ -34,6 +35,7 @@ class NightStudyUseCaseCountTest {
         projectRoomService = projectRoomService,
         userQueryClient = userQueryClient,
         outSleepingClient = outSleepingClient,
+        deadlineService = mock(NightStudyDeadlineService::class.java),
     )
 
     @Test
